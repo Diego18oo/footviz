@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estadísticas de Fútbol</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        table {
+            width: 50%;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 10px;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Estadísticas de Jugadores</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Jugador</th>
+                <th>Goles</th>
+                <th>Asistencias</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-estadisticas">
+            <!-- Aquí se insertarán los datos dinámicamente -->
+        </tbody>
+    </table>
+
+    <script>
+        // Función para obtener los datos de la API Flask
+        function obtenerEstadisticas() {
+            fetch('http://127.0.0.1:5000/api/estadisticas') // Petición GET a la API
+                .then(response => response.json()) // Convertir la respuesta a JSON
+                .then(data => {
+                    console.log(data); // Mostrar los datos en la consola
+                    let tabla = document.getElementById("tabla-estadisticas");
+                    tabla.innerHTML = ""; // Limpiar la tabla antes de insertar nuevos datos
+
+                    // Recorrer los datos y agregarlos a la tabla
+                    data.forEach(jugador => {
+                        let fila = `<tr>
+                                        <td>${jugador.nombre}</td>
+                                        <td>${jugador.goles}</td>
+                                        <td>${jugador.asistencias}</td>
+                                    </tr>`;
+                        tabla.innerHTML += fila; // Agregar la fila a la tabla
+                    });
+                })
+                .catch(error => console.error("Error al obtener los datos:", error));
+        }
+
+        // Llamar a la función al cargar la página
+        obtenerEstadisticas();
+    </script>
+
+</body>
+</html>
