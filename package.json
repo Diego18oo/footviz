@@ -1,0 +1,21 @@
+{
+  "name": "basededatos",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "database.js",
+  "scripts": { 
+    "dev": "npx nodemon app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "mysql2": "^3.14.3"
+  }
+}

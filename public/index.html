@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>FootViz</title>
+    <style>
+        table {
+            width: 80%;
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #aaa;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        img {
+            width: 32px;
+            height: auto;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align:center;">FootViz</h1>
+    <form action="#">
+        <label for="liga">Selecciona una Liga</label>
+        <select id="liga">
+            <option value="premierleague" selected>Premier League</option>
+            <option value="laliga">La Liga</option>
+            <option value="seriea">Serie A</option>
+            <option value="bundesliga">Bundesliga</option>
+            <option value="ligueone">Ligue 1</option>
+        </select>
+    </form> 
+    
+    <table id="tabla-equipos">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Equipo</th>
+                <th>PJ</th>
+                <th>V</th>
+                <th>E</th>
+                <th>D</th>
+                <th>Pts</th>
+                <th>DG</th>
+                <th>GA</th>
+                <th>GC</th>
+
+            </tr>
+        </thead>
+        <tbody>
+            
+        </tbody>
+    </table>
+
+    <table id="ultimos-partidos">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Local</th>
+                <th>Resultado</th>
+                
+                <th>Vistante</th>
+                
+
+            </tr>
+        </thead>
+        <tbody>
+            
+        </tbody>
+    </table>
+
+    <script>
+        var liga = document.getElementById('liga');
+        var tbody = document.querySelector("#tabla-equipos tbody");
+        var endpoints = {
+            "premierleague": "/premier-league",
+            "laliga": "/la-liga",
+            "seriea": "/serie-a",
+            "bundesliga": "/bundesliga",
+            "ligueone": "/ligue-one"
+        };
+        function cargarTabla(ligaSeleccionada){
+            tbody.innerHTML = "";
+
+            if(endpoints[ligaSeleccionada]){
+                var url = endpoints[ligaSeleccionada];
+                fetch(url)
+                
+                    .then(response => response.json())
+                    .then(data => {
+                        tbody.innerHTML = "";
+                        const equipos = data.tabla_liga;
+                        equipos.sort((a,b) => {
+                            if (b.puntos !== a.puntos) return b.puntos - a.puntos;
+                            if (b.diferencia_de_goles !== a.diferencia_de_goles) return b.diferencia_de_goles - a.diferencia_de_goles;
+                            return b.goles_anotados - a.goles_anotados;
+                        });
+                        equipos.forEach((equipo, index) => {
+                            const fila = document.createElement("tr");
+                            fila.innerHTML = `
+                                <td>${index +1}</td> 
+                                <td><img src="${equipo.url_imagen}" alt="Escudo">${equipo.nombre_equipo}</td>
+                                <td>${equipo.partidos_jugados}</td>
+                                <td>${equipo.victorias}</td>
+                                <td>${equipo.empates}</td>
+                                <td>${equipo.derrotas}</td>
+                                <td>${equipo.puntos}</td>
+                                <td>${equipo.diferencia_de_goles}</td>
+                                <td>${equipo.goles_anotados}</td>
+                                <td>${equipo.goles_recibidos}</td>
+                            `;
+                            tbody.appendChild(fila);
+                        });
+
+                        const tbodyPartidos = document.querySelector("#ultimos-partidos tbody");
+                        tbodyPartidos.innerHTML = "";
+                        const partidos = data.ultimos_partidos;
+                        partidos.forEach(partido => {
+                            const fila = document.createElement("tr");
+                            const fechaFormateada = partido.fecha.split('T')[0];
+                            fila.innerHTML = `
+                                <td>${fechaFormateada}</td>
+                                <td><img src="${partido.escudo_local}" alt="Local">${partido.nombre_local || ""}</td>
+                                <td>${partido.goles_local} - ${partido.goles_visitante}</td>
+                                <td><img src="${partido.escudo_visitante}" alt="Visitante">${partido.nombre_visitante || ""}</td>
+                            `;
+                            tbodyPartidos.appendChild(fila);
+                        });
+                    })
+                    .catch(error => {
+                        console.error("Error al cargar la pagina: ", error);
+                    });
+                
+            }
+        }
+        liga.addEventListener("change", function(){
+            cargarTabla(this.value);
+        });
+        cargarTabla(liga.value);
+      
+    </script>
+</body>
+</html>
