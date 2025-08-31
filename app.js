@@ -54,7 +54,7 @@ app.get("/ligue-one", async(req,res) => {
     res.json({ tabla_liga, ultimos_partidos });
 })
  
-
+ 
 
 
 app.use((err, req, res, next) => {

@@ -589,14 +589,12 @@ def insert_update_plantilla_equipos(engine, driver, ligas, temporadas):
                         mapa_jugadores.update(dict(zip(df_jugador_actualizado['nombre'], df_jugador_actualizado['id_jugador'])))
                         id_jugador = mapa_jugadores.get(nombre_jugador)
                     insert_plantilla_equipos_stmt = insert(tabla_plantilla_equipos).values(
-                        fecha_inicio = fecha_inicio,
                         jugador = id_jugador,
                         equipo = mapa_equipos.get(nombre_equipo, None),
                         temporada = i +1
                     )
 
                     update_plantilla_equipos_stmt = insert_plantilla_equipos_stmt.on_duplicate_key_update(
-                        fecha_inicio=insert_plantilla_equipos_stmt.inserted.fecha_inicio,
                         jugador=insert_plantilla_equipos_stmt.inserted.jugador,
                         equipo=insert_plantilla_equipos_stmt.inserted.equipo,
                         temporada=insert_plantilla_equipos_stmt.inserted.temporada,
@@ -609,6 +607,143 @@ def insert_update_plantilla_equipos(engine, driver, ligas, temporadas):
 
 def extraer_id_sofascore(url):
     return url.split(':')[-1]
+
+
+def insert_estadistica_partido_jugador(data, engine ,id_sofascore, posicion, tarjeta_amarilla, tarjeta_roja, nombre_jugador):
+    df_jugadores = pd.read_sql('SELECT id_jugador, nombre FROM jugador', engine)
+    mapa_jugadores = dict(zip(df_jugadores['nombre'], df_jugadores['id_jugador']))
+    df_partido = pd.read_sql('SELECT id_partido, url_sofascore FROM partido', engine)
+    mapa_partidos = {
+        extraer_id_sofascore(url): id_partido
+        for id_partido, url in zip(df_partido['id_partido'], df_partido['url_sofascore'])
+    }
+    id_partido = mapa_partidos.get(str(id_sofascore))
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    tabla_estadistica_jugador_partido = meta.tables['estadistica_jugador_partido']
+    tabla_estadistica_jugador_portero = meta.tables['estadistica_jugador_portero']
+    with engine.begin() as conn: 
+        if posicion == 'G':
+            insert_estadistica_jugador_portero_stmt = insert(tabla_estadistica_jugador_portero).values(
+                pases_totales = data['statistics'].get('totalPass', 0),
+                pases_acertados = data['statistics'].get('accuratePass', 0),
+                pases_largos_totales = data['statistics'].get('totalLongBalls', 0),
+                pases_largos_acertados = data['statistics'].get('accurateLongBalls', 0),
+                asistencias = data['statistics'].get('goalAssist', 0),
+                goles = data['statistics'].get('goals', 0),
+                atajadas_dentro_del_area = data['statistics'].get('savedShotsFromInsideTheBox', 0),
+                atajadas = data['statistics'].get('saves', 0),
+                minutos = data['statistics'].get('minutesPlayed', 0),
+                toques = data['statistics'].get('touches', 0),
+                rating = data['statistics'].get('rating', 0),
+                goles_prevenidos = round(data['statistics'].get('goalsPrevented', 0), 5),
+                penales_atajados = data['statistics'].get('penaltySave', 0),
+                tarjeta_amarilla = tarjeta_amarilla,
+                tarjeta_roja = tarjeta_roja,
+                jugador = mapa_jugadores.get(nombre_jugador),
+                partido = id_partido
+            )
+
+            update_estadistica_jugador_portero_stmt = insert_estadistica_jugador_portero_stmt.on_duplicate_key_update(
+                pases_totales=insert_estadistica_jugador_portero_stmt.inserted.pases_totales,
+                pases_acertados=insert_estadistica_jugador_portero_stmt.inserted.pases_acertados,
+                pases_largos_totales=insert_estadistica_jugador_portero_stmt.inserted.pases_largos_totales,
+                pases_largos_acertados=insert_estadistica_jugador_portero_stmt.inserted.pases_largos_acertados,
+                asistencias=insert_estadistica_jugador_portero_stmt.inserted.asistencias,
+                goles=insert_estadistica_jugador_portero_stmt.inserted.goles,
+                atajadas_dentro_del_area=insert_estadistica_jugador_portero_stmt.inserted.atajadas_dentro_del_area,
+                atajadas=insert_estadistica_jugador_portero_stmt.inserted.atajadas,
+                minutos=insert_estadistica_jugador_portero_stmt.inserted.minutos,
+                toques=insert_estadistica_jugador_portero_stmt.inserted.toques,
+                rating=insert_estadistica_jugador_portero_stmt.inserted.rating,
+                goles_prevenidos=insert_estadistica_jugador_portero_stmt.inserted.goles_prevenidos,
+                penales_atajados=insert_estadistica_jugador_portero_stmt.inserted.penales_atajados,
+                tarjeta_amarilla=insert_estadistica_jugador_portero_stmt.inserted.tarjeta_amarilla,
+                tarjeta_roja=insert_estadistica_jugador_portero_stmt.inserted.tarjeta_roja,
+                jugador=insert_estadistica_jugador_portero_stmt.inserted.jugador,
+                partido=insert_estadistica_jugador_portero_stmt.inserted.partido,
+            )
+            conn.execute(update_estadistica_jugador_portero_stmt)
+        else: 
+            insert_estadistica_jugador_partido_stmt = insert(tabla_estadistica_jugador_partido).values(
+                jugador = mapa_jugadores.get(nombre_jugador),
+                partido = id_partido,
+                goles =  data['statistics'].get('goals', 0),
+                pases_totales = data['statistics'].get('totalPass', 0),
+                pases_acertados = data['statistics'].get('accuratePass', 0),
+                pases_largos_totales = data['statistics'].get('totalLongBalls', 0),
+                pases_largos_acertados = data['statistics'].get('accurateLongBalls', 0),
+                asistencias = data['statistics'].get('goalAssist', 0), 
+                despejes = data['statistics'].get('totalClearance', 0), 
+                intercepciones = data['statistics'].get('interceptionWon', 0),
+                entradas = data['statistics'].get('totalTackle', 0),
+                faltas_cometidas = data['statistics'].get('fouls', 0),
+                faltas_recibidas = data['statistics'].get('wasFouled', 0),
+                minutos = data['statistics'].get('minutesPlayed', 0),
+                toques = data['statistics'].get('touches', 0),
+                rating = data['statistics'].get('rating', 0),
+                perdidas_de_balon = data['statistics'].get('possessionLostCtrl', 0),
+                regates_totales = data['statistics'].get('totalContest', 0),
+                regates_efectivos = data['statistics'].get('wonContest', 0),
+                bloqueos = data['statistics'].get('outfielderBlock', 0),
+                disparos_a_puerta = data['statistics'].get('onTargetScoringAttempt', 0),
+                disparos_desviados = data['statistics'].get('shotOffTarget', 0),
+                pases_clave = data['statistics'].get('keyPass', 0),
+                grandes_oportunidades_creadas = data['statistics'].get('bigChanceCreated', 0),
+                goles_esperados = round(data['statistics'].get('expectedGoals', 0), 5),
+                asistencias_esperadas = round(data['statistics'].get('expectedAssists', 0), 5),
+                entrada_de_ultimo_hombre = data['statistics'].get('lastManTackle', 0),
+                duelos_aereos_ganados = data['statistics'].get('aerialWon', 0),
+                duelos_aereos_perdidos = data['statistics'].get('aerialLost', 0),
+                centros = data['statistics'].get('totalCross', 0),
+                centros_acertados = data['statistics'].get('accurateCross', 0),
+                disparos_bloqueados = data['statistics'].get('blockedScoringAttempt', 0),
+                gran_oportunidad_fallada = data['statistics'].get('bigChanceMissed', 0),
+                tarjeta_amarilla = tarjeta_amarilla,
+                tarjeta_roja = tarjeta_roja,
+                autogoles = data['statistics'].get('owngoal', 0)
+            )
+            
+            update_estadistica_jugador_partido_stmt = insert_estadistica_jugador_partido_stmt.on_duplicate_key_update(
+                jugador = insert_estadistica_jugador_partido_stmt.inserted.jugador, 
+                partido = insert_estadistica_jugador_partido_stmt.inserted.partido,
+                pases_totales = insert_estadistica_jugador_partido_stmt.inserted.pases_totales,
+                pases_acertados = insert_estadistica_jugador_partido_stmt.inserted.pases_acertados,
+                pases_largos_totales = insert_estadistica_jugador_partido_stmt.inserted.pases_largos_totales,
+                pases_largos_acertados = insert_estadistica_jugador_partido_stmt.inserted.pases_largos_acertados,
+                asistencias = insert_estadistica_jugador_partido_stmt.inserted.asistencias,
+                despejes = insert_estadistica_jugador_partido_stmt.inserted.despejes,
+                intercepciones = insert_estadistica_jugador_partido_stmt.inserted.intercepciones,  
+                entradas = insert_estadistica_jugador_partido_stmt.inserted.entradas,
+                faltas_cometidas = insert_estadistica_jugador_partido_stmt.inserted.faltas_cometidas,
+                faltas_recibidas = insert_estadistica_jugador_partido_stmt.inserted.faltas_recibidas,
+                minutos = insert_estadistica_jugador_partido_stmt.inserted.minutos,
+                toques = insert_estadistica_jugador_partido_stmt.inserted.toques,
+                rating = insert_estadistica_jugador_partido_stmt.inserted.rating,
+                perdidas_de_balon = insert_estadistica_jugador_partido_stmt.inserted.perdidas_de_balon,
+                regates_totales = insert_estadistica_jugador_partido_stmt.inserted.regates_totales,
+                regates_efectivos = insert_estadistica_jugador_partido_stmt.inserted.regates_efectivos,
+                bloqueos = insert_estadistica_jugador_partido_stmt.inserted.bloqueos,
+                disparos_a_puerta = insert_estadistica_jugador_partido_stmt.inserted.disparos_a_puerta,
+                disparos_desviados = insert_estadistica_jugador_partido_stmt.inserted.disparos_desviados,
+                pases_clave = insert_estadistica_jugador_partido_stmt.inserted.pases_clave,
+                grandes_oportunidades_creadas = insert_estadistica_jugador_partido_stmt.inserted.grandes_oportunidades_creadas,
+                goles_esperados = insert_estadistica_jugador_partido_stmt.inserted.goles_esperados,
+                asistencias_esperadas = insert_estadistica_jugador_partido_stmt.inserted.asistencias_esperadas,
+                entrada_de_ultimo_hombre = insert_estadistica_jugador_partido_stmt.inserted.entrada_de_ultimo_hombre,
+                duelos_aereos_ganados = insert_estadistica_jugador_partido_stmt.inserted.duelos_aereos_ganados,
+                duelos_aereos_perdidos = insert_estadistica_jugador_partido_stmt.inserted.duelos_aereos_perdidos,
+                centros = insert_estadistica_jugador_partido_stmt.inserted.centros,
+                centros_acertados = insert_estadistica_jugador_partido_stmt.inserted.centros_acertados,
+                disparos_bloqueados = insert_estadistica_jugador_partido_stmt.inserted.disparos_bloqueados,
+                gran_oportunidad_fallada = insert_estadistica_jugador_partido_stmt.inserted.gran_oportunidad_fallada,
+                tarjeta_amarilla = insert_estadistica_jugador_partido_stmt.inserted.tarjeta_amarilla,
+                tarjeta_roja = insert_estadistica_jugador_partido_stmt.inserted.tarjeta_roja,
+                autogoles = insert_estadistica_jugador_partido_stmt.inserted.autogoles
+            )
+
+            conn.execute(update_estadistica_jugador_partido_stmt)
+    return
 
 def insert_mapa_de_calor(engine, driver, id_sofascore):
     engine = create_engine('mysql+pymysql://root@localhost/footviz')
@@ -627,16 +762,40 @@ def insert_mapa_de_calor(engine, driver, id_sofascore):
     with engine.begin() as conn:
         url = f"api/v1/event/{id_sofascore}/lineups"
         data = get_sofascore_api_data(driver, path=url)
-        for i in range(len(data['home']['players'])):
-            id_jugador_sofascore = data['home']['players'][i]['player']['id']
-            nombre_jugador = data['home']['players'][i]['player']['name']
-            print(f"Scrapeando a {nombre_jugador} {id_jugador_sofascore}")
-            try:
-                minutos_jugados = data['home']['players'][i]['statistics']['minutesPlayed']
-                print(f"{nombre_jugador} jugo {minutos_jugados} minutos en el partido")
+        incidents = get_sofascore_api_data(driver, path=f"api/v1/event/{id_sofascore}/incidents")
+        lista_amarillas = []
+        lista_rojas = []
+        lista_amarillas_rojas = []
+        for i in range(len(incidents['incidents'])):
+            try: 
+                if incidents['incidents'][i]['incidentClass'] == 'yellow':
+                    id_jugador = incidents['incidents'][i]['player']['id']
+                    lista_amarillas.append(id_jugador)
+                elif incidents['incidents'][i]['incidentClass'] == 'yellowRed':
+                    id_jugador = incidents['incidents'][i]['player']['id']
+                    lista_amarillas_rojas.append(id_jugador)
+                elif incidents['incidents'][i]['incidentClass'] == 'red':
+                    id_jugador = incidents['incidents'][i]['player']['id']
+                    lista_rojas.append(id_jugador)
             except KeyError:
-                print(f"{nombre_jugador} no jugo en el partido")
-                minutos_jugados = 0
+                print(",")
+        for i in range(len(data['home']['players'])):
+            posicion = data['home']['players'][i]['position']
+            id_jugador_sofascore = data['home']['players'][i]['player']['id']
+            if id_jugador_sofascore in lista_amarillas:
+                tarjeta_amarilla = 1
+                tarjeta_roja = 0
+            elif id_jugador_sofascore in lista_rojas:
+                tarjeta_amarilla = 0
+                tarjeta_roja = 1
+            elif id_jugador_sofascore in lista_amarillas_rojas:
+                tarjeta_amarilla = 2
+                tarjeta_roja = 1
+            else: 
+                tarjeta_amarilla = 0
+                tarjeta_roja = 0
+            
+            nombre_jugador = data['home']['players'][i]['player']['name']
             id_jugador = mapa_jugadores.get(nombre_jugador, None)
             if id_jugador is None: 
                 data_jugador = get_jugador(driver, id_jugador_sofascore)
@@ -644,7 +803,20 @@ def insert_mapa_de_calor(engine, driver, id_sofascore):
                 df_jugador_actualizado = pd.read_sql('SELECT id_jugador, nombre FROM jugador', engine)
                 mapa_jugadores.update(dict(zip(df_jugador_actualizado['nombre'], df_jugador_actualizado['id_jugador'])))
                 id_jugador = mapa_jugadores.get(nombre_jugador) 
+            
+            
+            
+            print(f"Scrapeando a {nombre_jugador} {id_jugador_sofascore}")
+            try:
+                minutos_jugados = data['home']['players'][i]['statistics']['minutesPlayed']
+                print(f"{nombre_jugador} jugo {minutos_jugados} minutos en el partido")
+            except KeyError:
+                print(f"{nombre_jugador} no jugo en el partido")
+                minutos_jugados = 0
+            
             if minutos_jugados > 2:
+                insert_estadistica_partido_jugador(data['home']['players'][i], engine, id_sofascore, posicion, tarjeta_amarilla, tarjeta_roja, nombre_jugador)
+                print(f"Estadistica insertada de {nombre_jugador} en el partido {id_partido}")
                 new_url = f"api/v1/event/{id_sofascore}/player/{id_jugador_sofascore}/heatmap"
                 print("Entrando a mapa de calor...")
                 try: 
@@ -674,14 +846,22 @@ def insert_mapa_de_calor(engine, driver, id_sofascore):
         
         
         for i in range(len(data['away']['players'])):
+            posicion = data['away']['players'][i]['position']
             id_jugador_sofascore = data['away']['players'][i]['player']['id']
+            if id_jugador_sofascore in lista_amarillas:
+                tarjeta_amarilla = 1
+                tarjeta_roja = 0
+            elif id_jugador_sofascore in lista_rojas:
+                tarjeta_amarilla = 0
+                tarjeta_roja = 1
+            elif id_jugador_sofascore in lista_amarillas_rojas:
+                tarjeta_amarilla = 2
+                tarjeta_roja = 1
+            else: 
+                tarjeta_amarilla = 0
+                tarjeta_roja = 0
+            
             nombre_jugador = data['away']['players'][i]['player']['name']
-            try:
-                minutos_jugados = data['away']['players'][i]['statistics']['minutesPlayed']
-                print(f"{nombre_jugador} jugo {minutos_jugados} minutos en el partido")
-            except KeyError:
-                print(f"{nombre_jugador} no jugo en el partido")
-                minutos_jugados = 0       
             id_jugador = mapa_jugadores.get(nombre_jugador, None)
             if id_jugador is None: 
                 data_jugador = get_jugador(driver, id_jugador_sofascore)
@@ -689,13 +869,24 @@ def insert_mapa_de_calor(engine, driver, id_sofascore):
                 df_jugador_actualizado = pd.read_sql('SELECT id_jugador, nombre FROM jugador', engine)
                 mapa_jugadores.update(dict(zip(df_jugador_actualizado['nombre'], df_jugador_actualizado['id_jugador'])))
                 id_jugador = mapa_jugadores.get(nombre_jugador) 
-            if minutos_jugados > 2:
+            
+            
+            print(f"Scrapeando a {nombre_jugador} {id_jugador_sofascore}")
+            try:
+                minutos_jugados = data['away']['players'][i]['statistics']['minutesPlayed']
+                print(f"{nombre_jugador} jugo {minutos_jugados} minutos en el partido")
+            except KeyError:
+                print(f"{nombre_jugador} no jugo en el partido")
+                minutos_jugados = 0
+            
+            if minutos_jugados >= 1:
+                insert_estadistica_partido_jugador(data['away']['players'][i], engine, id_sofascore, posicion, tarjeta_amarilla, tarjeta_roja, nombre_jugador)
+                print(f"Estadistica insertada de {nombre_jugador} en el partido {id_partido}")
                 new_url = f"api/v1/event/{id_sofascore}/player/{id_jugador_sofascore}/heatmap"
                 print("Entrando a mapa de calor...")
-                try:
+                try: 
                     mapa_de_calor = get_sofascore_api_data(driver, path=new_url)
-                
-                    if len(mapa_de_calor['heatmap']) > 1:
+                    if len(mapa_de_calor['heatmap']) > 1: 
                         for i in range(len(mapa_de_calor['heatmap'])):
                             insert_mapa_de_calor_stmt = insert(tabla_mapa_de_calor).values(
                                 jugador = id_jugador,
@@ -710,13 +901,12 @@ def insert_mapa_de_calor(engine, driver, id_sofascore):
                                 x=insert_mapa_de_calor_stmt.inserted.x,
                                 y=insert_mapa_de_calor_stmt.inserted.y
                             )
-
                             conn.execute(update_mapa_de_calor_stmt)
                         print(f"Mapa de calor de {nombre_jugador} insertado correctamente")
                     else: 
                         print("No hay info para este jugador, minutos insuficientes")
-                except KeyError:
-                    print("No hay info")        
+                except KeyError: 
+                    print("No hay info")       
     return 
 
 

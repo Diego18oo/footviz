@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from scrape_sofa import get_sofascore_api_data
+from scrape_sofa import get_sofascore_api_data, init_driver
 from datetime import datetime
 import pandas as pd
 
@@ -9,18 +9,18 @@ mapa_paises = dict(zip(df_paises['nombre'], df_paises['id_pais']))
 
 ligas_ids = [17,8,23,35,34]
 temporadas_ids = [76986, 77559, 76457, 77333, 77356]
-
+driver = init_driver()
 lista_jugadores= []
 for ligas in range(0,5):
     print(f"Inicializando scrapeo a api/v1/unique-tournament/{ligas_ids[ligas]}/season/{temporadas_ids[ligas]}/standings/total")
-    data_temporada = get_sofascore_api_data(path=f"api/v1/unique-tournament/{ligas_ids[ligas]}/season/{temporadas_ids[ligas]}/standings/total")
+    data_temporada = get_sofascore_api_data(driver, path=f"api/v1/unique-tournament/{ligas_ids[ligas]}/season/{temporadas_ids[ligas]}/standings/total")
     torneo = data_temporada['standings'][0]
     base_url = 'https://www.sofascore.com/team/football/'
     for row in range(len(torneo['rows'])):
         id_equipo = torneo['rows'][row]['team']['id']
         nombre_equipo = torneo['rows'][row]['team']['name']
         print(f"Scrapeando a {nombre_equipo}...")
-        data_jugadores = get_sofascore_api_data(path=f"api/v1/team/{id_equipo}/players")
+        data_jugadores = get_sofascore_api_data(driver, path=f"api/v1/team/{id_equipo}/players")
         for player in range(len(data_jugadores['players'])):
             nombre_jugador = data_jugadores['players'][player]['player']['name'] 
             dorsal = data_jugadores['players'][player]['player'].get('jerseyNumber', None)

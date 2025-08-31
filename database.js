@@ -54,4 +54,4 @@ export async function getUltimosPartidos(liga){
         `, [liga])  
     return rows
 }
-    
+     
