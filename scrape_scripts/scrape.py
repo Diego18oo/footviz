@@ -7,7 +7,7 @@ from funciones import liga_fbref_fixtures, ligas_ids, temporadas_ids, insert_tab
 import pandas as pd
 
 today = datetime.now()
-yesterday = today - timedelta(days=14)
+yesterday = today - timedelta(days=2)
 yesterday = yesterday.strftime('%Y-%m-%d')
 engine = create_engine('mysql+pymysql://root@localhost/footviz')
 
@@ -44,21 +44,21 @@ else:
         #url = f"https://fbref.com/en/comps/{liga_fbref_fixtures[iteracion]}"
         #lista_links = get_all_urls_fbref(driver, liga_url=url)
         #links_totales.extend(lista_links)
-    for i in range(len(df_partidos_ayer)):
-        partido_sofascore = df_partidos_ayer['url_sofascore'][i].split(':')[2]  
+    #for i in range(len(df_partidos_ayer)):
+       # partido_sofascore = df_partidos_ayer['url_sofascore'][i].split(':')[2]  
         #lista_ids_sofascore.append(partido_sofascore)
         #insert_update_partidos(engine, df_partidos_ayer.iloc[i]) 
         #print("Partido actualizado correctamente")
         #insert_estadistica_partido(engine, df_partidos_ayer.iloc[i])
         #print("Estadistica de partidos insertada correctamente")
-        insert_mapa_de_calor(engine, driver, partido_sofascore)
-        print(f"Mapa de calor de partido {partido_sofascore} insertado correctamente")
-        insert_mapa_de_disparos(engine, driver, partido_sofascore)
+        #insert_mapa_de_calor(engine, driver, partido_sofascore)
+        #print(f"Mapa de calor de partido {partido_sofascore} insertado correctamente")
+        #insert_mapa_de_disparos(engine, driver, partido_sofascore)
          
-    #for i in range(len(ids_para_scrapear_temporada)):
-        #liga_a_scrapear = ids_para_scrapear_temporada[i]
-        #insert_tabla_posiciones(liga_a_scrapear, engine=engine,temporada=temporadas_ids[liga_a_scrapear-1], liga=ligas_ids[liga_a_scrapear-1])   #actualiza la tabla de posiciones de todas las ligas
-        #print(f"Tabla {liga_a_scrapear} insertada correctamente")
+    for i in range(len(ids_para_scrapear_temporada)):
+        liga_a_scrapear = ids_para_scrapear_temporada[i]
+        insert_tabla_posiciones(liga_a_scrapear, engine=engine,temporada=temporadas_ids[liga_a_scrapear-1], liga=ligas_ids[liga_a_scrapear-1])   #actualiza la tabla de posiciones de todas las ligas
+        print(f"Tabla {liga_a_scrapear} insertada correctamente")
         
 
 print("Cerrando driver...")

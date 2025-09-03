@@ -1,5 +1,5 @@
 import express from 'express'
-import {getTablaLiga, getUltimosPartidos } from './database.js'
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados } from './database.js'
 
 
 const app = express()
@@ -10,7 +10,9 @@ app.get("/index", async(req,res) => {
     console.log("Se hizo una solicitud a /index");
     const tabla_liga = await getTablaLiga(1)
     const ultimos_partidos = await getUltimosPartidos(1)
-    res.json({ tabla_liga, ultimos_partidos });
+    const maximos_goleadores = await getMaximosGoleadores(1)
+    const mejores_valorados = await getMejoresValorados(1)
+    res.json({ tabla_liga, ultimos_partidos, maximos_goleadores, mejores_valorados });
     
 })
 
@@ -18,30 +20,39 @@ app.get("/premier-league", async(req,res) => {
     console.log("Se hizo una solicitud a /premier-league");
     const tabla_liga = await getTablaLiga(1)
     const ultimos_partidos = await getUltimosPartidos(1)
-    res.json({ tabla_liga, ultimos_partidos });
+    const maximos_goleadores = await getMaximosGoleadores(1)
+    const mejores_valorados = await getMejoresValorados(1)
+    res.json({ tabla_liga, ultimos_partidos, maximos_goleadores, mejores_valorados });
     
 })
+
 
 
 app.get("/la-liga", async(req,res) => {
     console.log("Se hizo una solicitud a /la-liga");
     const tabla_liga = await getTablaLiga(2) 
     const ultimos_partidos = await getUltimosPartidos(2)
-    res.json({ tabla_liga, ultimos_partidos });
+    const maximos_goleadores = await getMaximosGoleadores(2)
+    const mejores_valorados = await getMejoresValorados(2)
+    res.json({ tabla_liga, ultimos_partidos, maximos_goleadores, mejores_valorados });
 })
 
 app.get("/serie-a", async(req,res) => {
     console.log("Se hizo una solicitud a /serie-a");
     const tabla_liga = await getTablaLiga(3)
     const ultimos_partidos = await getUltimosPartidos(3)
-    res.json({ tabla_liga, ultimos_partidos });
+    const maximos_goleadores = await getMaximosGoleadores(3)
+    const mejores_valorados = await getMejoresValorados(3)
+    res.json({ tabla_liga, ultimos_partidos, maximos_goleadores, mejores_valorados });
 })
 
 app.get("/bundesliga", async(req,res) => {
     console.log("Se hizo una solicitud a /bundesliga");
     const tabla_liga = await getTablaLiga(4)
     const ultimos_partidos = await getUltimosPartidos(4)
-    res.json({ tabla_liga, ultimos_partidos });
+    const maximos_goleadores = await getMaximosGoleadores(4)
+    const mejores_valorados = await getMejoresValorados(4)
+    res.json({ tabla_liga, ultimos_partidos, maximos_goleadores, mejores_valorados });
     
 })
 
@@ -49,11 +60,12 @@ app.get("/ligue-one", async(req,res) => {
     console.log("Se hizo una solicitud a /ligue-one");
     const tabla_liga = await getTablaLiga(5)
     const ultimos_partidos = await getUltimosPartidos(5)
-    
+    const maximos_goleadores = await getMaximosGoleadores(5)
+    const mejores_valorados = await getMejoresValorados(5)
     console.log(tabla_liga)
-    res.json({ tabla_liga, ultimos_partidos });
+    res.json({ tabla_liga, ultimos_partidos, maximos_goleadores, mejores_valorados });
 })
- 
+  
  
 
 

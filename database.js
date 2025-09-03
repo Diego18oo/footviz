@@ -27,7 +27,7 @@ export async function getTablaLiga(temporada){
         FROM estadisticas_equipo ee 
         JOIN equipo e ON ee.equipo = e.id_equipo
         WHERE ee.temporada = ?
-        `, [temporada])
+        `, [temporada]) 
     return rows
 }
 
@@ -55,3 +55,40 @@ export async function getUltimosPartidos(liga){
     return rows
 }
      
+
+export async function getMaximosGoleadores(temporada) {
+    const [rows] = await pool.query(`
+        SELECT 
+            j.url_imagen as imagen_jugador,
+            j.nombre as nombre_jugador,
+            SUM(ejp.goles) AS total_goles
+        FROM estadistica_jugador_partido ejp
+        JOIN partido p ON ejp.partido = p.id_partido
+        JOIN jugador j ON ejp.jugador = j.id_jugador
+        WHERE p.temporada = ?
+        GROUP BY ejp.jugador
+        ORDER BY total_goles DESC
+        LIMIT 5;
+        
+        `, [temporada])
+    return rows
+    
+}
+
+export async function getMejoresValorados(temporada) {
+    const [rows] = await pool.query(`
+        SELECT 
+            j.nombre as nombre_jugador,
+            j.url_imagen as imagen_jugador,
+            ROUND(AVG(ejp.rating),2) AS mejor_valoracion
+        FROM estadistica_jugador_partido ejp
+        JOIN partido p ON ejp.partido = p.id_partido
+        JOIN jugador j ON ejp.jugador = j.id_jugador
+        WHERE p.temporada = ?
+        GROUP BY ejp.jugador
+        ORDER BY mejor_valoracion DESC
+        LIMIT 5;
+        `, [temporada])
+    
+    return rows
+}
