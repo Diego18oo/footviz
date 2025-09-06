@@ -7,7 +7,7 @@ from funciones import liga_fbref_fixtures, ligas_ids, temporadas_ids, insert_tab
 import pandas as pd
 
 today = datetime.now()
-yesterday = today - timedelta(days=2)
+yesterday = today - timedelta(days=5)
 yesterday = yesterday.strftime('%Y-%m-%d')
 engine = create_engine('mysql+pymysql://root@localhost/footviz')
 
@@ -37,7 +37,7 @@ else:
     #lista_ids_bd = []
     #partidos = df_partidos_ayer['id_partido']['temporada']
     ids_para_scrapear_temporada = df_partidos_ayer['temporada'].unique() 
-    #insert_estadistica_jugador(engine,  ids_para_scrapear_temporada)
+    insert_estadistica_jugador(engine,  ids_para_scrapear_temporada)
     #links_totales = []
     #for i in range(len(ids_para_scrapear_temporada)):
         #iteracion = ids_para_scrapear_temporada[i]
@@ -55,10 +55,10 @@ else:
         #print(f"Mapa de calor de partido {partido_sofascore} insertado correctamente")
         #insert_mapa_de_disparos(engine, driver, partido_sofascore)
          
-    for i in range(len(ids_para_scrapear_temporada)):
-        liga_a_scrapear = ids_para_scrapear_temporada[i]
-        insert_tabla_posiciones(liga_a_scrapear, engine=engine,temporada=temporadas_ids[liga_a_scrapear-1], liga=ligas_ids[liga_a_scrapear-1])   #actualiza la tabla de posiciones de todas las ligas
-        print(f"Tabla {liga_a_scrapear} insertada correctamente")
+    #for i in range(len(ids_para_scrapear_temporada)):
+        #liga_a_scrapear = ids_para_scrapear_temporada[i]
+        #insert_tabla_posiciones(liga_a_scrapear, engine=engine,temporada=temporadas_ids[liga_a_scrapear-1], liga=ligas_ids[liga_a_scrapear-1])   #actualiza la tabla de posiciones de todas las ligas
+        #print(f"Tabla {liga_a_scrapear} insertada correctamente")
         
 
 print("Cerrando driver...")

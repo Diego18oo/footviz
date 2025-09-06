@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Estadisticas Ofensivas</title>
+    <style>
+        table {
+            width: 80%;
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #aaa;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        img {
+            width: 32px;
+            height: auto;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+    </style>
+    <body>
+        <form action="#">
+            <label for="liga">Selecciona una Liga</label>
+            <select id="liga">
+                <option value="premierleague" selected>Premier League</option>
+                <option value="laliga">La Liga</option>
+                <option value="seriea">Serie A</option>
+                <option value="bundesliga">Bundesliga</option>
+                <option value="ligueone">Ligue 1</option>
+            </select>
+        </form> 
+        <div>
+            <button id="prev">Anterior</button>
+            <span id="page-info"></span>
+            <button id="next">Siguiente</button>
+        </div>
+        <table id="estadisticas-ofensivas">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Jugador</th>
+                    <th>Minutos</th>
+                    <th>Goles</th>
+                    <th>Disparos</th>
+                    <th>Disparos a puerta</th>
+                    <th>Porcentaje disparos a puerta</th>
+                    <th>Disparos por 90</th>
+                    <th>Goles por disparo</th>
+                    <th>Distancia promedio de disparos</th>
+                    <th>Tiros Libres</th>
+                    <th>Penales</th>
+                    <th>xG</th>
+                    
+
+                </tr>
+            </thead>
+            <tbody>
+                
+            </tbody>
+        </table>
+
+        <script>
+            
+            var liga = document.getElementById('liga');
+            var tbody = document.querySelector("#estadisticas-ofensivas tbody");
+            var endpoints = {
+                "premierleague": "/estadisticas-ofensivas-premier-league",
+                "laliga": "/estadisticas-ofensivas-la-liga",
+                "seriea": "/estadisticas-ofensivas-serie-a", 
+                "bundesliga": "/estadisticas-ofensivas-bundesliga",
+                "ligueone": "/estadisticas-ofensivas-ligue-one"
+            };
+            let allData = [];
+            let currentPage = 1;
+            const pageSize = 10;
+            function renderPage() {
+                tbody.innerHTML = "";
+                const start = (currentPage - 1) * pageSize;
+                const end = start + pageSize;
+                const pageData = allData.slice(start, end);
+
+                pageData.forEach((estadistica_ofensiva, index) => {
+                    const fila = document.createElement("tr");
+                    fila.innerHTML = `
+                        <td>${start + index + 1}</td>
+                        <td><img src="${estadistica_ofensiva.imagen_jugador}" width="30"> ${estadistica_ofensiva.nombre_jugador} <img src="${estadistica_ofensiva.imagen_equipo}" width="30"></td>
+                        <td>${estadistica_ofensiva.minutos}</td>
+                        <td>${estadistica_ofensiva.total_goles}</td>
+                        <td>${estadistica_ofensiva.disparos}</td>
+                        <td>${estadistica_ofensiva.disparos_a_puerta}</td>
+                        <td>${estadistica_ofensiva.porcentaje_disparos_a_puerta}</td>
+                        <td>${estadistica_ofensiva.disparos_por_90}</td>
+                        <td>${estadistica_ofensiva.goles_por_disparo}</td>
+                        <td>${estadistica_ofensiva.distancia_promedio_de_disparos}</td>
+                        <td>${estadistica_ofensiva.tiros_libres}</td>
+                        <td>${estadistica_ofensiva.penales}</td>
+                        <td>${estadistica_ofensiva["SUM(ejp.goles_esperados)"]}</td>
+
+                    `;
+                    tbody.appendChild(fila);
+                });
+
+                // Actualizar info de página
+                document.getElementById("page-info").textContent = 
+                    `Página ${currentPage} de ${Math.ceil(allData.length / pageSize)}`;
+            }
+
+            function cargarTabla(ligaSeleccionada){
+                
+                if (endpoints[ligaSeleccionada]){
+                    var url = endpoints[ligaSeleccionada];
+                    fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        allData = data;
+                        currentPage = 1;
+                        renderPage();
+                    })
+                    .catch(error => {
+                        console.error("Error al cargar la pagina: ", error);
+                    });
+                }
+            }
+
+            document.getElementById("prev").addEventListener("click", () => {
+                if(currentPage > 1) {
+                    currentPage --;
+                    renderPage();
+                }
+            })
+
+            document.getElementById("next").addEventListener("click", () => {
+                if(currentPage < Math.ceil(allData.length / pageSize)) {
+                    currentPage++;
+                    renderPage();
+                }
+            })
+
+            liga.addEventListener("change", function(){
+                cargarTabla(this.value);
+            });
+            cargarTabla(liga.value);
+            const params = new URLSearchParams(window.location.search);
+            const ligaParam = params.get("liga");
+
+            if (ligaParam) {
+                liga.value = ligaParam;
+                cargarTabla(ligaParam);
+            } else {
+                cargarTabla(liga.value);
+            }
+        </script>
+    </body>
+</head> 

@@ -1,11 +1,34 @@
 import express from 'express'
-import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados } from './database.js'
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas } from './database.js'
 
 
 const app = express()
 app.use(express.static("public"))
-  
 
+ 
+app.get("/estadisticas-ofensivas-premier-league", async(req, res) => {
+    const estadisticas_ofensivas = await getEstadisticasOfensivas(1)
+    res.json(estadisticas_ofensivas);
+})
+
+app.get("/estadisticas-ofensivas-la-liga", async(req, res) => {
+    const estadisticas_ofensivas = await getEstadisticasOfensivas(2)
+    res.json(estadisticas_ofensivas);
+})
+app.get("/estadisticas-ofensivas-serie-a", async(req, res) => {
+    const estadisticas_ofensivas = await getEstadisticasOfensivas(3)
+    res.json(estadisticas_ofensivas);
+})
+
+app.get("/estadisticas-ofensivas-bundesliga", async(req, res) => {
+    const estadisticas_ofensivas = await getEstadisticasOfensivas(4)
+    res.json(estadisticas_ofensivas);
+})
+
+app.get("/estadisticas-ofensivas-ligue-one", async(req, res) => {
+    const estadisticas_ofensivas = await getEstadisticasOfensivas(5)
+    res.json(estadisticas_ofensivas);
+})
 app.get("/index", async(req,res) => {
     console.log("Se hizo una solicitud a /index");
     const tabla_liga = await getTablaLiga(1)

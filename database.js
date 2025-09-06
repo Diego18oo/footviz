@@ -1,7 +1,7 @@
 import mysql from 'mysql2'
 
 import dotenv from 'dotenv'
-dotenv.config()
+dotenv.config() 
 
 const pool = mysql.createPool({
     host: process.env.MYSQL_HOST,
@@ -91,4 +91,49 @@ export async function getMejoresValorados(temporada) {
         `, [temporada])
     
     return rows
+}
+
+export async function getEstadisticasOfensivas(temporada) {
+    const [rows] = await pool.query(`
+        SELECT 
+            j.url_imagen AS imagen_jugador,
+            j.nombre AS nombre_jugador,
+            e.nombre AS nombre_equipo,
+            e.url_imagen AS imagen_equipo,
+            SUM(ejp.minutos) as minutos,
+            SUM(ejp.goles) AS total_goles,
+            sj.disparos,
+            sj.disparos_a_puerta,
+            sj.disparos_a_puerta / sj.disparos as porcentaje_disparos_a_puerta,
+            sj.disparos / SUM(ejp.minutos) * 100 as disparos_por_90,
+            sj.goles_por_disparo,
+            sj.distancia_promedio_de_disparos,
+            sj.tiros_libres,
+            sj.penales,
+            SUM(ejp.goles_esperados)
+        FROM estadistica_jugador_partido ejp
+        JOIN partido p ON ejp.partido = p.id_partido
+        JOIN jugador j ON ejp.jugador = j.id_jugador
+        JOIN plantilla_equipos pe ON j.id_jugador = pe.jugador
+        JOIN equipo e ON pe.equipo = e.id_equipo
+        JOIN estadistica_jugador sj ON j.id_jugador = sj.jugador
+        WHERE p.temporada = ?
+        GROUP BY 
+            ejp.jugador, 
+            j.url_imagen, 
+            j.nombre, 
+            e.nombre, 
+            e.url_imagen, 
+            sj.disparos,
+            sj.disparos_a_puerta,
+            sj.goles_por_disparo,
+            sj.distancia_promedio_de_disparos,
+            sj.tiros_libres,
+            sj.penales
+        ORDER BY total_goles DESC;
+
+        
+        `, [temporada])
+    return rows
+    
 }
