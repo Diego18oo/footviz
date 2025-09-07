@@ -137,3 +137,104 @@ export async function getEstadisticasOfensivas(temporada) {
     return rows
     
 }
+
+export async function getStatsJugador(id_jugador) {
+    const [rows] = await pool.query(`
+        SELECT
+            j.id_jugador,
+            j.url_imagen AS imagen_jugador,
+            j.nombre AS nombre_jugador,
+            e.nombre AS nombre_equipo,
+            e.url_imagen AS imagen_equipo,
+            SUM(ejp.goles) AS total_goles,
+            sj.disparos,
+            sj.asistencias,
+            sj.acciones_creadas,
+            sj.pases,
+            sj.porcentaje_de_efectividad_de_pases,
+            sj.pases_progresivos,
+            sj.acarreos_progresivos,
+            sj.regates_efectivos,
+            sj.toques_de_balon,
+            sj.entradas,
+            sj.intercepciones,
+            sj.bloqueos,
+            sj.despejes,
+            sj.duelos_aereos_ganados
+        FROM estadistica_jugador_partido ejp
+        JOIN partido p ON ejp.partido = p.id_partido
+        JOIN jugador j ON ejp.jugador = j.id_jugador
+        JOIN plantilla_equipos pe ON j.id_jugador = pe.jugador
+        JOIN equipo e ON pe.equipo = e.id_equipo
+        JOIN estadistica_jugador sj ON j.id_jugador = sj.jugador
+        WHERE j.id_jugador = ?
+        GROUP BY 
+            j.id_jugador,
+            ejp.jugador, 
+            j.url_imagen, 
+            j.nombre, 
+            e.nombre, 
+            e.url_imagen, 
+            sj.disparos,
+            sj.asistencias,
+            sj.acciones_creadas,
+            sj.pases,
+            sj.porcentaje_de_efectividad_de_pases,
+            sj.pases_progresivos,
+            sj.acarreos_progresivos,
+            sj.regates_efectivos,
+            sj.toques_de_balon,
+            sj.entradas,
+            sj.intercepciones,
+            sj.bloqueos,
+            sj.despejes,
+            sj.duelos_aereos_ganados
+        ORDER BY total_goles DESC;
+
+        `, [id_jugador])
+    return rows 
+    
+}
+
+
+export async function buscarJugadores(nombre) {
+    const [rows] = await pool.query(`
+        SELECT 
+            j.id_jugador,
+            j.nombre AS nombre_jugador,
+            e.nombre AS nombre_equipo,
+            j.url_imagen AS imagen_jugador,
+            e.url_imagen AS imagen_equipo
+        FROM jugador j
+        JOIN plantilla_equipos pe ON j.id_jugador = pe.jugador
+        JOIN equipo e ON pe.equipo = e.id_equipo
+        WHERE j.nombre LIKE ?
+        LIMIT 10;
+    `, [`%${nombre}%`]); // el % permite coincidencias parciales
+
+    return rows;
+}
+
+export async function getStatsMaximas() {
+    const [rows] = await pool.query(`
+        SELECT 
+            MAX(goles) AS max_goles,
+            MAX(disparos) AS max_disparos,
+            MAX(asistencias) AS max_asistencias,
+            MAX(acciones_creadas) as max_acciones_creadas,
+            MAX(pases) AS max_pases,
+            MAX(porcentaje_de_efectividad_de_pases) as max_porcentaje_de_efectividad_de_pases,
+            MAX(pases_progresivos) as max_pases_progresivos,
+            MAX(acarreos_progresivos) as max_acarreos_progresivos,
+            MAX(regates_efectivos) as max_regates_efectivos,
+            MAX(toques_de_balon) AS max_toques_de_balon,
+            MAX(entradas) as max_entradas,
+            MAX(intercepciones) as max_intercepciones,
+            MAX(bloqueos) as max_bloqueos,
+            MAX(despejes) as max_despejes,
+            MAX(duelos_aereos_ganados) as max_duelos_aereos_ganados
+        FROM estadistica_jugador;
+    `);
+    return rows[0];
+    
+}

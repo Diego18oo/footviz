@@ -25,6 +25,7 @@
         }
     </style>
     <body>
+        <h1>Estadisticas Ofensivas Inidividuales</h1>
         <form action="#">
             <label for="liga">Selecciona una Liga</label>
             <select id="liga">
@@ -64,9 +65,78 @@
                 
             </tbody>
         </table>
+        <h3>Comparacion Jugadores</h3>
+        
+
+        
+        <input type="text" id="searchInput1" placeholder="Buscar jugador 1..." />
+        <div id="searchResults1"></div>
+        <input type="text" id="searchInput2" placeholder="Buscar jugador 2..." />
+        <div id="searchResults2"></div>     
+        <div id="searchResults"></div>
+        <div id="detalleJugador"></div>
+        <canvas id="radarChart" width="100px" height="100px"></canvas>
+
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
         <script>
             
+            function setupSearch(inputID, jugadorNum){
+                const input = document.getElementById(inputID);
+                input.addEventListener("input", async (e) => {
+                    const query = e.target.value;
+                    const resultsDiv = document.getElementById(`searchResults${jugadorNum}`);
+                    resultsDiv.innerHTML ="";
+                    if (query.length < 2) return;
+                    const res = await fetch(`/buscar-jugadores?nombre=${query}`);
+                    const jugador = await res.json();
+                    jugador.forEach(jugador => {
+                        const div = document.createElement("div");
+                        div.innerHTML = `
+                            <img src="${jugador.imagen_equipo}" width="30" />
+                            <img src="${jugador.imagen_jugador}" width="30" />
+                            ${jugador.nombre_jugador}
+                        `;
+
+                        div.style.cursor = "pointer";
+                        div.addEventListener("click", async () => {
+                            resultsDiv.innerHTML="";
+                            const res = await fetch(`/estadisticas-jugador/${jugador.id_jugador}`);
+                            const data = await res.json();
+                            const maximos = await getMaxStats();
+
+                            function normalizar(valor, maximo) {
+                                return maximo > 0 ? (valor/maximo) * 100 : 0;
+                            }
+
+                            renderRadarChart({
+                                nombre_jugador: data.nombre_jugador,
+                                goles: normalizar(data.total_goles, maximos.max_goles),
+                                disparos: normalizar(data.disparos, maximos.max_disparos),
+                                asistencias: normalizar(data.asistencias, maximos.max_asistencias),
+                                acciones_creadas: normalizar(data.acciones_creadas, maximos.max_acciones_creadas),
+                                pases: normalizar(data.pases, maximos.max_pases),
+                                porcentaje_de_efectividad_de_pases: normalizar(data.porcentaje_de_efectividad_de_pases, maximos.max_porcentaje_de_efectividad_de_pases),
+                                pases_progresivos: normalizar(data.pases_progresivos, maximos.max_pases_progresivos),
+                                acarreos_progresivos: normalizar(data.acarreos_progresivos, maximos.max_acarreos_progresivos),
+                                regates_efectivos: normalizar(data.regates_efectivos, maximos.max_regates_efectivos),
+                                toques_de_balon: normalizar(data.toques_de_balon, maximos.max_toques_de_balon),
+                                entradas: normalizar(data.entradas, maximos.max_entradas),
+                                intercepciones: normalizar(data.intercepciones, maximos.max_intercepciones),
+                                bloqueos: normalizar(data.bloqueos, maximos.max_bloqueos),
+                                despejes: normalizar(data.despejes, maximos.max_despejes),
+                                duelos_aereos_ganados: normalizar(data.duelos_aereos_ganados, maximos.max_duelos_aereos_ganados)
+                            }, jugadorNum);
+                        });
+                        resultsDiv.appendChild(div);
+
+                    });
+                })
+            }
+            
+            
+
             var liga = document.getElementById('liga');
             var tbody = document.querySelector("#estadisticas-ofensivas tbody");
             var endpoints = {
@@ -155,6 +225,76 @@
             } else {
                 cargarTabla(liga.value);
             }
+            
+
+            function renderRadarChart(stats, jugadorNum) {
+                if (!window.radarChartInstance) {
+                    const ctx = document.getElementById('radarChart').getContext('2d');
+                    window.radarChartInstance = new Chart(ctx, {
+                        type: 'radar',
+                        data: {
+                            labels: ["goles", "disparos", "asistencias", 
+                            "acciones_creadas", "pases", "porcentaje_de_efectividad_de_pases",
+                            "pases_progresivos", "acarreos_progresivos", "regates_efectivos", 
+                            "toques_de_balon", "entradas", "intercepciones",
+                            "bloqueos", "despejes", "duelos_aereos_ganados"],
+                            datasets: []
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                r: {
+                                    min: 0,
+                                    max: 100
+                                }
+                            }
+                            
+                        }
+                    });
+                }
+
+                const colores = [
+                    { bg: "rgba(0,123,255,0.2)", border: "rgba(0,123,255,1)" },
+                    { bg: "rgba(255,99,132,0.2)", border: "rgba(255,99,132,1)" }
+                ];
+
+                window.radarChartInstance.data.datasets[jugadorNum - 1] = {
+                    label: stats.nombre_jugador,
+                    data: [
+                        stats.goles,   
+                        stats.disparos,   
+                        stats.asistencias,   
+                        stats.acciones_creadas,   
+                        stats.pases,
+                        stats.porcentaje_de_efectividad_de_pases,
+                        stats.pases_progresivos,
+                        stats.acarreos_progresivos,
+                        stats.regates_efectivos,
+                        stats.toques_de_balon,
+                        stats.entradas,
+                        stats.intercepciones,
+                        stats.bloqueos,
+                        stats.despejes,
+                        stats.duelos_aereos_ganados    
+                    ],
+                    fill: true,
+                    backgroundColor: colores[jugadorNum - 1].bg,
+                    borderColor: colores[jugadorNum - 1].border,
+                    pointBackgroundColor: colores[jugadorNum - 1].border
+                };
+                window.radarChartInstance.update();
+
+                
+                
+            }
+            async function getMaxStats() {
+                const res = await fetch("/max-stats");
+                return await res.json();
+            }
+            setupSearch("searchInput1", 1);
+            setupSearch("searchInput2", 2);
+            
+
         </script>
     </body>
 </head> 
