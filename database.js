@@ -238,3 +238,33 @@ export async function getStatsMaximas() {
     return rows[0];
     
 }
+
+
+export async function getMejoresGoles(temporada) {
+    const [rows] = await pool.query(`
+        SELECT 
+            m.id_disparo,
+            m.xg,
+            j.url_imagen,
+            j.nombre AS nombre_jugador,
+            el.nombre AS equipo_local,
+            el.url_imagen AS escudo_local,
+            ev.nombre AS equipo_visitante,
+            ev.url_imagen AS escudo_visitante,
+            ep.goles_local,
+            ep.goles_visitante
+        FROM mapa_de_disparos m
+        JOIN jugador j ON m.jugador = j.id_jugador
+        JOIN partido p ON m.partido = p.id_partido
+        JOIN equipo el ON p.equipo_local = el.id_equipo
+        JOIN equipo ev ON p.equipo_visitante = ev.id_equipo
+        JOIN estadisticas_partido ep ON p.id_partido = ep.partido
+        WHERE m.xg IS NOT NULL and m.resultado = 'goal' and p.temporada = ?
+        ORDER BY m.xg ASC
+        LIMIT 5;
+
+        `, [temporada])
+    
+    return rows
+    
+}
