@@ -1,31 +1,32 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Estadisticas Ofensivas</title>
-    <style>
-        table {
-            width: 80%;
-            margin: 0 auto;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 10px;
-            border: 1px solid #aaa;
-            text-align: center;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        img {
-            width: 32px;
-            height: auto;
-            vertical-align: middle;
-            margin-right: 10px;
-        }
-    </style>
+    <head>
+        <meta charset="UTF-8">
+        <title>Estadisticas Ofensivas</title>
+        <style>
+            table {
+                width: 80%;
+                margin: 0 auto;
+                border-collapse: collapse;
+            }
+            th, td {
+                padding: 10px;
+                border: 1px solid #aaa;
+                text-align: center;
+            }
+            th {
+                background-color: #f2f2f2;
+            }
+            img {
+                width: 32px;
+                height: auto;
+                vertical-align: middle;
+                margin-right: 10px;
+            }
+        </style>
+    </head>
     <body>
-        <h1>Estadisticas Ofensivas Inidividuales</h1>
+        <h1>Estadisticas Ofensivas</h1>
         <form action="#">
             <label for="liga">Selecciona una Liga</label>
             <select id="liga">
@@ -36,6 +37,7 @@
                 <option value="ligueone">Ligue 1</option>
             </select>
         </form> 
+        <button id="tipo-de-estadistica">Ver Estadisticas Por Equipo</button>
         <div>
             <button id="prev">Anterior</button>
             <span id="page-info"></span>
@@ -103,6 +105,9 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
         <script>
+
+
+
             function cargarMejoresGoles (ligaSeleccionada){  
                 let endpoints = {
                     "premierleague": "1",
@@ -194,7 +199,7 @@
             }
             
             
-
+            let tipoDeStat = document.getElementById('tipo-de-estadistica');
             var liga = document.getElementById('liga');
             var tbody = document.querySelector("#estadisticas-ofensivas tbody");
             var endpoints = {
@@ -276,6 +281,13 @@
                 cargarTabla(this.value);
                 cargarMejoresGoles(this.value)
             });
+
+            tipoDeStat.addEventListener("click", function(){
+                window.location = "estadisticas-ofensivas-equipo.html?liga=" + liga.value;
+
+            });
+
+
             
             const params = new URLSearchParams(window.location.search);
             const ligaParam = params.get("liga");
@@ -386,4 +398,4 @@
 
         </script>
     </body>
-</head> 
+</html>

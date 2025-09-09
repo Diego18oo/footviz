@@ -1,21 +1,37 @@
 import express from 'express'
-import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles } from './database.js'
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo } from './database.js'
 
 
 const app = express()
 app.use(express.static("public"))
 
 
+app.get("/estadisticas-ofensivas-equipo/:id", async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const estadisticas_ofensivas_equipo = await getEstadisticasOfensivasEquipo(id);
+
+        if (estadisticas_ofensivas_equipo.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion de la liga" });
+        }
+
+        res.json(estadisticas_ofensivas_equipo); 
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas de los equipos" });
+    }
+});
+
 app.get("/mejores-goles/:id", async (req, res) => {
     try {
-        const { id } = req.params; // ejemplo: /estadisticas-jugador/45
+        const { id } = req.params; 
         const mejores_goles = await getMejoresGoles(id);
 
         if (mejores_goles.length === 0) {
             return res.status(404).json({ error: "No hay suficiente informacion del jugador" });
         }
-
-        res.json(mejores_goles); // devuelves solo el jugador, no array
+ 
+        res.json(mejores_goles); 
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Error al obtener estadísticas del jugador" });

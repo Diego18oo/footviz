@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Estadisticas Ofensivas Por Equipo</title>
+        <h3>Estadisticas Ofensivas Por Equipo</h3>
+        <style>
+            th, td {
+                padding: 10px;
+                border: 1px solid #aaa;
+                text-align: center;
+            }
+            img {
+                width: 32px;
+                height: auto;
+                vertical-align: middle;
+                margin-right: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div>
+            <form action="#" style="display: inline;">
+                <label for="liga">Selecciona una Liga</label>
+                <select id="liga">
+                    <option value="premierleague" selected>Premier League</option>
+                    <option value="laliga">La Liga</option>
+                    <option value="seriea">Serie A</option>
+                    <option value="bundesliga">Bundesliga</option>
+                    <option value="ligueone">Ligue 1</option>
+                </select>
+            </form> 
+            <button id="tipo-de-estadistica">Ver Estadisticas Individuales</button> 
+        </div>
+        <div>
+            <table id="estadisticas-ofensivas-equipo">
+                <thead>
+                    <tr>
+                        <th>Club</th>
+                        <th>Partidos Jugados</th>
+                        <th>Goles</th>
+                        <th>Disparos</th>
+                        <th>Disparos a Puerta</th>
+                        <th>% Disparos a Puerta</th>
+                        <th>xG</th>
+                        <th>Disparos/PJ</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+        </div>
+
+
+        <script>
+            let tipoDeStat = document.getElementById('tipo-de-estadistica');
+            tipoDeStat.addEventListener("click", function(){
+                window.location = "estadistica_ofensivas.html?liga=" + liga.value;
+            });
+
+            let liga = document.getElementById('liga');
+
+            function cargarTablaStats(ligaSeleccionada){
+                let endpoints = {
+                    "premierleague": "1",
+                    "laliga": "2",
+                    "seriea": "3", 
+                    "bundesliga": "4",
+                    "ligueone": "5"
+
+                } 
+                fetch(`/estadisticas-ofensivas-equipo/${endpoints[ligaSeleccionada]}`)
+                .then(response => response.json())
+                .then(data => {
+                    const tbodyStatsOfensivas = document.querySelector("#estadisticas-ofensivas-equipo tbody");
+                    tbodyStatsOfensivas.innerHTML="";
+                    const stats = data;
+                    stats.forEach(stat => {
+                        const fila = document.createElement("tr");
+                        fila.innerHTML = `
+                            <td><img src="${stat.url_imagen}">${stat.nombre}</td>
+                            <td>${stat.partidos_jugados}</td>
+                            <td>${stat.goles_anotados}</td>
+                            <td>${stat.disparos}</td>
+                            <td>${stat.disparos_a_puerta}</td>
+                            <td>${stat.porcentaje_disparos_a_puerta}</td>
+                            <td>${stat.xg}</td>
+                            <td>${stat.disparos_por_90}</td>
+                        `;
+                        tbodyStatsOfensivas.appendChild(fila);
+                    });
+
+                })
+            }
+            const params = new URLSearchParams(window.location.search);
+            const ligaParam = params.get("liga");
+            if (ligaParam) { 
+                liga.value = ligaParam;
+                cargarTablaStats(ligaParam);
+            } else {
+                cargarTablaStats(liga.value);
+            }
+            liga.addEventListener("change", function(){
+                cargarTablaStats(this.value);
+            })
+        </script> 
+
+    </body>
+</html>

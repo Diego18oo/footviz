@@ -228,7 +228,8 @@ def insert_tabla_posiciones(liga_a_scrapear, engine, temporada, liga):
                 regates = data_equipo['dribblesAtt'],
                 acciones_creadas = data_equipo['GCA'],
                 acarreos_progresivos = data_equipo['PrgC'],
-                pases_progresivos = data_equipo['PrgP']
+                pases_progresivos = data_equipo['PrgP'],
+                xg_en_contra = data_equipo['xgAgainst']
             )
 
             update_stmt = insert_stmt.on_duplicate_key_update(
@@ -261,7 +262,8 @@ def insert_tabla_posiciones(liga_a_scrapear, engine, temporada, liga):
                 regates=insert_stmt.inserted.regates,
                 acciones_creadas=insert_stmt.inserted.acciones_creadas,
                 acarreos_progresivos=insert_stmt.inserted.acarreos_progresivos,
-                pases_progresivos=insert_stmt.inserted.pases_progresivos
+                pases_progresivos=insert_stmt.inserted.pases_progresivos,
+                xg_en_contra = insert_stmt.inserted.xg_en_contra
 
             )
 

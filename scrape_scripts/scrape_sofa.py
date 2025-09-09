@@ -147,10 +147,16 @@ def get_all_teams_stats_fbref(driver, id_liga_fbref):
 
     df_total = [pd.read_html(str(table))[0] for table in tables if table]
     tabla_ofensiva =  df_total[8]
+    tabla_ofensiva_en_contra = df_total[9]
     tabla_pass = df_total[12]
     tabla_gk = df_total[6]
+    tabla_ofensiva_en_contra.columns = tabla_ofensiva_en_contra.columns.droplevel(0)
+    cols = tabla_ofensiva_en_contra.columns.tolist()
+    cols[15] = 'xgAgainst'
+    tabla_ofensiva_en_contra.columns = cols
     tabla_gk.columns = tabla_gk.columns.droplevel(0)
     gk = tabla_gk['Att'].iloc[:, 1]
+
     tabla_misc = df_total[22]
     tabla_def = df_total[16]
     tabla_posesion = df_total[18]
@@ -158,6 +164,7 @@ def get_all_teams_stats_fbref(driver, id_liga_fbref):
     tabla_pases_progres = df_total[10]
     tabla_pases_progres.columns = tabla_pases_progres.columns.droplevel(0)
     prg_pas = tabla_pases_progres['PrgP']
+    xg_en_contra = tabla_ofensiva_en_contra['xgAgainst']
     tabla_pass.columns = tabla_pass.columns.droplevel(0)
     pas = tabla_pass[['FK','CK','Att','Cmp']]
     tabla_gca.columns = tabla_gca.columns.droplevel(0)
@@ -171,7 +178,7 @@ def get_all_teams_stats_fbref(driver, id_liga_fbref):
     tabla_def.columns = tabla_def.columns.droplevel(0)
     defn1 = tabla_def['Tkl'].iloc[:,0]
     defn2 = tabla_def[['Blocks', 'Int', 'Clr']]
-    df_concat = pd.concat([off,misc,pas, gk, defn1, defn2,pos, gca, prg_pas], axis=1)
+    df_concat = pd.concat([off,misc,pas, gk, defn1, defn2,pos, gca, prg_pas, xg_en_contra], axis=1)
     cols = df_concat.columns.tolist()
     cols[13] = 'PasesIntentados'
     cols[15] = 'goalKick'

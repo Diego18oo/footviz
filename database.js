@@ -268,3 +268,23 @@ export async function getMejoresGoles(temporada) {
     return rows
     
 }
+
+export async function getEstadisticasOfensivasEquipo(temporada) {
+    const [rows] = await pool.query(`
+        SELECT 
+            e.url_imagen,
+            e.nombre,
+            ee.partidos_jugados,
+            ee.goles_anotados,
+            ee.disparos,
+            ee.disparos_a_puerta,
+            ee.disparos_a_puerta / ee.disparos * 100 as porcentaje_disparos_a_puerta,
+            ee.xg,
+            ee.disparos / ee.partidos_jugados as disparos_por_90
+        FROM estadisticas_equipo ee 
+        JOIN equipo e on ee.equipo = e.id_equipo
+        WHERE ee.temporada = ?;
+        `, [temporada])
+        return rows;
+    
+} 
