@@ -454,6 +454,7 @@ def insert_estadistica_partido(engine, df_partido):
         shots = get_stat(info, "Total shots", default={"home": 0, "away": 0})
         fouls = get_stat(info, "Fouls", default={"home": 0, "away": 0})
         tackles = get_stat(info, "Tackles", default={"home": 0, "away": 0})
+        xg = get_stat(info, "Expected goals", default={"home":0, "away":0})
 
 
 
@@ -478,7 +479,9 @@ def insert_estadistica_partido(engine, df_partido):
             faltas_local = fouls['home'],
             faltas_visitante = fouls['away'],
             entradas_local = tackles['home'],
-            entradas_visitante = tackles['away']
+            entradas_visitante = tackles['away'],
+            xg_local = xg['home'],
+            xg_visitante = xg['away']
         )
 
         update_estadistica_partido_stmt = insert_estadistica_partido_stmt.on_duplicate_key_update(
@@ -502,7 +505,9 @@ def insert_estadistica_partido(engine, df_partido):
             faltas_local=insert_estadistica_partido_stmt.inserted.faltas_local,
             faltas_visitante=insert_estadistica_partido_stmt.inserted.faltas_visitante,
             entradas_local=insert_estadistica_partido_stmt.inserted.entradas_local,
-            entradas_visitante=insert_estadistica_partido_stmt.inserted.entradas_visitante,            
+            entradas_visitante=insert_estadistica_partido_stmt.inserted.entradas_visitante,
+            xg_local = insert_estadistica_partido_stmt.inserted.xg_local,
+            xg_visitante = insert_estadistica_partido_stmt.inserted.xg_visitante            
         )
 
         conn.execute(update_estadistica_partido_stmt)

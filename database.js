@@ -272,6 +272,7 @@ export async function getMejoresGoles(temporada) {
 export async function getEstadisticasOfensivasEquipo(temporada) {
     const [rows] = await pool.query(`
         SELECT 
+            e.id_equipo,
             e.url_imagen,
             e.nombre,
             ee.partidos_jugados,
@@ -288,3 +289,30 @@ export async function getEstadisticasOfensivasEquipo(temporada) {
         return rows;
     
 } 
+
+
+export async function getXgPorEquipo(equipo){
+    const [rows] = await pool.query(`
+        SELECT 
+            p.id_partido,
+            p.jornada,
+            CASE 
+                WHEN el.id_equipo = ? THEN ep.xg_local
+                WHEN ev.id_equipo = ? THEN ep.xg_visitante
+            END AS xg_equipo,
+            CASE 
+                WHEN el.id_equipo = ? THEN ep.xg_visitante
+                WHEN ev.id_equipo = ? THEN ep.xg_local
+            END AS xg_rival,
+            el.nombre AS equipo_local,
+            ev.nombre AS equipo_visitante
+        FROM estadisticas_partido ep
+        JOIN partido p ON ep.partido = p.id_partido
+        JOIN equipo el ON p.equipo_local = el.id_equipo
+        JOIN equipo ev ON p.equipo_visitante = ev.id_equipo
+        WHERE el.id_equipo = ? OR ev.id_equipo = ?;
+
+        `, [equipo, equipo, equipo, equipo, equipo, equipo])
+
+        return rows;
+}

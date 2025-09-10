@@ -1,9 +1,25 @@
 import express from 'express'
-import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo } from './database.js'
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo } from './database.js'
 
 
 const app = express()
 app.use(express.static("public"))
+
+app.get("/goles-esperados-equipo/:id", async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const xgEquipo = await getXgPorEquipo(id);
+
+        if (xgEquipo.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del equipo" });
+        }
+
+        res.json(xgEquipo); 
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas de los equipos" });
+    }
+});
 
 
 app.get("/estadisticas-ofensivas-equipo/:id", async (req, res) => {

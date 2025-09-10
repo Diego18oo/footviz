@@ -49,8 +49,12 @@
 
                 </tbody>
             </table>
+            <div style="width: 800px; height: 800px;">
+                <canvas id="lineChart"></canvas>
+            </div>
         </div>
 
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
         <script>
             let tipoDeStat = document.getElementById('tipo-de-estadistica');
@@ -59,7 +63,7 @@
             });
 
             let liga = document.getElementById('liga');
-
+            
             function cargarTablaStats(ligaSeleccionada){
                 let endpoints = {
                     "premierleague": "1",
@@ -86,11 +90,126 @@
                             <td>${stat.porcentaje_disparos_a_puerta}</td>
                             <td>${stat.xg}</td>
                             <td>${stat.disparos_por_90}</td>
+                            <td><button class="btn-estadisticas" data-equipo="${stat.id_equipo}">🥅</button></td>
                         `;
                         tbodyStatsOfensivas.appendChild(fila);
+                        
+                        
                     });
+                    renderChart();
 
                 })
+
+                
+
+            }
+
+            function renderChart(){
+                
+                document.querySelectorAll(".btn-estadisticas").forEach(button => {
+                    button.addEventListener("click", function(){
+                        const equipoId = this.getAttribute("data-equipo");
+                        console.log("Equipo ID:", equipoId);
+                        fetch(`/goles-esperados-equipo/${equipoId}`)
+                            .then(response => response.json())
+                            .then(info => {
+                                const jornadas = info.map(item => `Jornada ${item.jornada}`);
+                                const xgEquipo = info.map(item => item.xg_equipo);
+                                const xgRival = info.map(item => item.xg_rival);
+
+                                const ctx = document.getElementById('lineChart').getContext('2d');
+
+                                if (window.lineChartInstance) {
+                                    window.lineChartInstance.destroy();
+                                }
+
+                                window.lineChartInstance = new Chart(ctx, {
+                                    type: 'line',
+                                    data: {
+                                        labels: jornadas,
+                                        datasets: [
+                                            {
+                                                label: 'xG Equipo',
+                                                data: xgEquipo,
+                                                borderColor: 'rgba(54, 162, 235, 1)',
+                                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                                tension: 0.3
+                                            },
+                                            {
+                                                label: 'xG Rival',
+                                                data: xgRival,
+                                                borderColor: 'rgba(255, 99, 132, 1)',
+                                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                                
+                                                tension: 0.3
+                                            }
+                                        ]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        plugins: {
+                                            legend: {
+                                                position: 'top',
+                                            },
+                                            title: {
+                                                display: true,
+                                                text: 'xG por Jornada'
+                                            }
+                                        }
+                                    }
+                                });
+
+                            });
+
+                    })
+                })
+                    
+                
+
+                /*
+                document.querySelectorAll(".btn-estadisticas").forEach(button => {
+                    button.addEventListener("click", function(){
+                        const equipoId = this.getAttribute("data-equipo");
+                        console.log("Equipo ID:", equipoId);
+                        fetch(`/goles-esperados-equipo/${equipoId}`)
+                            .then(response => response.json())
+                            .then(info => {
+                                const labels = '';
+                                const data = {
+                                    labels: labels,
+                                    datasets: [{
+                                        label: 'Dataset 1',
+                                        data: info.xg_equipo
+
+                                    },
+                                    {
+                                        label: 'Dataset 2',
+                                        data: info.xg_rival
+                                    }
+
+                                    ]
+                                };
+                                const config = {
+                                    type: 'line',
+                                    data: data,
+                                    options: {
+                                        responsive: true,
+                                        plugins: {
+                                        legend: {
+                                            position: 'top',
+                                        },
+                                        title: {
+                                            display: true,
+                                            text: 'Chart.js Line Chart'
+                                        }
+                                        }
+                                    },
+                                };
+
+                            });
+                    })
+                })
+                    */
             }
             const params = new URLSearchParams(window.location.search);
             const ligaParam = params.get("liga");
@@ -103,6 +222,8 @@
             liga.addEventListener("change", function(){
                 cargarTablaStats(this.value);
             })
+
+
         </script> 
 
     </body>
