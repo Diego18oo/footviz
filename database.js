@@ -215,7 +215,7 @@ export async function buscarJugadores(nombre) {
     return rows;
 }
 
-export async function getStatsMaximas() {
+export async function getStatsMaximas(jugador1, jugador2) {
     const [rows] = await pool.query(`
         SELECT 
             MAX(goles) AS max_goles,
@@ -233,8 +233,9 @@ export async function getStatsMaximas() {
             MAX(bloqueos) as max_bloqueos,
             MAX(despejes) as max_despejes,
             MAX(duelos_aereos_ganados) as max_duelos_aereos_ganados
-        FROM estadistica_jugador;
-    `);
+        FROM estadistica_jugador
+        WHERE estadistica_jugador.jugador = ? OR estadistica_jugador.jugador = ?;
+    `, [jugador1, jugador2]);
     return rows[0];
     
 }

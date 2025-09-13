@@ -106,6 +106,11 @@
 
         <script>
 
+            let jugador1Id = null;
+            let jugador2Id = null;
+            let jugador1Stats = null;
+            let jugador2Stats = null;
+
 
 
             function cargarMejoresGoles (ligaSeleccionada){  
@@ -162,42 +167,159 @@
                         div.style.cursor = "pointer";
                         div.addEventListener("click", async () => {
                             resultsDiv.innerHTML="";
-                            const res = await fetch(`/estadisticas-jugador/${jugador.id_jugador}`);
-                            const data = await res.json();
-                            const maximos = await getMaxStats();
-
-                            function normalizar(valor, maximo) {
-                                return maximo > 0 ? (valor/maximo) * 100 : 0;
+                            if (jugadorNum === 1) {
+                                jugador1Id = jugador.id_jugador;
+                                const res = await fetch(`/estadisticas-jugador/${jugador.id_jugador}`);
+                                jugador1Stats = await res.json();
+                            } else {
+                                jugador2Id = jugador.id_jugador;
+                                const res = await fetch(`/estadisticas-jugador/${jugador.id_jugador}`);
+                                jugador2Stats = await res.json();
                             }
-                            const normalizados = {
-                                nombre_jugador: data.nombre_jugador,
-                                goles: normalizar(data.total_goles, maximos.max_goles),
-                                disparos: normalizar(data.disparos, maximos.max_disparos),
-                                asistencias: normalizar(data.asistencias, maximos.max_asistencias),
-                                acciones_creadas: normalizar(data.acciones_creadas, maximos.max_acciones_creadas),
-                                pases: normalizar(data.pases, maximos.max_pases),
-                                porcentaje_de_efectividad_de_pases: normalizar(data.porcentaje_de_efectividad_de_pases, maximos.max_porcentaje_de_efectividad_de_pases),
-                                pases_progresivos: normalizar(data.pases_progresivos, maximos.max_pases_progresivos),
-                                acarreos_progresivos: normalizar(data.acarreos_progresivos, maximos.max_acarreos_progresivos),
-                                regates_efectivos: normalizar(data.regates_efectivos, maximos.max_regates_efectivos),
-                                toques_de_balon: normalizar(data.toques_de_balon, maximos.max_toques_de_balon),
-                                entradas: normalizar(data.entradas, maximos.max_entradas),
-                                intercepciones: normalizar(data.intercepciones, maximos.max_intercepciones),
-                                bloqueos: normalizar(data.bloqueos, maximos.max_bloqueos),
-                                despejes: normalizar(data.despejes, maximos.max_despejes),
-                                duelos_aereos_ganados: normalizar(data.duelos_aereos_ganados, maximos.max_duelos_aereos_ganados)
-                            };
 
                             
-
-                            renderRadarChart(normalizados, data, jugadorNum);
+                     
+                            if (jugador1Id && jugador2Id) {
+                                const maximos = await getMaxStats(jugador1Id, jugador2Id);
+                                actualizarRadar(maximos);
+                                
+                            }
                         });
                         resultsDiv.appendChild(div);
 
                     });
                 })
             }
+
+            function actualizarRadar(maximos) {
+                function normalizar(valor, maximo) {
+                    return maximo > 0 ? (valor / maximo) * 100 : 0;
+                }
+
+                let jugadores = [
+                    { stats: jugador1Stats, idx: 0 },
+                    { stats: jugador2Stats, idx: 1 }
+                ];
+
+                jugadores.forEach(j => {
+                    if (!j.stats) return; // si aún no hay stats del jugador, lo saltamos
+
+                    const normalizados = {
+                        nombre_jugador: j.stats.nombre_jugador,
+                        goles: normalizar(j.stats.total_goles, maximos.max_goles),
+                        disparos: normalizar(j.stats.disparos, maximos.max_disparos),
+                        asistencias: normalizar(j.stats.asistencias, maximos.max_asistencias),
+                        acciones_creadas: normalizar(j.stats.acciones_creadas, maximos.max_acciones_creadas),
+                        pases: normalizar(j.stats.pases, maximos.max_pases),
+                        porcentaje_de_efectividad_de_pases: normalizar(j.stats.porcentaje_de_efectividad_de_pases, maximos.max_porcentaje_de_efectividad_de_pases),
+                        pases_progresivos: normalizar(j.stats.pases_progresivos, maximos.max_pases_progresivos),
+                        acarreos_progresivos: normalizar(j.stats.acarreos_progresivos, maximos.max_acarreos_progresivos),
+                        regates_efectivos: normalizar(j.stats.regates_efectivos, maximos.max_regates_efectivos),
+                        toques_de_balon: normalizar(j.stats.toques_de_balon, maximos.max_toques_de_balon),
+                        entradas: normalizar(j.stats.entradas, maximos.max_entradas),
+                        intercepciones: normalizar(j.stats.intercepciones, maximos.max_intercepciones),
+                        bloqueos: normalizar(j.stats.bloqueos, maximos.max_bloqueos),
+                        despejes: normalizar(j.stats.despejes, maximos.max_despejes),
+                        duelos_aereos_ganados: normalizar(j.stats.duelos_aereos_ganados, maximos.max_duelos_aereos_ganados)
+                    };
+
+                    renderRadarChart(normalizados, j.stats, j.idx + 1);
+                });
+            }
+
             
+            function renderRadarChart(stats, rawStats, jugadorNum) {
+                if (!window.radarChartInstance) {
+                    const ctx = document.getElementById('radarChart').getContext('2d');
+                    window.radarChartInstance = new Chart(ctx, {
+                        type: 'radar',
+                        data: {
+                            labels: ["goles", "disparos", "asistencias", 
+                            "acciones_creadas", "pases", "porcentaje_de_efectividad_de_pases",
+                            "pases_progresivos", "acarreos_progresivos", "regates_efectivos", 
+                            "toques_de_balon", "entradas", "intercepciones",
+                            "bloqueos", "despejes", "duelos_aereos_ganados"],
+                            datasets: [
+                                { label: "Jugador 1", data: [], customStats: {} },
+                                { label: "Jugador 2", data: [], customStats: {} }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                r: {
+                                    ticks: {
+                                        display: false
+                                    }
+                                }
+                            },
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const dataset = context.dataset;
+                                            const statName = context.chart.data.labels[context.dataIndex];
+                                            const realValue = dataset.customStats[statName];
+                                            return `${dataset.label} - ${statName}: ${realValue}`; 
+                                        }
+                                    }
+                                }
+                            }
+                            
+                        }
+                    });
+                }
+
+                const colores = [
+                    { bg: "rgba(0,123,255,0.2)", border: "rgba(0,123,255,1)" },
+                    { bg: "rgba(255,99,132,0.2)", border: "rgba(255,99,132,1)" }
+                ];
+
+                window.radarChartInstance.data.datasets[jugadorNum - 1] = {
+                    label: stats.nombre_jugador,
+                    data: [
+                        stats.goles,   
+                        stats.disparos,   
+                        stats.asistencias,   
+                        stats.acciones_creadas,   
+                        stats.pases,
+                        stats.porcentaje_de_efectividad_de_pases,
+                        stats.pases_progresivos,
+                        stats.acarreos_progresivos,
+                        stats.regates_efectivos,
+                        stats.toques_de_balon,
+                        stats.entradas,
+                        stats.intercepciones,
+                        stats.bloqueos,
+                        stats.despejes,
+                        stats.duelos_aereos_ganados    
+                    ],
+                    customStats: {
+                        goles: rawStats.total_goles,
+                        disparos: rawStats.disparos,
+                        asistencias: rawStats.asistencias,
+                        acciones_creadas: rawStats.acciones_creadas,
+                        pases: rawStats.pases,
+                        porcentaje_de_efectividad_de_pases: rawStats.porcentaje_de_efectividad_de_pases,
+                        pases_progresivos: rawStats.pases_progresivos,
+                        acarreos_progresivos: rawStats.acarreos_progresivos,
+                        regates_efectivos: rawStats.regates_efectivos,
+                        toques_de_balon: rawStats.toques_de_balon,
+                        entradas: rawStats.entradas,
+                        intercepciones: rawStats.intercepciones,
+                        bloqueos: rawStats.bloqueos,
+                        despejes: rawStats.despejes,
+                        duelos_aereos_ganados: rawStats.duelos_aereos_ganados
+                    },
+                    fill: true,
+                    backgroundColor: colores[jugadorNum - 1].bg,
+                    borderColor: colores[jugadorNum - 1].border,
+                    pointBackgroundColor: colores[jugadorNum - 1].border
+                };
+                console.log(window.radarChartInstance)
+                window.radarChartInstance.update();               
+            }
+     
             
             let tipoDeStat = document.getElementById('tipo-de-estadistica');
             var liga = document.getElementById('liga');
@@ -302,94 +424,8 @@
             }
             
 
-            function renderRadarChart(stats, rawStats, jugadorNum) {
-                if (!window.radarChartInstance) {
-                    const ctx = document.getElementById('radarChart').getContext('2d');
-                    window.radarChartInstance = new Chart(ctx, {
-                        type: 'radar',
-                        data: {
-                            labels: ["goles", "disparos", "asistencias", 
-                            "acciones_creadas", "pases", "porcentaje_de_efectividad_de_pases",
-                            "pases_progresivos", "acarreos_progresivos", "regates_efectivos", 
-                            "toques_de_balon", "entradas", "intercepciones",
-                            "bloqueos", "despejes", "duelos_aereos_ganados"],
-                            datasets: []
-                        },
-                        options: {
-                            responsive: true,
-                            scales: {
-                                r: {
-                                    min: 0,
-                                    max: 100
-                                }
-                            },
-                            plugins: {
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(context) {
-                                            const dataset = context.dataset;
-                                            const statName = context.chart.data.labels[context.dataIndex];
-                                            const realValue = dataset.customStats[statName];
-                                            return `${dataset.label} - ${statName}: ${realValue}`; 
-                                        }
-                                    }
-                                }
-                            }
-                            
-                        }
-                    });
-                }
-
-                const colores = [
-                    { bg: "rgba(0,123,255,0.2)", border: "rgba(0,123,255,1)" },
-                    { bg: "rgba(255,99,132,0.2)", border: "rgba(255,99,132,1)" }
-                ];
-
-                window.radarChartInstance.data.datasets[jugadorNum - 1] = {
-                    label: stats.nombre_jugador,
-                    data: [
-                        stats.goles,   
-                        stats.disparos,   
-                        stats.asistencias,   
-                        stats.acciones_creadas,   
-                        stats.pases,
-                        stats.porcentaje_de_efectividad_de_pases,
-                        stats.pases_progresivos,
-                        stats.acarreos_progresivos,
-                        stats.regates_efectivos,
-                        stats.toques_de_balon,
-                        stats.entradas,
-                        stats.intercepciones,
-                        stats.bloqueos,
-                        stats.despejes,
-                        stats.duelos_aereos_ganados    
-                    ],
-                    customStats: {
-                        goles: rawStats.total_goles,
-                        disparos: rawStats.disparos,
-                        asistencias: rawStats.asistencias,
-                        acciones_creadas: rawStats.acciones_creadas,
-                        pases: rawStats.pases,
-                        porcentaje_de_efectividad_de_pases: rawStats.porcentaje_de_efectividad_de_pases,
-                        pases_progresivos: rawStats.pases_progresivos,
-                        acarreos_progresivos: rawStats.acarreos_progresivos,
-                        regates_efectivos: rawStats.regates_efectivos,
-                        toques_de_balon: rawStats.toques_de_balon,
-                        entradas: rawStats.entradas,
-                        intercepciones: rawStats.intercepciones,
-                        bloqueos: rawStats.bloqueos,
-                        despejes: rawStats.despejes,
-                        duelos_aereos_ganados: rawStats.duelos_aereos_ganados
-                    },
-                    fill: true,
-                    backgroundColor: colores[jugadorNum - 1].bg,
-                    borderColor: colores[jugadorNum - 1].border,
-                    pointBackgroundColor: colores[jugadorNum - 1].border
-                };
-                window.radarChartInstance.update();               
-            }
-            async function getMaxStats() {
-                const res = await fetch("/max-stats");
+            async function getMaxStats(id1, id2) {
+                const res = await fetch(`/max-stats/${id1}/${id2}`);
                 return await res.json();
             }
             setupSearch("searchInput1", 1);

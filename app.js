@@ -54,13 +54,20 @@ app.get("/mejores-goles/:id", async (req, res) => {
     }
 });
 
-app.get("/max-stats", async (req, res) => {
-    try{
-        const maxStats = await getStatsMaximas();
-        res.json(maxStats);
-    } catch(err) {
-        console.error("Error obtienendo valores maximos", err);
-        res.status(500).json({ error: "Error obteniendo máximos" });
+app.get("/max-stats/:id1/:id2", async (req, res) => {
+    try {
+        const { id1 } = req.params; 
+        const { id2 } = req.params; 
+        const max_stats = await getStatsMaximas(id1, id2);
+
+        if (max_stats.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del jugador" });
+        }
+ 
+        res.json(max_stats); 
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del jugador" });
     }
 });
 
