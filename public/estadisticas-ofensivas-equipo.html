@@ -52,6 +52,11 @@
             <div style="width: 800px; height: 800px;">
                 <canvas id="lineChart"></canvas>
             </div>
+            <div style="width: 800px; height: 500px;">
+                <p id="label-equipo"></p>
+                <canvas id="campoCanvas" width="800" height="500"></canvas>
+            </div>
+            
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -103,13 +108,71 @@
                 
 
             }
+            
+            
+            function dibujarCampo(ctx) { 
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); 
+                // Fondo verde 
+                ctx.fillStyle = "#3a5f0b"; 
+                ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height); 
+                // Límites del campo 
+                ctx.strokeStyle = "#fff"; 
+                ctx.lineWidth = 2; ctx.strokeRect(50, 50, 700, 400); 
+                // Línea de medio campo 
+                ctx.beginPath(); 
+                ctx.moveTo(400, 50); 
+                ctx.lineTo(400, 450); 
+                ctx.stroke(); 
+                // Círculo central 
+                ctx.beginPath(); 
+                ctx.arc(400, 250, 60, 0, Math.PI * 2); 
+                ctx.stroke(); 
+                // Áreas grandes 
+                ctx.strokeRect(50, 150, 100, 200); 
+                ctx.strokeRect(650, 150, 100, 200); 
+                // Áreas chicas 
+                ctx.strokeRect(50, 200, 50, 100); 
+                ctx.strokeRect(700, 200, 50, 100); 
+                // Puntos de penalti 
+                ctx.beginPath(); 
+                ctx.arc(150, 250, 3, 0, Math.PI * 2); 
+                ctx.fillStyle = "#fff"; 
+                ctx.fill(); 
+                ctx.beginPath(); 
+                ctx.arc(650, 250, 3, 0, Math.PI * 2); 
+                ctx.fill(); 
+            }
+
+
+
+            function plotearDisparos(ctx, disparos) { 
+                disparos.forEach(d => {
+                    const x = 50 + (d.pitch_x / 100) * 700; // pitch_x va de 0 a 100
+                    const y = (50 + (1-d.pitch_y / 100) * 400); // pitch_y va de 0 a 100
+                    const radio = Math.max(4, Math.min(15, d.xg * 20));
+                    ctx.beginPath();
+                    ctx.arc(x, y, radio, 0, Math.PI * 2);
+                    ctx.fillStyle = d.resultado === "goal" ? "red" : "yellow"; 
+                    ctx.fill();
+                    ctx.strokeStyle = "#000";
+                    ctx.stroke();
+                }); 
+                ctx.restore();
+            }
+
+
+            
+
+
 
             function renderChart(){
                 
                 document.querySelectorAll(".btn-estadisticas").forEach(button => {
                     button.addEventListener("click", function(){
                         const equipoId = this.getAttribute("data-equipo");
-                        console.log("Equipo ID:", equipoId);
+                        const canvas = document.getElementById("campoCanvas");
+                        const ctxCampo = canvas.getContext("2d");
+                        console.log ("Equipo ID:", equipoId);
                         fetch(`/goles-esperados-equipo/${equipoId}`)
                             .then(response => response.json())
                             .then(info => {
@@ -161,55 +224,22 @@
 
                             });
 
-                    })
-                })
-                    
-                
-
-                /*
-                document.querySelectorAll(".btn-estadisticas").forEach(button => {
-                    button.addEventListener("click", function(){
-                        const equipoId = this.getAttribute("data-equipo");
-                        console.log("Equipo ID:", equipoId);
-                        fetch(`/goles-esperados-equipo/${equipoId}`)
+                        fetch(`/mapa-disparos/${equipoId}`)
+                            
                             .then(response => response.json())
-                            .then(info => {
-                                const labels = '';
-                                const data = {
-                                    labels: labels,
-                                    datasets: [{
-                                        label: 'Dataset 1',
-                                        data: info.xg_equipo
+                            .then(data => {
+                                const nombreEquipo = data[0].nombre_equipo;
+                                labelEquipo = document.getElementById("label-equipo");
+                                labelEquipo.innerHTML=`<p>Mapa de disparos de equipo: ${nombreEquipo}</p>`
+                                dibujarCampo(ctxCampo);
+                                console.log(`Disparos de equipo: ${equipoId}`)
+                                plotearDisparos(ctxCampo, data);
 
-                                    },
-                                    {
-                                        label: 'Dataset 2',
-                                        data: info.xg_rival
-                                    }
+                            })
 
-                                    ]
-                                };
-                                const config = {
-                                    type: 'line',
-                                    data: data,
-                                    options: {
-                                        responsive: true,
-                                        plugins: {
-                                        legend: {
-                                            position: 'top',
-                                        },
-                                        title: {
-                                            display: true,
-                                            text: 'Chart.js Line Chart'
-                                        }
-                                        }
-                                    },
-                                };
-
-                            });
                     })
                 })
-                    */
+              
             }
             const params = new URLSearchParams(window.location.search);
             const ligaParam = params.get("liga");

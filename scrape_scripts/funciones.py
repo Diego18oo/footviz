@@ -131,7 +131,7 @@ nombre_map = {
 def get_links_totales(engine, driver):
     
     today = datetime.now()
-    yesterday = today - timedelta(days=2)
+    yesterday = today - timedelta(days=1)
     yesterday = yesterday.strftime('%Y-%m-%d')
     df_partidos_ayer = pd.read_sql(f"SELECT * FROM partido WHERE fecha = '{yesterday}'", engine)
     ids_para_scrapear_temporada = df_partidos_ayer['temporada'].unique() 

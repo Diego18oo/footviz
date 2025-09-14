@@ -1,9 +1,25 @@
 import express from 'express'
-import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo } from './database.js'
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo } from './database.js'
 
 
 const app = express()
 app.use(express.static("public"))
+
+app.get("/mapa-disparos/:id", async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const mapaDisparos = await getMapaDeDisparosEquipo(id);
+
+        if (mapaDisparos.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del equipo" });
+        }
+
+        res.json(mapaDisparos); 
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del equipo" });
+    }
+});
 
 app.get("/goles-esperados-equipo/:id", async (req, res) => {
     try {
@@ -46,7 +62,7 @@ app.get("/mejores-goles/:id", async (req, res) => {
         if (mejores_goles.length === 0) {
             return res.status(404).json({ error: "No hay suficiente informacion del jugador" });
         }
- 
+  
         res.json(mejores_goles); 
     } catch (error) {
         console.error(error);

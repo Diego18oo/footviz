@@ -213,7 +213,7 @@ export async function buscarJugadores(nombre) {
     `, [`%${nombre}%`]); // el % permite coincidencias parciales
 
     return rows;
-}
+} 
 
 export async function getStatsMaximas(jugador1, jugador2) {
     const [rows] = await pool.query(`
@@ -316,4 +316,29 @@ export async function getXgPorEquipo(equipo){
         `, [equipo, equipo, equipo, equipo, equipo, equipo])
 
         return rows;
+}
+
+export async function getMapaDeDisparosEquipo(equipo){
+    const [rows] = await pool.query(`
+        SELECT 
+			j.nombre,
+            mp.pitch_x, 
+            mp.pitch_y, 
+            mp.goal_mouth_y,
+            mp.goal_mouth_z,
+            mp.xg, 
+            mp.resultado, 
+            p.id_partido,
+            CASE
+                WHEN el.id_equipo = ? THEN el.nombre
+                WHEN ev.id_equipo = ? THEN ev.nombre
+            END AS nombre_equipo 
+        FROM mapa_de_disparos mp 
+        JOIN partido p on mp.partido = p.id_partido 
+        JOIN jugador j on mp.jugador = j.id_jugador
+        JOIN equipo el ON p.equipo_local = el.id_equipo 
+        JOIN equipo ev ON p.equipo_visitante = ev.id_equipo 
+        WHERE (el.id_equipo = ? AND mp.es_local = 1) OR (ev.id_equipo = ? AND mp.es_local= 0);
+        `, [equipo, equipo, equipo, equipo])
+    return rows;
 }
