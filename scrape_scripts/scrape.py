@@ -37,8 +37,8 @@ else:
     #lista_ids_bd = []
     #partidos = df_partidos_ayer['id_partido']['temporada']
     ids_para_scrapear_temporada = df_partidos_ayer['temporada'].unique() 
-    #insert_estadistica_jugador(engine,  ids_para_scrapear_temporada)
-    links_totales = []
+    insert_estadistica_jugador(engine,  ids_para_scrapear_temporada)
+    #links_totales = []
     #for i in range(len(ids_para_scrapear_temporada)):
         #iteracion = ids_para_scrapear_temporada[i]
         #url = f"https://fbref.com/en/comps/{liga_fbref_fixtures[iteracion]}"
@@ -46,14 +46,14 @@ else:
         #links_totales.extend(lista_links)
     for i in range(len(df_partidos_ayer)):
         partido_sofascore = df_partidos_ayer['url_sofascore'][i].split(':')[2]  
-        #lista_ids_sofascore.append(partido_sofascore)
+        lista_ids_sofascore.append(partido_sofascore)
         #insert_update_partidos(engine, df_partidos_ayer.iloc[i]) 
         #print("Partido actualizado correctamente")
         #insert_estadistica_partido(engine, df_partidos_ayer.iloc[i])
         #print("Estadistica de partidos insertada correctamente")
         #insert_mapa_de_calor(engine, driver, partido_sofascore)
         #print(f"Mapa de calor de partido {partido_sofascore} insertado correctamente")
-        insert_mapa_de_disparos(engine, driver, partido_sofascore)
+        #insert_mapa_de_disparos(engine, driver, partido_sofascore)
          
     #for i in range(len(ids_para_scrapear_temporada)):
         #liga_a_scrapear = ids_para_scrapear_temporada[i]

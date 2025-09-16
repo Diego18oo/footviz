@@ -56,6 +56,16 @@
                 <p id="label-equipo"></p>
                 <canvas id="campoCanvas" width="800" height="500"></canvas>
             </div>
+            <div id="tooltip" 
+                style="position: absolute; display: none; 
+                        background: rgba(0,0,0,0.8); color: #fff; 
+                        padding: 5px; border-radius: 5px; font-size: 14px;">
+            </div>
+            <div style="width: 900px; height: 700px; margin-top: 30px;">
+                
+                <canvas id="porteriaCanvas" width="900" height="700"></canvas>
+            </div>
+
             
         </div>
 
@@ -117,7 +127,8 @@
                 ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height); 
                 // Límites del campo 
                 ctx.strokeStyle = "#fff"; 
-                ctx.lineWidth = 2; ctx.strokeRect(50, 50, 700, 400); 
+                ctx.lineWidth = 2; 
+                ctx.strokeRect(50, 50, 700, 400); 
                 // Línea de medio campo 
                 ctx.beginPath(); 
                 ctx.moveTo(400, 50); 
@@ -143,12 +154,82 @@
                 ctx.fill(); 
             }
 
+            function dibujarPorteria(ctx) {
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
+                // Césped debajo de la portería
+                ctx.fillStyle = "#3a5f0b";
+                ctx.fillRect(0, 350, ctx.canvas.width, 50);
 
-            function plotearDisparos(ctx, disparos) { 
+                // Fondo de la portería
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(100, 50, 400, 300);
+
+                // Borde de la portería
+                ctx.strokeStyle = "#000";
+                ctx.lineWidth = 3;
+                ctx.strokeRect(200, 150, 500, 200);
+
+                
+            }
+
+            let disparosPorteriaGuardados = [];
+            function plotearDisparosPorteria(ctx, disparos) {
+                disparosPorteriaGuardados = [];
                 disparos.forEach(d => {
-                    const x = 50 + (d.pitch_x / 100) * 700; // pitch_x va de 0 a 100
-                    const y = (50 + (1-d.pitch_y / 100) * 400); // pitch_y va de 0 a 100
+                    // Normalizar coordenadas: goal_mouth_y = -1 izquierda, +1 derecha
+                    // goal_mouth_z = 0 suelo, 1 travesaño
+                    const x = 2910 - (d.goal_mouth_y / 100) * 4950; 
+                    const y = 350 - (d.goal_mouth_z * 6.16);
+
+                    const radio = 8;
+                    ctx.beginPath();
+                    ctx.arc(x, y, radio, 0, Math.PI * 2);
+                    ctx.fillStyle = d.resultado === "goal" ? "red" : "blue";
+                    ctx.fill();
+                    ctx.strokeStyle = "#000";
+                    ctx.stroke();
+
+                    disparosPorteriaGuardados.push({
+                        x, y, radio,
+                        jugador: d.nombre,
+                        resultado: d.resultado
+                    });
+                });
+            }
+
+            const porteriaCanvas = document.getElementById("porteriaCanvas");
+            porteriaCanvas.addEventListener("mousemove", (e) => {
+                const rect = porteriaCanvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                let encontrado = null;
+                for (let d of disparosPorteriaGuardados) {
+                    const dist = Math.sqrt((mouseX - d.x) ** 2 + (mouseY - d.y) ** 2);
+                    if (dist <= d.radio) {
+                        encontrado = d;
+                        break;
+                    }
+                }
+
+                if (encontrado) {
+                    tooltip.style.display = "block";
+                    tooltip.style.left = e.pageX + 10 + "px";
+                    tooltip.style.top = e.pageY + 10 + "px";
+                    tooltip.innerHTML = `<b>${encontrado.jugador}</b><br>
+                    Resultado: ${encontrado.resultado}`;
+                } else {
+                    tooltip.style.display = "none";
+                }
+            });
+
+            let disparosGuardados = [];
+            function plotearDisparos(ctx, disparos) { 
+                disparosGuardados = [];
+                disparos.forEach(d => {
+                    const x = 50 + (d.pitch_x / 100) * 700; 
+                    const y = (50 + (1-d.pitch_y / 100) * 400); 
                     const radio = Math.max(4, Math.min(15, d.xg * 20));
                     ctx.beginPath();
                     ctx.arc(x, y, radio, 0, Math.PI * 2);
@@ -156,9 +237,49 @@
                     ctx.fill();
                     ctx.strokeStyle = "#000";
                     ctx.stroke();
+
+                    disparosGuardados.push({
+                        x, y, radio,
+                        jugador: d.nombre,
+                        xg: d.xg,
+                        resultado: d.resultado
+                    });
                 }); 
                 ctx.restore();
             }
+
+            const canvas = document.getElementById("campoCanvas");
+            const tooltip = document.getElementById("tooltip");
+
+            canvas.addEventListener("mousemove", (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                let encontrado = null;
+                for (let d of disparosGuardados) {
+                    const dist = Math.sqrt((mouseX - d.x) ** 2 + (mouseY - d.y) ** 2);
+                    if (dist <= d.radio) {
+                        encontrado = d;
+                        break;
+                    }
+                }
+
+                if (encontrado) {
+                    tooltip.style.display = "block";
+                    tooltip.style.left = e.pageX + 10 + "px";
+                    tooltip.style.top = e.pageY + 10 + "px";
+                    tooltip.innerHTML = `<b>${encontrado.jugador}</b><br>
+                     xG: ${encontrado.xg}<br>
+                     Resultado: ${encontrado.resultado}`;
+                } else {
+                    tooltip.style.display = "none";
+                }
+            });
+
+            canvas.addEventListener("mouseleave", () => {
+                tooltip.style.display = "none";
+            });
 
 
             
@@ -232,8 +353,11 @@
                                 labelEquipo = document.getElementById("label-equipo");
                                 labelEquipo.innerHTML=`<p>Mapa de disparos de equipo: ${nombreEquipo}</p>`
                                 dibujarCampo(ctxCampo);
-                                console.log(`Disparos de equipo: ${equipoId}`)
                                 plotearDisparos(ctxCampo, data);
+                                const ctxPorteria = document.getElementById("porteriaCanvas").getContext("2d");
+                                
+                                dibujarPorteria(ctxPorteria);
+                                plotearDisparosPorteria(ctxPorteria, data);
 
                             })
 

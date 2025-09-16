@@ -321,7 +321,7 @@ export async function getXgPorEquipo(equipo){
 export async function getMapaDeDisparosEquipo(equipo){
     const [rows] = await pool.query(`
         SELECT 
-			j.nombre,
+			j.nombre, 
             mp.pitch_x, 
             mp.pitch_y, 
             mp.goal_mouth_y,
