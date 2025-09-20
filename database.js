@@ -12,7 +12,8 @@ const pool = mysql.createPool({
 
 export async function getTablaLiga(temporada){
     const [rows] = await pool.query(`
-        SELECT 
+        SELECT
+            e.id_equipo, 
             e.nombre AS nombre_equipo,
             e.url_imagen,
             ee.partidos_jugados,
@@ -341,4 +342,13 @@ export async function getMapaDeDisparosEquipo(equipo){
         WHERE (el.id_equipo = ? AND mp.es_local = 1) OR (ev.id_equipo = ? AND mp.es_local= 0);
         `, [equipo, equipo, equipo, equipo])
     return rows;
+}
+
+export async function getEvolucionEquipos(equipo) {
+    const [rows] = await pool.query(`
+        SELECT * FROM evolucion_posiciones where equipo = ?;
+        `, [equipo])
+    
+        return rows;
+    
 }

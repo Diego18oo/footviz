@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Estadisticas Liga</title>
+        <style>
+            table {
+                width: 80%;
+                margin: 0 auto;
+                border-collapse: collapse;
+            }
+            th, td {
+                padding: 10px;
+                border: 1px solid #aaa;
+                text-align: center;
+            }
+            th {
+                background-color: #f2f2f2;
+            }
+            img {
+                width: 32px;
+                height: auto;
+                vertical-align: middle;
+                margin-right: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <form action="#">
+            <label for="liga">Selecciona una Liga</label>
+            <select id="liga">
+                <option value="premierleague" selected>Premier League</option>
+                <option value="laliga">La Liga</option>
+                <option value="seriea">Serie A</option>
+                <option value="bundesliga">Bundesliga</option>
+                <option value="ligueone">Ligue 1</option>
+            </select>
+        </form> 
+        <h1>Tabla</h1>
+        <table id="tabla-equipos">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Equipo</th>
+                    <th>PJ</th>
+                    <th>V</th>
+                    <th>E</th>
+                    <th>D</th>
+                    <th>Pts</th>
+                    <th>DG</th>
+                    <th>GA</th>
+                    <th>GC</th>
+
+                </tr>
+            </thead>
+            <tbody>
+                
+            </tbody>
+        </table>
+
+        <h3>Evolucion de los equipos</h3>
+        <form action="#">
+            <label for="equipo1">Selecciona un equipo</label>
+            <select id="equipo1">
+                
+            </select>
+        </form> 
+        <form action="#">
+            <label for="equipo2">Selecciona otro equipo</label>
+            <select id="equipo2">
+                
+            </select>
+        </form>
+        <div style="width: 800px; height: 800px;">
+            <canvas id="lineChart"></canvas>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <script>
+            let totalEquiposLiga = 20;
+            var liga = document.getElementById('liga');
+            var tbody = document.querySelector("#tabla-equipos tbody");
+            
+            var endpoints = {
+                "premierleague": "/premier-league",
+                "laliga": "/la-liga",
+                "seriea": "/serie-a",
+                "bundesliga": "/bundesliga",
+                "ligueone": "/ligue-one"
+            };
+
+            function cargarGraficaEvo(equipoSeleccionado, nombreEquipo, color, slot){
+                console.log(equipoSeleccionado)
+                fetch(`/evolucion-equipos/${equipoSeleccionado}`)
+                .then(response => response.json())
+                .then(info => {
+                    const evolucion = info[0];
+                    const jornadas = [];
+                    const posiciones = [];
+                    for (let i = 1; i <= 38; i++) {
+                        const pos = evolucion[`jornada${i}`];
+                        if (pos !== 0 ) {   
+                            jornadas.push(`J${i}`);
+                            posiciones.push(pos);
+                        }
+                        else {
+                            break;
+                        }
+                    }
+                    const ctx = document.getElementById('lineChart').getContext('2d');
+
+                    if (!window.lineChartInstance) {
+                        window.lineChartInstance = new Chart(ctx, 
+                        {
+                            type: 'line',
+                            data: {
+                                labels: jornadas,
+                                datasets: []
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    legend: {
+                                        position: 'top',
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: `Comparacion de equipos`
+                                    }
+                                },
+                                scales: {
+                                    y: {
+                                        reverse: true, 
+                                        min: 0,
+                                        max: totalEquiposLiga,   // límite superior (20 equipos)
+                                        ticks: {
+                                            stepSize: 1 // opcional, para que se vean todos los enteros
+                                        },
+                                        title: {
+                                            display: true,
+                                            text: 'Posición'
+                                        }
+                                    },
+                                    x: {
+                                        title: {
+                                            display: true,
+                                            text: 'Jornadas'
+                                        }
+                                    }
+                                }
+                                
+                            }
+                        });
+
+                    }
+                    
+
+                    window.lineChartInstance.data.datasets[slot] = {
+                        label: nombreEquipo,
+                        data: posiciones,
+                        borderColor: color,
+                        backgroundColor: color,
+                        tension: 0.3
+                    };
+                    window.lineChartInstance.update();
+
+                    
+                })
+            }
+
+            function cargarTabla(ligaSeleccionada){
+                tbody.innerHTML = "";
+
+                if(endpoints[ligaSeleccionada]){
+                    var url = endpoints[ligaSeleccionada];
+                    fetch(url)
+                    
+                        .then(response => response.json())
+                        .then(data => { 
+                            tbody.innerHTML = "";
+                            const equipos = data.tabla_liga;
+                            totalEquiposLiga = equipos.length;
+                            equipos.sort((a,b) => {
+                                if (b.puntos !== a.puntos) return b.puntos - a.puntos;
+                                if (b.diferencia_de_goles !== a.diferencia_de_goles) return b.diferencia_de_goles - a.diferencia_de_goles;
+                                return b.goles_anotados - a.goles_anotados;
+                            });
+                            equipos.forEach((equipo, index) => {
+                                const fila = document.createElement("tr");
+                             
+                                fila.innerHTML = `
+                                    <td>${index +1}</td> 
+                                    <td><img src="${equipo.url_imagen}" alt="Escudo">${equipo.nombre_equipo}</td>
+                                    <td>${equipo.partidos_jugados}</td>
+                                    <td>${equipo.victorias}</td>
+                                    <td>${equipo.empates}</td>
+                                    <td>${equipo.derrotas}</td>
+                                    <td>${equipo.puntos}</td>
+                                    <td>${equipo.diferencia_de_goles}</td>
+                                    <td>${equipo.goles_anotados}</td>
+                                    <td>${equipo.goles_recibidos}</td>
+                                `;
+                                tbody.appendChild(fila);
+                            });
+                        })
+                }
+            }
+            
+            function cargarOpciones(ligaSeleccionada){
+                let select1 = document.getElementById("equipo1");
+                let select2 = document.getElementById("equipo2");
+                
+                if(endpoints[ligaSeleccionada]){
+                    var url = endpoints[ligaSeleccionada];
+                    fetch(url)
+                    .then(response => response.json())
+                    .then(data => { 
+                        select1.innerHTML = "";
+                        select2.innerHTML = "";
+                        const equipos = data.tabla_liga;
+                        equipos.forEach((equipo => {
+                            const opcion1 = document.createElement("option");
+                            opcion1.value = equipo.id_equipo;
+                            opcion1.textContent = equipo.nombre_equipo;
+                            const opcion2 = opcion1.cloneNode(true);
+                            select1.appendChild(opcion1);
+                            select2.appendChild(opcion2);
+                            
+
+                        }))
+                        select1.addEventListener("change", function(){
+                            const nombreEquipo = this.options[this.selectedIndex].text; 
+                            cargarGraficaEvo(this.value, nombreEquipo, "blue", 0);
+
+                        });
+
+                        select2.addEventListener("change", function(){
+                            const nombreEquipo = this.options[this.selectedIndex].text; 
+                            cargarGraficaEvo(this.value, nombreEquipo, "red", 1);
+                        });
+                    })
+                }
+            }
+            liga.addEventListener("change", function(){
+                cargarTabla(this.value);
+                cargarOpciones(this.value);
+            });
+            cargarTabla(liga.value);
+            cargarOpciones(liga.value);
+        </script>
+    </body>
+</html>

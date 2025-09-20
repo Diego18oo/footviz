@@ -1,9 +1,25 @@
 import express from 'express'
-import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo } from './database.js'
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos} from './database.js'
 
 
 const app = express()
 app.use(express.static("public"))
+
+app.get("/evolucion-equipos/:id", async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const evolucion = await getEvolucionEquipos(id);
+
+        if (evolucion.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del equipo" });
+        }
+
+        res.json(evolucion); 
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del equipo" });
+    }
+});
 
 app.get("/mapa-disparos/:id", async (req, res) => {
     try {
