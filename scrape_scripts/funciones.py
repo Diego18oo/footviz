@@ -1181,3 +1181,225 @@ def insert_estadistica_jugador(engine,  ids_para_scrapear_temp):
         print(f"Liga {ligas[iteracion-1]} insertada correctamente")
     return 
 
+def update_standings_evolution_graph(liga_a_scrapear, engine,  temporada):
+    df_equipo = pd.read_sql('SELECT id_equipo, nombre FROM equipo', engine)
+    df_temporada = pd.read_sql('SELECT id_temporada, nombre FROM temporada', engine)
+    mapa_equipo = dict(zip(df_equipo['nombre'], df_equipo['id_equipo']))
+    mapa_temporada = dict(zip(df_temporada['nombre'], df_temporada['id_temporada']))
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    tabla_evoluciones = meta.tables['evolucion_posiciones'] 
+    driver = init_driver()
+    with engine.begin() as conn:
+        print(f"Iniiciando scrapeo a {liga_a_scrapear}")
+        data = get_sofascore_api_data(driver, path=f"api/v1/unique-tournament/{ligas_ids[liga_a_scrapear - 1]}/season/{temporadas_ids[liga_a_scrapear -1]}/standings/total")
+        if temporada == 76986:
+            id_temporada = 1
+        elif temporada == 77559:
+            id_temporada = 2
+        elif temporada == 76457:
+            id_temporada = 3
+        elif temporada == 77333:
+            id_temporada = 4
+        else:
+            id_temporada = 5
+        torneo = data['standings'][0]
+        for row in torneo['rows']:
+            nombre_equipo_sofa = row['team']['name']
+            print(f"Scrapeando a {nombre_equipo_sofa}...")
+            id_equipo = mapa_equipo.get(nombre_equipo_sofa)
+            id_sofa_equipo = row['team']['id']
+            try:
+                data_evolucion = get_sofascore_api_data(driver, path=f"api/v1/unique-tournament/{ligas_ids[liga_a_scrapear - 1]}/season/{temporadas_ids[liga_a_scrapear -1]}/team/{id_sofa_equipo}/team-performance-graph-data")
+                jornadas = []
+                for jornada in range(len(data_evolucion['graphData'])):
+                    jornadas.append(data_evolucion['graphData'][jornada]['position'])
+                
+                jornadas_restates = 38 - len(jornadas)
+                for i in range(jornadas_restates):
+                    jornadas.append(0)
+
+                
+                insert_evolucion_equipos_stmt = insert(tabla_evoluciones).values(
+                    equipo = id_equipo,
+                    temporada = id_temporada,                   
+                    jornada1 = jornadas[0],
+                    jornada2 = jornadas[1],
+                    jornada3 = jornadas[2],
+                    jornada4 = jornadas[3],
+                    jornada5 = jornadas[4],
+                    jornada6 = jornadas[5],
+                    jornada7 = jornadas[6],
+                    jornada8 = jornadas[7],
+                    jornada9 = jornadas[8],
+                    jornada10 = jornadas[9],
+                    jornada11 = jornadas[10],
+                    jornada12 = jornadas[11],
+                    jornada13 = jornadas[12],
+                    jornada14 = jornadas[13],
+                    jornada15 = jornadas[14],
+                    jornada16 = jornadas[15],
+                    jornada17 = jornadas[16],
+                    jornada18 = jornadas[17],
+                    jornada19 = jornadas[18],
+                    jornada20 = jornadas[19],
+                    jornada21 = jornadas[20],
+                    jornada22 = jornadas[21],
+                    jornada23 = jornadas[22],
+                    jornada24 = jornadas[23],
+                    jornada25 = jornadas[24],
+                    jornada26 = jornadas[25],
+                    jornada27 = jornadas[26],
+                    jornada28 = jornadas[27],
+                    jornada29 = jornadas[28],
+                    jornada30 = jornadas[29],
+                    jornada31 = jornadas[30],
+                    jornada32 = jornadas[31],
+                    jornada34 = jornadas[32],
+                    jornada35 = jornadas[34],
+                    jornada36 = jornadas[35],
+                    jornada37 = jornadas[36],
+                    jornada38 = jornadas[37]                        
+                )
+                
+                update_evolucion_equipos_stmt = insert_evolucion_equipos_stmt.on_duplicate_key_update(
+                    equipo = insert_evolucion_equipos_stmt.inserted.equipo,
+                    temporada = insert_evolucion_equipos_stmt.inserted.temporada,
+                    jornada1 = insert_evolucion_equipos_stmt.inserted.jornada1,
+                    jornada2 = insert_evolucion_equipos_stmt.inserted.jornada2,
+                    jornada3 = insert_evolucion_equipos_stmt.inserted.jornada3,
+                    jornada4 = insert_evolucion_equipos_stmt.inserted.jornada4,
+                    jornada5 = insert_evolucion_equipos_stmt.inserted.jornada5,
+                    jornada6 = insert_evolucion_equipos_stmt.inserted.jornada6,
+                    jornada7 = insert_evolucion_equipos_stmt.inserted.jornada7,
+                    jornada8 = insert_evolucion_equipos_stmt.inserted.jornada8,
+                    jornada9 = insert_evolucion_equipos_stmt.inserted.jornada9,
+                    jornada10 = insert_evolucion_equipos_stmt.inserted.jornada10,
+                    jornada11 = insert_evolucion_equipos_stmt.inserted.jornada11,
+                    jornada12 = insert_evolucion_equipos_stmt.inserted.jornada12,
+                    jornada13 = insert_evolucion_equipos_stmt.inserted.jornada13,
+                    jornada14 = insert_evolucion_equipos_stmt.inserted.jornada14,
+                    jornada15 = insert_evolucion_equipos_stmt.inserted.jornada15,
+                    jornada16 = insert_evolucion_equipos_stmt.inserted.jornada16,
+                    jornada17 = insert_evolucion_equipos_stmt.inserted.jornada17,
+                    jornada18 = insert_evolucion_equipos_stmt.inserted.jornada18,
+                    jornada19 = insert_evolucion_equipos_stmt.inserted.jornada19,
+                    jornada20 = insert_evolucion_equipos_stmt.inserted.jornada20,
+                    jornada21 = insert_evolucion_equipos_stmt.inserted.jornada21,
+                    jornada22 = insert_evolucion_equipos_stmt.inserted.jornada22,
+                    jornada23 = insert_evolucion_equipos_stmt.inserted.jornada23,
+                    jornada24 = insert_evolucion_equipos_stmt.inserted.jornada24,
+                    jornada25 = insert_evolucion_equipos_stmt.inserted.jornada25,
+                    jornada26 = insert_evolucion_equipos_stmt.inserted.jornada26,
+                    jornada27 = insert_evolucion_equipos_stmt.inserted.jornada27,
+                    jornada28 = insert_evolucion_equipos_stmt.inserted.jornada28,
+                    jornada29 = insert_evolucion_equipos_stmt.inserted.jornada29,
+                    jornada30 = insert_evolucion_equipos_stmt.inserted.jornada30,
+                    jornada31 = insert_evolucion_equipos_stmt.inserted.jornada31,
+                    jornada32 = insert_evolucion_equipos_stmt.inserted.jornada32,
+                    jornada33 = insert_evolucion_equipos_stmt.inserted.jornada33,
+                    jornada34 = insert_evolucion_equipos_stmt.inserted.jornada34,
+                    jornada35 = insert_evolucion_equipos_stmt.inserted.jornada35,
+                    jornada36 = insert_evolucion_equipos_stmt.inserted.jornada36,
+                    jornada37 = insert_evolucion_equipos_stmt.inserted.jornada37,
+                    jornada38 = insert_evolucion_equipos_stmt.inserted.jornada38
+
+                )
+                conn.execute(update_evolucion_equipos_stmt)
+            except KeyError:
+                print("upsi dupsi no hay info")
+                insert_evolucion_equipos_stmt = insert(tabla_evoluciones).values(
+                    equipo = id_equipo,
+                    temporada = id_temporada,                   
+                    jornada1 = 0,
+                    jornada2 = 0,
+                    jornada3 = 0,
+                    jornada4 = 0,
+                    jornada5 = 0,
+                    jornada6 = 0,
+                    jornada7 = 0,
+                    jornada8 = 0,
+                    jornada9 = 0,
+                    jornada10 = 0,
+                    jornada11 = 0,
+                    jornada12 = 0,
+                    jornada13 = 0,
+                    jornada14 = 0,
+                    jornada15 = 0,
+                    jornada16 = 0,
+                    jornada17 = 0,
+                    jornada18 = 0,
+                    jornada19 = 0,
+                    jornada20 = 0,
+                    jornada21 = 0,
+                    jornada22 = 0,
+                    jornada23 = 0,
+                    jornada24 = 0,
+                    jornada25 = 0,
+                    jornada26 = 0,
+                    jornada27 = 0,
+                    jornada28 = 0,
+                    jornada29 = 0,
+                    jornada30 = 0,
+                    jornada31 = 0,
+                    jornada32 = 0,
+                    jornada34 = 0,
+                    jornada35 = 0,
+                    jornada36 = 0,
+                    jornada37 = 0,
+                    jornada38 = 0                        
+                )
+                
+                update_evolucion_equipos_stmt = insert_evolucion_equipos_stmt.on_duplicate_key_update(
+                    equipo = insert_evolucion_equipos_stmt.inserted.equipo,
+                    temporada = insert_evolucion_equipos_stmt.inserted.temporada,
+                    jornada1 = insert_evolucion_equipos_stmt.inserted.jornada1,
+                    jornada2 = insert_evolucion_equipos_stmt.inserted.jornada2,
+                    jornada3 = insert_evolucion_equipos_stmt.inserted.jornada3,
+                    jornada4 = insert_evolucion_equipos_stmt.inserted.jornada4,
+                    jornada5 = insert_evolucion_equipos_stmt.inserted.jornada5,
+                    jornada6 = insert_evolucion_equipos_stmt.inserted.jornada6,
+                    jornada7 = insert_evolucion_equipos_stmt.inserted.jornada7,
+                    jornada8 = insert_evolucion_equipos_stmt.inserted.jornada8,
+                    jornada9 = insert_evolucion_equipos_stmt.inserted.jornada9,
+                    jornada10 = insert_evolucion_equipos_stmt.inserted.jornada10,
+                    jornada11 = insert_evolucion_equipos_stmt.inserted.jornada11,
+                    jornada12 = insert_evolucion_equipos_stmt.inserted.jornada12,
+                    jornada13 = insert_evolucion_equipos_stmt.inserted.jornada13,
+                    jornada14 = insert_evolucion_equipos_stmt.inserted.jornada14,
+                    jornada15 = insert_evolucion_equipos_stmt.inserted.jornada15,
+                    jornada16 = insert_evolucion_equipos_stmt.inserted.jornada16,
+                    jornada17 = insert_evolucion_equipos_stmt.inserted.jornada17,
+                    jornada18 = insert_evolucion_equipos_stmt.inserted.jornada18,
+                    jornada19 = insert_evolucion_equipos_stmt.inserted.jornada19,
+                    jornada20 = insert_evolucion_equipos_stmt.inserted.jornada20,
+                    jornada21 = insert_evolucion_equipos_stmt.inserted.jornada21,
+                    jornada22 = insert_evolucion_equipos_stmt.inserted.jornada22,
+                    jornada23 = insert_evolucion_equipos_stmt.inserted.jornada23,
+                    jornada24 = insert_evolucion_equipos_stmt.inserted.jornada24,
+                    jornada25 = insert_evolucion_equipos_stmt.inserted.jornada25,
+                    jornada26 = insert_evolucion_equipos_stmt.inserted.jornada26,
+                    jornada27 = insert_evolucion_equipos_stmt.inserted.jornada27,
+                    jornada28 = insert_evolucion_equipos_stmt.inserted.jornada28,
+                    jornada29 = insert_evolucion_equipos_stmt.inserted.jornada29,
+                    jornada30 = insert_evolucion_equipos_stmt.inserted.jornada30,
+                    jornada31 = insert_evolucion_equipos_stmt.inserted.jornada31,
+                    jornada32 = insert_evolucion_equipos_stmt.inserted.jornada32,
+                    jornada33 = insert_evolucion_equipos_stmt.inserted.jornada33,
+                    jornada34 = insert_evolucion_equipos_stmt.inserted.jornada34,
+                    jornada35 = insert_evolucion_equipos_stmt.inserted.jornada35,
+                    jornada36 = insert_evolucion_equipos_stmt.inserted.jornada36,
+                    jornada37 = insert_evolucion_equipos_stmt.inserted.jornada37,
+                    jornada38 = insert_evolucion_equipos_stmt.inserted.jornada38
+
+                )
+                conn.execute(update_evolucion_equipos_stmt)
+
+
+
+            
+
+
+
+
+    return
