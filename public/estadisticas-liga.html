@@ -73,6 +73,22 @@
         <div style="width: 800px; height: 800px;">
             <canvas id="lineChart"></canvas>
         </div>
+        
+        <div style="width: 800px; height: 800px;">
+            <form action="#">
+                <label for="stat">Selecciona una Estadistica</label>
+                <select id="stat">
+                    <option value="goles" selected>Goles</option>
+                    <option value="disparos">Disparos</option>
+                    <option value="disparos_a_puerta">Disparos a puerta</option>
+                    <option value="faltas">Faltas</option>
+                    <option value="tiros_de_esquina">Tiros de esquina</option>
+                </select>
+            </form>
+            <p>Todas las estadisticas son promedios por partido</p>
+            <canvas id="barChart"></canvas>
+        </div>
+
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -161,13 +177,144 @@
                         borderColor: color,
                         backgroundColor: color,
                         tension: 0.3
-                    };
+                    }; 
                     window.lineChartInstance.update();
 
                     
                 })
             }
 
+            let barChartInstance = null;
+            function cargarGraficaPromedios(ligaSeleccionada){
+                let endpoints2 = {
+                    "premierleague" : "1",
+                    "laliga" : "2",
+                    "seriea" : "3",
+                    "bundesliga" : "4",
+                    "ligueone" : "5",
+                }
+
+                let nombres = {
+                    "premierleague" : "Premier League",
+                    "laliga" : "La Liga",
+                    "seriea" : "Serie A",
+                    "bundesliga" : "Bundesliga",
+                    "ligueone" : "Ligue 1",
+                }
+
+                fetch(`/promedios-liga/${endpoints2[ligaSeleccionada]}`)
+                .then(response => response.json())
+                .then(info => {
+                    const loadImage = (src) => new Promise(resolve => {
+                        const img = new Image();
+                        img.src = src;
+                        img.onload = () => resolve(img);
+                    });
+
+                    Promise.all(info.map(e => loadImage(e.url_imagen)))
+                    .then(images => {
+                        const teamLogos = {};
+                        info.forEach((e, i) => {
+                            teamLogos[e.nombre] = images[i];
+                        });
+
+                        function renderBarChart(statKey, label) {
+                            const labels = info.map(e => e.nombre);
+                            const valores = info.map(e => {
+                                switch(statKey){
+                                    case "goles": return e.goles_por_partido;
+                                    case "disparos": return e.disparos_por_partido;
+                                    case "disparos_a_puerta": return e.disparos_a_puerta_por_partido;
+                                    case "faltas": return e.faltas_por_partido;
+                                    case "tiros_de_esquina": return e.tiros_de_esquina_por_partido;
+                                    default: return 0;
+                                }
+                            });
+
+                            const ctx = document.getElementById('barChart').getContext('2d');
+
+                            if (barChartInstance) {
+                                barChartInstance.destroy();
+                            }
+
+                            barChartInstance = new Chart(ctx, {
+                                type: 'bar',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        label: label,
+                                        data: valores,
+                                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                                        borderColor: 'rgba(54, 162, 235, 1)',
+                                        borderWidth: 1
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    layout: {
+                                        padding: {
+                                            bottom: 90
+                                        }
+                                    },
+                                    plugins: {
+                                        legend: { display: true },
+                                        title: {
+                                            display: true,
+                                            text: `Promedio de ${label} por partido (${nombres[ligaSeleccionada]})`
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                title: (tooltipItems) => labels[tooltipItems[0].dataIndex]
+                                            }
+                                        }
+                                    },
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            title: {
+                                                display: true,
+                                                text: `Promedio por partido`
+                                            }
+                                        },
+                                        x: {
+                                            ticks: { 
+                                                display: false, 
+                                                autoSkip: false, 
+                                                maxRotation: 0, 
+                                                minRotation:0 
+                                            }
+                                        }
+                                    }
+                                },
+                                plugins: [{
+                                    id: "logos",
+                                    afterDatasetsDraw: chart => {
+                                        const xAxis = chart.scales.x;
+                                        const yAxis = chart.scales.y;
+                                        chart.data.labels.forEach((label, index) => {
+                                            const logo = teamLogos[label];
+                                            if (logo) {
+                                                const x = xAxis.getPixelForTick(index);
+                                                const y = yAxis.bottom + 10;
+                                                const size = 30;
+                                                chart.ctx.drawImage(logo, x - size/2, y, size, size);
+                                            }
+                                        });
+                                    }
+                                }]
+                            });
+                        }
+
+                        // inicial con goles
+                        renderBarChart("goles", "Goles");
+
+                        document.getElementById("stat").onchange = function(){
+                            renderBarChart(this.value, this.options[this.selectedIndex].text);
+                        };
+                    });
+                });
+            }
+            
             function cargarTabla(ligaSeleccionada){
                 tbody.innerHTML = "";
 
@@ -241,12 +388,27 @@
                     })
                 }
             }
+            const params = new URLSearchParams(window.location.search);
+            const ligaParam = params.get("liga");
+
+            if(ligaParam){
+                liga.value = ligaParam;
+                cargarTabla(ligaParam);
+                cargarOpciones(ligaParam);
+                cargarGraficaPromedios(ligaParam);
+            }
+            else{
+                cargarTabla(liga.value);
+                cargarOpciones(liga.value);
+                cargarGraficaPromedios(liga.value);
+            }
+
             liga.addEventListener("change", function(){
                 cargarTabla(this.value);
                 cargarOpciones(this.value);
+                cargarGraficaPromedios(this.value);
             });
-            cargarTabla(liga.value);
-            cargarOpciones(liga.value);
+            
         </script>
     </body>
 </html>

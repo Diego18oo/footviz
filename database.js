@@ -349,6 +349,26 @@ export async function getEvolucionEquipos(equipo) {
         SELECT * FROM evolucion_posiciones where equipo = ?;
         `, [equipo])
     
-        return rows;
+        return rows; 
     
+}
+
+export async function getPromediosStatsDeUnaLiga(temporada) {
+    
+    const [rows] = await pool.query(`
+        SELECT 
+            e.id_equipo,
+            e.url_imagen,
+            e.nombre,
+            ee.partidos_jugados,
+            ee.goles_anotados / ee.partidos_jugados as goles_por_partido,
+            ee.disparos_a_puerta / ee.partidos_jugados as disparos_a_puerta_por_partido,
+            ee.disparos / ee.partidos_jugados as disparos_por_partido,
+            ee.faltas / ee.partidos_jugados as faltas_por_partido,
+            ee.tiros_de_esquina / ee.partidos_jugados as tiros_de_esquina_por_partido
+        FROM estadisticas_equipo ee 
+        JOIN equipo e on ee.equipo = e.id_equipo
+        WHERE ee.temporada = ?;
+        `, [temporada])
+        return rows;    
 }

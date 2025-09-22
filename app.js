@@ -1,9 +1,25 @@
 import express from 'express'
-import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos} from './database.js'
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga} from './database.js'
 
 
 const app = express()
 app.use(express.static("public"))
+
+app.get("/promedios-liga/:id", async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const promedios = await getPromediosStatsDeUnaLiga(id);
+
+        if (promedios.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion de la liga seleccionada" });
+        }
+
+        res.json(promedios);  
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas de la liga seleccionada" });
+    }
+});
 
 app.get("/evolucion-equipos/:id", async (req, res) => {
     try {
@@ -14,7 +30,7 @@ app.get("/evolucion-equipos/:id", async (req, res) => {
             return res.status(404).json({ error: "No hay suficiente informacion del equipo" });
         }
 
-        res.json(evolucion); 
+        res.json(evolucion);  
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Error al obtener estadísticas del equipo" });
