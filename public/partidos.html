@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Footviz - Partidos</title>
+        <style>
+            table {
+                width: 80%;
+                margin: 0 auto;
+                border-collapse: collapse;
+            }
+            th, td {
+                padding: 10px;
+                border: 1px solid #aaa;
+                text-align: center;
+            }
+            th {
+                background-color: #f2f2f2;
+            }
+            img {
+                width: 32px;
+                height: auto;
+                vertical-align: middle;
+                margin-right: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <form action="#">
+            <label for="liga">Selecciona una Liga</label>
+            <select id="liga">
+                <option value="premierleague" selected>Premier League</option>
+                <option value="laliga">La Liga</option>
+                <option value="seriea">Serie A</option>
+                <option value="bundesliga">Bundesliga</option>
+                <option value="ligueone">Ligue 1</option>
+            </select>
+        </form> 
+        <form action="#">
+            <label for="jornada">Selecciona una jornada</label>
+            <select id="jornada">
+                
+            </select>
+        </form> 
+        <table id="tabla-partidos">
+            <thead>
+                <tr>
+                    <th>Partidos</th>
+                    <th>Fecha y Hora</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+            </tbody>
+        </table>
+
+        <script>
+            var tbody = document.querySelector("#tabla-partidos tbody");
+            var liga = document.getElementById('liga');
+            var jornada = document.getElementById('jornada');
+            function actualizarJornadas(ligaSeleccionada) {
+                const jornadasPorLiga = {
+                    "premierleague": 38,
+                    "laliga": 38,
+                    "seriea": 38,
+                    "bundesliga": 34,
+                    "ligueone": 34
+                };
+
+                const maxJornadas = jornadasPorLiga[ligaSeleccionada];
+
+                const jornadaSeleccionadaAnteriormente = jornada.value;
+
+                jornada.innerHTML = "";
+
+                for (let i = 1; i <= maxJornadas; i++) {
+                    const option = document.createElement("option");
+                    option.value = i;
+                    option.textContent = i;
+                    
+                    jornada.appendChild(option);
+                }
+                
+            
+                
+            }
+        
+            async function cargarPartidos(ligaSeleccionada, jornadaSeleccionada){
+                tbody.innerHTML = "";
+                let endpoints = {
+                    "premierleague" : "1",
+                    "laliga" : "2",
+                    "seriea" : "3",
+                    "bundesliga" : "4",
+                    "ligueone" : "5",
+                }
+                try{
+                    const response = await fetch(`/ultimos-partidos/${endpoints[ligaSeleccionada]}/${jornadaSeleccionada}`);
+                    const partidos = await response.json();
+
+                    const hoyNormalizada = new Date();
+                    hoyNormalizada.setHours(0, 0, 0, 0);
+
+                    for (const partido of partidos) {
+
+                        const fechaPartidoNormalizada = new Date(partido.fecha);
+                        fechaPartidoNormalizada.setHours(0, 0, 0, 0);
+
+                        if (hoyNormalizada > fechaPartidoNormalizada) {
+                            const resResponse = await fetch(`/resultado-partido/${partido.id_partido}`); 
+                            const resultado = await resResponse.json();
+                            const fila = document.createElement("tr");
+                            fila.innerHTML = `
+                                <td>
+                                    <img src="${partido.escudo_local}" alt="Escudo local"> 
+                                    ${resultado.goles_local} - ${resultado.goles_visitante} 
+                                    <img src="${partido.escudo_visitante}" alt="Escudo visitante">
+                                </td>
+                                <td>Finalizado</td>
+                            `;
+                            tbody.appendChild(fila);
+                        } else {
+                            const anio = fechaPartidoNormalizada.getFullYear();
+                            const mesFormateado = String(fechaPartidoNormalizada.getMonth() + 1).padStart(2, '0');
+                            const diaFormateado = String(fechaPartidoNormalizada.getDate()).padStart(2, '0');
+                            const fechaParaMostrar = `${anio}-${mesFormateado}-${diaFormateado}`;
+
+                            const fila = document.createElement("tr");
+                            fila.innerHTML = `
+                                <td><img src="${partido.escudo_local}" alt="Escudo local"> ${partido.equipo_local} - <img src="${partido.escudo_visitante}" alt="Escudo visitante"> ${partido.equipo_visitante}</td>
+                                <td>${fechaParaMostrar}</td> 
+                            `;
+                            tbody.appendChild(fila);
+                        }
+                    }
+                } catch(error){
+                    console.error("Hubo un error al cargar los partidos:", error);
+                    tbody.innerHTML = `<tr><td colspan="2">Error al cargar la información.</td></tr>`;
+                }
+
+            }
+
+            const params = new URLSearchParams(window.location.search);
+            const ligaParam = params.get("liga");
+
+            if(ligaParam){
+                liga.value = ligaParam;
+                        
+            }
+
+            actualizarJornadas(liga.value); 
+            cargarPartidos(liga.value, jornada.value);   
+
+            liga.addEventListener("change", function(){
+                actualizarJornadas(this.value);
+                cargarPartidos(this.value, jornada.value);
+            });
+            jornada.addEventListener("change", function(){
+                cargarPartidos(liga.value, this.value);     
+            });
+
+        </script>
+    </body>
+
+    
+</html>

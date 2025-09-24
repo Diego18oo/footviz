@@ -351,7 +351,7 @@ export async function getEvolucionEquipos(equipo) {
     
         return rows; 
     
-}
+} 
 
 export async function getPromediosStatsDeUnaLiga(temporada) {
     
@@ -371,4 +371,31 @@ export async function getPromediosStatsDeUnaLiga(temporada) {
         WHERE ee.temporada = ?;
         `, [temporada])
         return rows;    
+}
+
+export async function getPartidos(temporada, jornada){
+    const [rows] = await pool.query(`
+        SELECT 
+            p.id_partido,
+            p.jornada, 
+            p.fecha, 
+            el.nombre as equipo_local, 
+            ev.nombre as equipo_visitante, 
+            el.url_imagen as escudo_local, 
+            ev.url_imagen as escudo_visitante
+        FROM partido p 
+        JOIN equipo el on p.equipo_local = el.id_equipo
+        JOIN equipo ev on p.equipo_visitante = ev.id_equipo
+        WHERE temporada = ? and jornada = ? ORDER BY fecha ASC;
+        `, [temporada, jornada])
+    return rows;  
+}
+
+export async function getResultadoPartido(partido){
+    const [rows] = await pool.query(`
+        SELECT
+	        goles_local, goles_visitante
+        FROM estadisticas_partido WHERE partido = ?;
+        `, [partido])
+    return rows[0];  
 }

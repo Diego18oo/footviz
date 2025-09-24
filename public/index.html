@@ -111,12 +111,15 @@
         </tbody>
     </table>
 
-    <script>
+    <script> 
         document.querySelector("#maximos-goleadores tr").addEventListener("click", function() {
             window.location = "estadistica_ofensivas.html?liga=" + liga.value;
         });
         document.querySelector("#tabla-equipos tr").addEventListener("click", function(){
             window.location = "estadisticas-liga.html?liga=" + liga.value;
+        })
+        document.querySelector("#ultimos-partidos tr").addEventListener("click", function(){
+            window.location = "partidos.html?liga=" + liga.value;
         })
         var liga = document.getElementById('liga');
         var tbody = document.querySelector("#tabla-equipos tbody");

@@ -1,9 +1,42 @@
 import express from 'express'
-import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga} from './database.js'
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido} from './database.js'
 
 
 const app = express()
 app.use(express.static("public"))
+
+app.get("/resultado-partido/:id", async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const resultado = await getResultadoPartido(id);
+
+        if (resultado.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del partido" });
+        }
+
+        res.json(resultado);  
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del partido" });
+    }
+});
+
+app.get("/ultimos-partidos/:id1/:id2", async (req, res) => {
+    try {
+        const { id1 } = req.params; 
+        const { id2 } = req.params; 
+        const partidos = await getPartidos(id1, id2);
+
+        if (partidos.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion" });
+        }
+ 
+        res.json(partidos); 
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener partidos" });
+    }
+});
 
 app.get("/promedios-liga/:id", async (req, res) => {
     try {
