@@ -1394,12 +1394,430 @@ def update_standings_evolution_graph(liga_a_scrapear, engine,  temporada):
 
                 )
                 conn.execute(update_evolucion_equipos_stmt)
+    return
 
+def ultimos_partidos(engine, temporada):
+    df_partidos = pd.read_sql(f'SELECT * FROM partido WHERE temporada = {temporada}', engine)
+    df_equipo = pd.read_sql('SELECT id_equipo, nombre FROM equipo', engine)
+    mapa_equipo = dict(zip(df_equipo['nombre'], df_equipo['id_equipo']))
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    tabla_ultimos_enfrentamientos = meta.tables['ultimos_enfrentamientos'] 
+    driver = init_driver()
+    with engine.begin() as conn:
+        for x in range(153):
+            id_partido_sofascore = df_partidos.iloc[x]['url_sofascore'].split('/')[6].split('#')[0]
+            data = get_sofascore_api_data(driver, path=f'api/v1/event/{id_partido_sofascore}/h2h/events')
+            eventos_conservados = [
+                evento for evento in data['events'] 
+                if evento['status']['code'] == 100
+            ]
 
-
+            data['events'] = eventos_conservados
             
+            if len(data['events']) < 5:
+                for i in range(len(data['events'])):
+                    fecha = data['events'][i]['startTimestamp']
+                    fecha = datetime.utcfromtimestamp(fecha).strftime('%Y-%m-%d')
+                    equipo_local = data['events'][i]['homeTeam']['name']
+                    equipo_visitante = data['events'][i]['awayTeam']['name']
+                    try:
+                        goles_local = data['events'][i]['homeScore']['display']
+                        goles_visitante = data['events'][i]['awayScore']['display']
+                    except KeyError:
+                        goles_local = 0
+                        goles_visitante = 0
+                    id_equipo_local = mapa_equipo.get(equipo_local)
+                    id_equipo_visitante = mapa_equipo.get(equipo_visitante)
+                    print(f"Partido: {df_partidos.iloc[x]['id_partido']}, {equipo_local} {goles_local} - {goles_visitante} {equipo_visitante}, {fecha}")
+                    print("Insertando...")
+                    insert_evolucion_equipos_stmt = insert(tabla_ultimos_enfrentamientos).values(
+                        partido = df_partidos.iloc[x]['id_partido'],
+                        fecha = fecha,
+                        equipo_local = id_equipo_local,
+                        equipo_visitante = id_equipo_visitante,
+                        goles_local = goles_local,
+                        goles_visitante = goles_visitante
+                    )
+                    conn.execute(insert_evolucion_equipos_stmt)
+            else:
+                for i in range(5):
+                    fecha = data['events'][i]['startTimestamp']
+                    fecha = datetime.utcfromtimestamp(fecha).strftime('%Y-%m-%d')
+                    equipo_local = data['events'][i]['homeTeam']['name']
+                    equipo_visitante = data['events'][i]['awayTeam']['name']
+                    try:
+                        goles_local = data['events'][i]['homeScore']['display']
+                        goles_visitante = data['events'][i]['awayScore']['display']
+                    except KeyError:
+                        goles_local = 0
+                        goles_visitante = 0
+                    id_equipo_local = mapa_equipo.get(equipo_local)
+                    id_equipo_visitante = mapa_equipo.get(equipo_visitante)
+                    print(f"Partido: {df_partidos.iloc[x]['id_partido']}, {equipo_local} {goles_local} - {goles_visitante} {equipo_visitante}, {fecha}")
+                    print("Insertando...")
+                    insert_evolucion_equipos_stmt = insert(tabla_ultimos_enfrentamientos).values(
+                        partido = df_partidos.iloc[x]['id_partido'],
+                        fecha = fecha,
+                        equipo_local = id_equipo_local,
+                        equipo_visitante = id_equipo_visitante,
+                        goles_local = goles_local,
+                        goles_visitante = goles_visitante
+                    )
+                    conn.execute(insert_evolucion_equipos_stmt)
+            
+    return 
 
 
 
+def update_fecha_partidos(engine, temporada, jornada):
+    df_partidos = pd.read_sql(f"SELECT * FROM partido WHERE temporada = {temporada} AND jornada = {jornada}", engine)    
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    table_partidos = meta.tables['partido'] 
+    driver = init_driver()
+    with engine.begin() as conn:
+        for i in range(len(df_partidos)):
+            event_id = df_partidos.iloc[i]['url_sofascore'].split(':')[2]
+            data = get_sofascore_api_data(driver, path=f'api/v1/event/{event_id}')
+            try: 
+
+                fecha = data['event']['startTimestamp']
+                fecha = datetime.utcfromtimestamp(fecha).strftime('%Y-%m-%d')
+                if fecha != df_partidos.iloc[i]['fecha']:
+                    insert_partido_stmt = insert(table_partidos).values(
+                        id_partido = df_partidos.iloc[i]['id_partido'],
+                        fecha = fecha 
+                        
+                    )
+
+                    update_partido_stmt = insert_partido_stmt.on_duplicate_key_update(
+                        fecha = insert_partido_stmt.inserted.fecha
+                    )
+
+                    conn.execute(update_partido_stmt)
+                    print(f"Fecha actualizada del partido {df_partidos.iloc[i]['id_partido']}")
+                else:
+                    print("Fecha igual")
+            except KeyError:
+                print("Patatas")
+            
+    return
+
+
+def prematch_odds(engine, partido):
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    table_partidos = meta.tables['partido'] 
+    driver = init_driver()
+    with engine.begin() as conn:    
+        event_id = partido['url_sofascore'].split(':')[2]
+        try:  
+            data = get_sofascore_api_data(driver, path=f'api/v1/event/{event_id}/odds/1/all')
+            numerador_local = data['markets'][0]['choices'][0]['fractionalValue'].split('/')[0]
+            denominador_local = data['markets'][0]['choices'][0]['fractionalValue'].split('/')[1]
+            momio_local = (int(numerador_local) / int(denominador_local)) + 1
+            numerador_empate = data['markets'][0]['choices'][1]['fractionalValue'].split('/')[0]
+            denominador_empate = data['markets'][0]['choices'][1]['fractionalValue'].split('/')[1]
+            momio_empate = (int(numerador_empate) / int(denominador_empate)) + 1
+            numerador_visitante = data['markets'][0]['choices'][2]['fractionalValue'].split('/')[0]
+            denominador_visitante = data['markets'][0]['choices'][2]['fractionalValue'].split('/')[1]
+            momio_visitante = (int(numerador_visitante) / int(denominador_visitante)) + 1
+
+
+            insert_odds_stmt = insert(table_partidos).values(
+                id_partido = partido['id_partido'],
+                momio_local = momio_local,
+                momio_empate = momio_empate,
+                momio_visitante = momio_visitante
+            )
+
+            update_odds_stmt = insert_odds_stmt.on_duplicate_key_update(
+                momio_local = insert_odds_stmt.inserted.momio_local,
+                momio_empate = insert_odds_stmt.inserted.momio_empate,
+                momio_visitante = insert_odds_stmt.inserted.momio_visitante
+            )
+            conn.execute(update_odds_stmt)
+            print(f"Momios insertados para partido {partido['id_partido']}")
+        except KeyError: 
+            print("Momios no disponibles")
+
+    return
+
+def postmatch_odss(engine, partido):
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    table_partidos = meta.tables['partido'] 
+    driver = init_driver()
+    with engine.begin() as conn:
+        event_id = partido['url_sofascore'].split(':')[2]
+        try: 
+            odd_ganador = 0
+            data = get_sofascore_api_data(driver, path=f'api/v1/event/{event_id}/odds/1/all')
+            for i in range(3):
+                resultado = data['markets'][0]['choices'][i]['winning']
+                if resultado == 1:
+                    odd_ganador = data['markets'][0]['choices'][i]['name']
+
+            insert_odds_stmt = insert(table_partidos).values(
+                id_partido = partido['id_partido'],
+                momio_ganador = odd_ganador
+                
+            )
+
+            update_odds_stmt = insert_odds_stmt.on_duplicate_key_update(
+                momio_ganador = insert_odds_stmt.inserted.momio_ganador
+            )
+            conn.execute(update_odds_stmt)
+            print(f"Momios insertados para partido {partido['id_partido']}")
+        except KeyError: 
+            print("Momios no disponibles")
+    return
+
+
+def pending_odds(engine, partidos):
+    for i in range(len(partidos)):
+        prematch_odds(engine, partidos.iloc[i])
+        postmatch_odss(engine, partidos.iloc[i])
+
+    return
+
+
+def insert_confirmed_lineups(engine, partido):
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    df_alineaciones = pd.read_sql(f'SELECT id_alineacion FROM alineaciones WHERE partido = {partido['id_partido']}', engine)
+    df_jugadores = pd.read_sql('SELECT id_jugador, nombre FROM jugador', engine)
+    mapa_jugadores = dict(zip(df_jugadores['nombre'], df_jugadores['id_jugador']))
+    table_partidos = meta.tables['alineaciones'] 
+    driver = init_driver()
+    with engine.begin() as conn:    
+        event_id = partido['url_sofascore'].split(':')[2]
+        try: 
+            data = get_sofascore_api_data(driver, path=f'api/v1/event/{event_id}/lineups')
+            nombre_jugador1 = data['home']['players'][0]['player']['name']
+            nombre_jugador2 = data['home']['players'][1]['player']['name']
+            nombre_jugador3 = data['home']['players'][2]['player']['name']
+            nombre_jugador4 = data['home']['players'][3]['player']['name']
+            nombre_jugador5 = data['home']['players'][4]['player']['name']
+            nombre_jugador6 = data['home']['players'][5]['player']['name']
+            nombre_jugador7 = data['home']['players'][6]['player']['name']
+            nombre_jugador8 = data['home']['players'][7]['player']['name']
+            nombre_jugador9 = data['home']['players'][8]['player']['name']
+            nombre_jugador10 = data['home']['players'][9]['player']['name']
+            nombre_jugador11 = data['home']['players'][10]['player']['name']
+            nombre_jugador12 = data['away']['players'][0]['player']['name']
+            nombre_jugador13 = data['away']['players'][1]['player']['name']
+            nombre_jugador14 = data['away']['players'][2]['player']['name']
+            nombre_jugador15 = data['away']['players'][3]['player']['name']
+            nombre_jugador16 = data['away']['players'][4]['player']['name']
+            nombre_jugador17 = data['away']['players'][5]['player']['name']
+            nombre_jugador18 = data['away']['players'][6]['player']['name']
+            nombre_jugador19 = data['away']['players'][7]['player']['name']
+            nombre_jugador20 = data['away']['players'][8]['player']['name']
+            nombre_jugador21 = data['away']['players'][9]['player']['name']
+            nombre_jugador22 = data['away']['players'][10]['player']['name']
+
+            insert_alineaciones_stmt = insert(table_partidos).values(
+                id_alineacion = int(df_alineaciones['id_alineacion']),
+                partido = partido['id_partido'],
+                formacion_local = data['home']['formation'],
+                formacion_visitante = data['away']['formation'],
+                jugador1 = mapa_jugadores.get(nombre_jugador1, None),
+                jugador2 = mapa_jugadores.get(nombre_jugador2, None),
+                jugador3 = mapa_jugadores.get(nombre_jugador3, None),
+                jugador4 = mapa_jugadores.get(nombre_jugador4, None),
+                jugador5 = mapa_jugadores.get(nombre_jugador5, None),
+                jugador6 = mapa_jugadores.get(nombre_jugador6, None),
+                jugador7 = mapa_jugadores.get(nombre_jugador7, None),
+                jugador8 = mapa_jugadores.get(nombre_jugador8, None),
+                jugador9 = mapa_jugadores.get(nombre_jugador9, None),
+                jugador10 = mapa_jugadores.get(nombre_jugador10, None),
+                jugador11 = mapa_jugadores.get(nombre_jugador11, None),
+                jugador12 = mapa_jugadores.get(nombre_jugador12, None),
+                jugador13 = mapa_jugadores.get(nombre_jugador13, None),
+                jugador14 = mapa_jugadores.get(nombre_jugador14, None),
+                jugador15 = mapa_jugadores.get(nombre_jugador15, None),
+                jugador16 = mapa_jugadores.get(nombre_jugador16, None),
+                jugador17 = mapa_jugadores.get(nombre_jugador17, None),
+                jugador18 = mapa_jugadores.get(nombre_jugador18, None),
+                jugador19 = mapa_jugadores.get(nombre_jugador19, None),
+                jugador20 = mapa_jugadores.get(nombre_jugador20, None),
+                jugador21 = mapa_jugadores.get(nombre_jugador21, None),
+                jugador22 = mapa_jugadores.get(nombre_jugador22, None),
+                esConfirmada = 1 
+            )
+
+            update_alineaciones_stmt = insert_alineaciones_stmt.on_duplicate_key_update(
+                partido = insert_alineaciones_stmt.inserted.partido,
+                formacion_local = insert_alineaciones_stmt.inserted.formacion_local,
+                formacion_visitante = insert_alineaciones_stmt.inserted.formacion_visitante,
+                jugador1 = insert_alineaciones_stmt.inserted.jugador1,
+                jugador2 = insert_alineaciones_stmt.inserted.jugador2,
+                jugador3 = insert_alineaciones_stmt.inserted.jugador3,
+                jugador4 = insert_alineaciones_stmt.inserted.jugador4,
+                jugador5 = insert_alineaciones_stmt.inserted.jugador5,
+                jugador6 = insert_alineaciones_stmt.inserted.jugador6,
+                jugador7 = insert_alineaciones_stmt.inserted.jugador7,
+                jugador8 = insert_alineaciones_stmt.inserted.jugador8,
+                jugador9 = insert_alineaciones_stmt.inserted.jugador9,
+                jugador10 = insert_alineaciones_stmt.inserted.jugador10,
+                jugador11 = insert_alineaciones_stmt.inserted.jugador11,
+                jugador12 = insert_alineaciones_stmt.inserted.jugador12,
+                jugador13 = insert_alineaciones_stmt.inserted.jugador13,
+                jugador14 = insert_alineaciones_stmt.inserted.jugador14,
+                jugador15 = insert_alineaciones_stmt.inserted.jugador15,
+                jugador16 = insert_alineaciones_stmt.inserted.jugador16,
+                jugador17 = insert_alineaciones_stmt.inserted.jugador17,
+                jugador18 = insert_alineaciones_stmt.inserted.jugador18,
+                jugador19 = insert_alineaciones_stmt.inserted.jugador19,
+                jugador20 = insert_alineaciones_stmt.inserted.jugador20,
+                jugador21 = insert_alineaciones_stmt.inserted.jugador21,
+                jugador22 = insert_alineaciones_stmt.inserted.jugador22,
+                esConfirmada = insert_alineaciones_stmt.inserted.esConfirmada
+            )
+            conn.execute(update_alineaciones_stmt)
+            print(f"Alineaciones confirmadas insertados para partido {partido['id_partido']}")
+        except KeyError: 
+            print("Alineaciones no disponibles")
+    return
+
+
+def insert_predicted_lineups(engine, partido):
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    df_jugadores = pd.read_sql('SELECT id_jugador, nombre FROM jugador', engine)
+    mapa_jugadores = dict(zip(df_jugadores['nombre'], df_jugadores['id_jugador']))
+    table_partidos = meta.tables['alineaciones'] 
+    driver = init_driver()
+    with engine.begin() as conn:    
+        event_id = partido['url_sofascore'].split(':')[2]
+        try: 
+            data = get_sofascore_api_data(driver, path=f'api/v1/event/{event_id}/lineups')
+            nombre_jugador1 = data['home']['players'][0]['player']['name']
+            nombre_jugador2 = data['home']['players'][1]['player']['name']
+            nombre_jugador3 = data['home']['players'][2]['player']['name']
+            nombre_jugador4 = data['home']['players'][3]['player']['name']
+            nombre_jugador5 = data['home']['players'][4]['player']['name']
+            nombre_jugador6 = data['home']['players'][5]['player']['name']
+            nombre_jugador7 = data['home']['players'][6]['player']['name']
+            nombre_jugador8 = data['home']['players'][7]['player']['name']
+            nombre_jugador9 = data['home']['players'][8]['player']['name']
+            nombre_jugador10 = data['home']['players'][9]['player']['name']
+            nombre_jugador11 = data['home']['players'][10]['player']['name']
+            nombre_jugador12 = data['away']['players'][0]['player']['name']
+            nombre_jugador13 = data['away']['players'][1]['player']['name']
+            nombre_jugador14 = data['away']['players'][2]['player']['name']
+            nombre_jugador15 = data['away']['players'][3]['player']['name']
+            nombre_jugador16 = data['away']['players'][4]['player']['name']
+            nombre_jugador17 = data['away']['players'][5]['player']['name']
+            nombre_jugador18 = data['away']['players'][6]['player']['name']
+            nombre_jugador19 = data['away']['players'][7]['player']['name']
+            nombre_jugador20 = data['away']['players'][8]['player']['name']
+            nombre_jugador21 = data['away']['players'][9]['player']['name']
+            nombre_jugador22 = data['away']['players'][10]['player']['name']
+
+            insert_alineaciones_stmt = insert(table_partidos).values(
+                
+                partido = partido['id_partido'],
+                formacion_local = data['home']['formation'],
+                formacion_visitante = data['away']['formation'],
+                jugador1 = mapa_jugadores.get(nombre_jugador1, None),
+                jugador2 = mapa_jugadores.get(nombre_jugador2, None),
+                jugador3 = mapa_jugadores.get(nombre_jugador3, None),
+                jugador4 = mapa_jugadores.get(nombre_jugador4, None),
+                jugador5 = mapa_jugadores.get(nombre_jugador5, None),
+                jugador6 = mapa_jugadores.get(nombre_jugador6, None),
+                jugador7 = mapa_jugadores.get(nombre_jugador7, None),
+                jugador8 = mapa_jugadores.get(nombre_jugador8, None),
+                jugador9 = mapa_jugadores.get(nombre_jugador9, None),
+                jugador10 = mapa_jugadores.get(nombre_jugador10, None),
+                jugador11 = mapa_jugadores.get(nombre_jugador11, None),
+                jugador12 = mapa_jugadores.get(nombre_jugador12, None),
+                jugador13 = mapa_jugadores.get(nombre_jugador13, None),
+                jugador14 = mapa_jugadores.get(nombre_jugador14, None),
+                jugador15 = mapa_jugadores.get(nombre_jugador15, None),
+                jugador16 = mapa_jugadores.get(nombre_jugador16, None),
+                jugador17 = mapa_jugadores.get(nombre_jugador17, None),
+                jugador18 = mapa_jugadores.get(nombre_jugador18, None),
+                jugador19 = mapa_jugadores.get(nombre_jugador19, None),
+                jugador20 = mapa_jugadores.get(nombre_jugador20, None),
+                jugador21 = mapa_jugadores.get(nombre_jugador21, None),
+                jugador22 = mapa_jugadores.get(nombre_jugador22, None),
+                esConfirmada = 0 
+            )
+
+            update_alineaciones_stmt = insert_alineaciones_stmt.on_duplicate_key_update(
+                partido = insert_alineaciones_stmt.inserted.partido,
+                formacion_local = insert_alineaciones_stmt.inserted.formacion_local,
+                formacion_visitante = insert_alineaciones_stmt.inserted.formacion_visitante,
+                jugador1 = insert_alineaciones_stmt.inserted.jugador1,
+                jugador2 = insert_alineaciones_stmt.inserted.jugador2,
+                jugador3 = insert_alineaciones_stmt.inserted.jugador3,
+                jugador4 = insert_alineaciones_stmt.inserted.jugador4,
+                jugador5 = insert_alineaciones_stmt.inserted.jugador5,
+                jugador6 = insert_alineaciones_stmt.inserted.jugador6,
+                jugador7 = insert_alineaciones_stmt.inserted.jugador7,
+                jugador8 = insert_alineaciones_stmt.inserted.jugador8,
+                jugador9 = insert_alineaciones_stmt.inserted.jugador9,
+                jugador10 = insert_alineaciones_stmt.inserted.jugador10,
+                jugador11 = insert_alineaciones_stmt.inserted.jugador11,
+                jugador12 = insert_alineaciones_stmt.inserted.jugador12,
+                jugador13 = insert_alineaciones_stmt.inserted.jugador13,
+                jugador14 = insert_alineaciones_stmt.inserted.jugador14,
+                jugador15 = insert_alineaciones_stmt.inserted.jugador15,
+                jugador16 = insert_alineaciones_stmt.inserted.jugador16,
+                jugador17 = insert_alineaciones_stmt.inserted.jugador17,
+                jugador18 = insert_alineaciones_stmt.inserted.jugador18,
+                jugador19 = insert_alineaciones_stmt.inserted.jugador19,
+                jugador20 = insert_alineaciones_stmt.inserted.jugador20,
+                jugador21 = insert_alineaciones_stmt.inserted.jugador21,
+                jugador22 = insert_alineaciones_stmt.inserted.jugador22,
+                esConfirmada = insert_alineaciones_stmt.inserted.esConfirmada
+            )
+            conn.execute(update_alineaciones_stmt)
+            print(f"Alineaciones posibles insertados para partido {partido['id_partido']}")
+        except KeyError: 
+            print("Alineaciones no disponibles")
+    return
+
+
+def prematch_ref(engine, partido):
+    df_arbitros = pd.read_sql('SELECT id_arbitro, nombre FROM arbitro', engine)
+    mapa_arbitros = dict(zip(df_arbitros['nombre'], df_arbitros['id_arbitro']))
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    table_partidos = meta.tables['partido'] 
+    tabla_arbitro = meta.tables['arbitro']
+    driver = init_driver()
+    with engine.begin() as conn:    
+        event_id = partido['url_sofascore'].split(':')[2]
+        try: 
+            data = get_sofascore_api_data(driver, path=f'api/v1/event/{event_id}')
+            arbitro_data = data['event']['referee']
+            arbitro_nombre = data['event']['referee']['name']
+            id_arbitro = mapa_arbitros.get(arbitro_nombre, None)
+            if id_arbitro is None:
+                print(f"Insertando a {arbitro_nombre}...")
+                insert_arbitro(engine, arbitro_data, tabla_arbitro, conn)
+                print(f"{arbitro_nombre} insertado correctamente")
+                df_arbitro_actualizado = pd.read_sql('SELECT id_arbitro, nombre FROM arbitro', engine)
+                mapa_arbitros.update(dict(zip(df_arbitro_actualizado['nombre'], df_arbitro_actualizado['id_arbitro'])))
+                id_arbitro = mapa_arbitros.get(arbitro_nombre)
+
+            insert_arbitro_stmt = insert(table_partidos).values(
+                id_partido = partido['id_partido'],
+                arbitro = id_arbitro
+                
+            )
+
+            update_arbitro_stmt = insert_arbitro_stmt.on_duplicate_key_update(
+                arbitro = insert_arbitro_stmt.inserted.arbitro
+                
+            )
+            conn.execute(update_arbitro_stmt)
+            print(f"Arbitro insertados para partido {partido['id_partido']}")
+        except KeyError: 
+            print("Arbitro no disponibles")
 
     return

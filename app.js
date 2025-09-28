@@ -1,9 +1,109 @@
 import express from 'express'
-import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido} from './database.js'
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos} from './database.js'
 
 
-const app = express()
+const app = express() 
 app.use(express.static("public"))
+
+app.get("/comparacion-estadisticas-equipos/:id1/:id2", async (req, res) => {
+    try {
+        const { id1 } = req.params; 
+        const { id2 } = req.params; 
+        const stats = await getComparacionStatsEquipos(id1, id2);
+
+        if (stats.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion" });
+        }
+ 
+        res.json(stats); 
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener la informacion" });
+    }
+});
+
+app.get("/comparacion-evoluciones/:id1/:id2", async (req, res) => {
+    try {
+        const { id1 } = req.params; 
+        const { id2 } = req.params; 
+        const evolucion = await getComparacionEvolucionEquipos(id1, id2);
+
+        if (evolucion.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion" });
+        }
+ 
+        res.json(evolucion); 
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener la informacion" });
+    }
+});
+
+
+app.get("/estadisticas-equipo/:id", async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const info = await getEstadisticasEquipo(id);
+
+        if (info.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del partido" });
+        }
+
+        res.json(info);  
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del partido" });
+    }
+});
+
+app.get("/ultimos-enfrentamientos/:id", async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const info = await getUltimosEnfrentamientos(id);
+
+        if (info.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del partido" });
+        }
+
+        res.json(info);  
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del partido" });
+    }
+});
+
+app.get("/posibles-alineaciones/:id", async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const info = await getPosiblesAlineaciones(id);
+
+        if (info.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del partido" });
+        }
+
+        res.json(info);  
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del partido" });
+    }
+});
+
+app.get("/info-prepartido/:id", async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const info = await getInfoPrePartido(id);
+
+        if (info.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del partido" });
+        }
+
+        res.json(info);  
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del partido" });
+    }
+});
+
 
 app.get("/resultado-partido/:id", async (req, res) => {
     try {

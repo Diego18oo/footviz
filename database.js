@@ -2,7 +2,7 @@ import mysql from 'mysql2'
 
 import dotenv from 'dotenv'
 dotenv.config() 
-
+ 
 const pool = mysql.createPool({
     host: process.env.MYSQL_HOST,
     user: process.env.MYSQL_USER,
@@ -399,3 +399,148 @@ export async function getResultadoPartido(partido){
         `, [partido])
     return rows[0];  
 }
+
+export async function getInfoPrePartido(partido) {
+    const [rows] = await pool.query(`
+        SELECT
+            p.id_partido,
+            p.jornada,
+            p.fecha,
+            t.nombre AS nombre_temporada,
+            el.id_equipo AS id_local,
+            el.nombre AS local_nombre,
+            el.url_imagen AS escudo_local,
+            ev.id_equipo AS id_visitante,
+            ev.nombre AS visitante_nombre,
+            ev.url_imagen AS escudo_visitante,
+            es.nombre AS estadio_nombre,
+            p.momio_local,
+            p.momio_empate,
+            p.momio_visitante,
+            a.nombre AS arbitro_nombre,
+            (SELECT COUNT(*) FROM equipo WHERE liga = t.id_temporada) AS total_equipos_liga
+        FROM
+            partido p
+        LEFT JOIN arbitro a ON p.arbitro = a.id_arbitro
+        JOIN temporada t ON p.temporada = t.id_temporada
+        JOIN estadio es ON p.estadio = es.id_estadio
+        JOIN equipo el ON p.equipo_local = el.id_equipo
+        JOIN equipo ev ON p.equipo_visitante = ev.id_equipo
+        WHERE
+            p.id_partido = ?;
+        `, [partido])
+    return rows[0]; 
+    
+}
+
+export async function getPosiblesAlineaciones(partido) {
+    const [rows] = await pool.query(`
+        SELECT 
+            formacion_local, 
+            formacion_visitante,
+            j1.nombre as nombre1, j1.dorsal as dorsal1, j1.url_imagen as img1,
+            j2.nombre as nombre2, j2.dorsal as dorsal2 , j2.url_imagen as img2,
+            j3.nombre as nombre3, j3.dorsal as dorsal3, j3.url_imagen as img3,
+            j4.nombre as nombre4, j4.dorsal as dorsal4, j4.url_imagen as img4,
+            j5.nombre as nombre5, j5.dorsal as dorsal5, j5.url_imagen as img5,
+            j6.nombre as nombre6, j6.dorsal as dorsal6, j6.url_imagen as img6,
+            j7.nombre as nombre7, j7.dorsal as dorsal7, j7.url_imagen as img7,
+            j8.nombre as nombre8, j8.dorsal as dorsal8, j8.url_imagen as img8,
+            j9.nombre as nombre9, j9.dorsal as drosal9, j9.url_imagen as img9,
+            j10.nombre as nombre10, j10.dorsal as dorsal10, j10.url_imagen as img10,
+            j11.nombre as nombre11, j11.dorsal as dorsal11, j11.url_imagen as img11,
+            j12.nombre as nombre12, j12.dorsal as dorsal12, j12.url_imagen as img12,
+            j13.nombre as nombre13, j13.dorsal as dorsal13, j13.url_imagen as img13,
+            j14.nombre as nombre14, j14.dorsal as dorsal14, j14.url_imagen as img14,
+            j15.nombre as nombre15, j15.dorsal as dorsal15, j15.url_imagen as img15,
+            j16.nombre as nombre16, j16.dorsal as dorsal16, j16.url_imagen as img16,
+            j17.nombre as nombre17, j17.dorsal as dorsal17, j17.url_imagen as img17,
+            j18.nombre as nombre18, j18.dorsal as dorsal18, j18.url_imagen as img18,
+            j19.nombre as nombre19, j19.dorsal as dorsal19, j19.url_imagen as img19,
+            j20.nombre as nombre20, j20.dorsal as dorsal20, j20.url_imagen as img20,
+            j21.nombre as nombre21, j21.dorsal as dorsal21, j21.url_imagen as img21,
+            j22.nombre as nombre22, j22.dorsal as dorsal22, j22.url_imagen as img22
+            
+        FROM alineaciones al
+        JOIN jugador j1 on al.jugador1 = j1.id_jugador
+        JOIN jugador j2 on al.jugador2 = j2.id_jugador
+        JOIN jugador j3 on al.jugador3 = j3.id_jugador
+        JOIN jugador j4 on al.jugador4 = j4.id_jugador
+        JOIN jugador j5 on al.jugador5 = j5.id_jugador
+        JOIN jugador j6 on al.jugador6 = j6.id_jugador
+        JOIN jugador j7 on al.jugador7 = j7.id_jugador
+        JOIN jugador j8 on al.jugador8 = j8.id_jugador
+        JOIN jugador j9 on al.jugador9 = j9.id_jugador
+        JOIN jugador j10 on al.jugador10 = j10.id_jugador
+        JOIN jugador j11 on al.jugador11 = j11.id_jugador
+        JOIN jugador j12 on al.jugador12 = j12.id_jugador
+        JOIN jugador j13 on al.jugador13 = j13.id_jugador
+        JOIN jugador j14 on al.jugador14 = j14.id_jugador
+        JOIN jugador j15 on al.jugador15 = j15.id_jugador
+        JOIN jugador j16 on al.jugador16 = j16.id_jugador
+        JOIN jugador j17 on al.jugador17 = j17.id_jugador
+        JOIN jugador j18 on al.jugador18 = j18.id_jugador
+        JOIN jugador j19 on al.jugador19 = j19.id_jugador
+        JOIN jugador j20 on al.jugador20 = j20.id_jugador
+        JOIN jugador j21 on al.jugador21 = j21.id_jugador
+        JOIN jugador j22 on al.jugador22 = j22.id_jugador
+
+        WHERE partido = ?;
+        `, [partido])
+    return rows[0]; 
+     
+}
+
+export async function getUltimosEnfrentamientos(partido) {
+    const [rows] = await pool.query(`
+        SELECT 
+            el.nombre as nombre_equipo_local, el.url_imagen as escudo_local,
+            ue.goles_local, ue.goles_visitante,
+            ev.nombre as nombre_equipo_visitante, ev.url_imagen as escudo_visitante,
+            ue.fecha
+        FROM ultimos_enfrentamientos ue
+        JOIN equipo el on ue.equipo_local = el.id_equipo
+        JOIN equipo ev on ue.equipo_visitante = ev.id_equipo
+        WHERE partido = ?;
+        `, [partido])
+    return rows; 
+    
+}
+
+export async function getEstadisticasEquipo(equipo) {
+    const [rows] = await pool.query(`
+        SELECT  
+            e.nombre as nombre_equipo, e.url_imagen as img_equipo, ent.nombre as nombre_entrenador, ent.url_imagen as img_entrenador,
+            ee.posicion, ee.puntos, ee.partidos_jugados, ee.goles_anotados, ee.goles_recibidos, ee.xg, ee.disparos, ee.faltas, ee.tarjetas_amarillas, ee.tarjetas_rojas
+        FROM estadisticas_equipo ee 
+        JOIN equipo e on ee.equipo = e.id_equipo
+        JOIN entrenador ent on e.entrenador = ent.id_entrenador
+        WHERE e.id_equipo = ?;
+        `, [equipo])
+    return rows; 
+    
+}
+
+
+export async function getComparacionEvolucionEquipos(equipo1, equipo2) {
+    const [rows] = await pool.query(`
+        SELECT * FROM evolucion_posiciones where equipo = ? or equipo = ?;
+        `, [equipo1, equipo2])
+    
+        return rows; 
+    
+} 
+
+export async function getComparacionStatsEquipos(equipo1, equipo2) {
+    const [rows] = await pool.query(`
+        SELECT
+            e.nombre as nombre_equipo, e.url_imagen as escudo_equipo, 
+            ee.posicion, ee.puntos, ee.victorias, ee.partidos_jugados, ee.goles_anotados, ee.goles_recibidos, ee.xg, ee.disparos, ee.disparos_a_puerta, ee.faltas, ee.tarjetas_amarillas, ee.tarjetas_rojas, ee.tiros_de_esquina, ee.pases_completados
+        FROM estadisticas_equipo ee
+        JOIN equipo e ON ee.equipo = e.id_equipo
+        WHERE equipo = ? or equipo = ?;
+        `, [equipo1, equipo2])
+    
+        return rows; 
+    
+} 

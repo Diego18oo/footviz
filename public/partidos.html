@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-    <head>
+    <head> 
         <title>Footviz - Partidos</title>
         <style>
             table {
@@ -117,6 +117,9 @@
                                 </td>
                                 <td>Finalizado</td>
                             `;
+                            fila.addEventListener("click", function(){
+                                window.location = "informe-postpartido.html?partido=" + partido.id_partido;
+                            })
                             tbody.appendChild(fila);
                         } else {
                             const anio = fechaPartidoNormalizada.getFullYear();
@@ -126,9 +129,12 @@
 
                             const fila = document.createElement("tr");
                             fila.innerHTML = `
-                                <td><img src="${partido.escudo_local}" alt="Escudo local"> ${partido.equipo_local} - <img src="${partido.escudo_visitante}" alt="Escudo visitante"> ${partido.equipo_visitante}</td>
+                                <td><img src="${partido.escudo_local}" alt="Escudo local">  -   <img src="${partido.escudo_visitante}" alt="Escudo visitante"></td>
                                 <td>${fechaParaMostrar}</td> 
                             `;
+                            fila.addEventListener("click", function(){
+                                window.location = "informe-prepartido.html?partido=" + partido.id_partido;
+                            })
                             tbody.appendChild(fila);
                         }
                     }
