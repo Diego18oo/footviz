@@ -564,13 +564,17 @@ export async function getInfoPostPartido(partido) {
             p.momio_empate,
             p.momio_visitante,
             p.momio_ganador, 
-            a.nombre AS arbitro_nombre
-            FROM partido p
+            a.nombre AS arbitro_nombre,
+            ee.goles_local,
+            ee.goles_visitante
+            FROM estadisticas_partido ee
+        JOIN partido p on ee.partido = p.id_partido
         LEFT JOIN arbitro a ON p.arbitro = a.id_arbitro
         JOIN temporada t ON p.temporada = t.id_temporada
         JOIN estadio es ON p.estadio = es.id_estadio
         JOIN equipo el ON p.equipo_local = el.id_equipo
         JOIN equipo ev ON p.equipo_visitante = ev.id_equipo
+        
         WHERE
             p.id_partido = ?;
         `, [partido])

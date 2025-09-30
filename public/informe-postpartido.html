@@ -36,27 +36,25 @@
             }
 
             .alineaciones-wrapper {
-                display: flex;                 /* ¡La magia de Flexbox! */
-                justify-content: space-between;/* Empuja los hijos a los extremos */
-                max-width: 1240px;             /* Un ancho máximo para que quepan ambos canvas */
-                margin: 40px auto;             /* Centra el contenedor en la página */
-                gap: 20px;                     /* Añade un espacio entre los dos contenedores */
-                flex-wrap: wrap;               /* Permite que se apilen en pantallas pequeñas */
+                display: flex;                 
+                justify-content: space-between;
+                max-width: 1240px;             
+                margin: 40px auto;             
+                gap: 20px;                    
+                flex-wrap: wrap;               
             }
             .alineacion-local-container,
             .alineacion-visitante-container {
-                flex: 1; /* Permite que ambos contenedores crezcan y ocupen el espacio disponible */
-                min-width: 300px; /* Ancho mínimo antes de que se apilen */
+                flex: 1; 
+                min-width: 300px; 
                 max-width: 600px; 
                 padding: 20px;
                 background-color: white;
                 border: 1px solid #ccc;
                 border-radius: 8px;
                 text-align: center;
-                /* Eliminamos display:inline-block y margin-left */
             }
 
-            /* Título para la formación */
             #formacion-local-titulo,
             #formacion-visitante-titulo {
                 font-size: 1.2em;
@@ -72,27 +70,24 @@
             }
             .dashboard-wrapper {
                 display: flex;
-                align-items: flex-start; /* Alinea las columnas en la parte superior */
+                align-items: flex-start; 
                 gap: 20px;
                 max-width: 1240px;
                 margin: 40px auto;
             }
 
-            /* 2. Columna Izquierda */
             .dashboard-column-left {
-                flex: 2; /* Ocupa 2/3 del espacio */
+                flex: 2; 
             }
 
-            /* 3. Columna Derecha */
             .dashboard-column-right {
-                flex: 2; /* Ocupa 1/3 del espacio */
+                flex: 2; 
                 display: flex;
-                flex-direction: column; /* Apila sus hijos verticalmente */
-                gap: 20px; /* Espacio entre los enfrentamientos y el gráfico */
+                flex-direction: column; 
+                gap: 20px; 
             }
 
-            /* 4. Estilos ajustados para los contenedores de contenido */
-        /* Ahora ya no necesitan ser flex-items, solo bloques normales */
+      
             .stats-container{
                 padding: 20px;
                 background-color: white;
@@ -107,7 +102,7 @@
                 border: 1px solid #ccc;
                 border-radius: 8px;
                 width: 100%;
-                box-sizing: border-box; /* <-- AÑADE ESTA LÍNEA MÁGICA */
+                box-sizing: border-box; 
                 
             }
 
@@ -172,6 +167,43 @@
                 background-color: #00B140;
                 border-radius: 5px;
             }
+
+            .shot-map-container {
+                padding: 20px;
+                background-color: white;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                width: 100%;
+                box-sizing: border-box;
+                text-align: center;
+            }
+
+            .shot-map-container h2 {
+                text-align: center;
+                margin-top: 0;
+            }
+
+            #shot-map-canvas {
+                max-width: 100%;
+                height: auto;
+                border-radius: 8px;
+                /* El color de fondo lo aplica el JS */
+            }
+
+            .shot-tooltip {
+                position: absolute; /* Clave para poder posicionarlo con JS */
+                display: none;      /* Oculto por defecto */
+                background-color: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-family: Arial, sans-serif;
+                font-size: 13px;
+                /* Evita que el propio tooltip intercepte los eventos del ratón */
+                pointer-events: none; 
+                white-space: nowrap; /* Evita que el texto se parta en varias líneas */
+                z-index: 100; /* Asegura que esté por encima de otros elementos */
+            }
         </style>
     </head>
     <body>
@@ -189,29 +221,23 @@
                 <h3 id="formacion-visitante-titulo"></h3> <canvas id="campo-visitante" width="500" height="700"></canvas>
             </div>
         </div>
-
+        <div id="shot-tooltip" class="shot-tooltip"></div>
         <div class="dashboard-wrapper">
 
             <!-- Columna Izquierda (más ancha) -->
             <div class="dashboard-column-left">
                 <div class="stats-container" id="stats-comparison-container">
-                    <!-- El contenido de la Comparativa de Estadísticas se carga aquí -->
                 </div>
             </div>
 
             <!-- Columna Derecha (contiene los otros dos elementos) -->
             <div class="dashboard-column-right">
-                <div class="enfrentamientos-container">
-                    <h2>Últimos Enfrentamientos</h2>
-                    <div id="ultimos-enfrentamientos">
-                        <!-- El contenido se carga aquí -->
-                    </div>
+                <div class="shot-map-container">
+                    <h2>Mapa de Disparos</h2>
+                    <canvas id="shot-map-canvas" width="400" height="600"></canvas>
                 </div>
 
-                <div class="grafico-container">
-                    <h2>Evolución en la Temporada</h2>
-                    <canvas id="evolucionChart"></canvas>
-                </div>
+                
             </div>
 
         </div>
@@ -305,6 +331,7 @@
                         <img src="${data.escudo_local}" alt="Escudo del equipo local">
                     </div>
                     <div class="info-partido">
+                        <h2 class="marcador">${data.goles_local ?? '-'} - ${data.goles_visitante ?? '-'}</h2>
                         <p>${fechaParaMostrar}</p>
                         <p>${data.estadio_nombre}</p> 
                         <p>${arbitro}</p>  
@@ -497,32 +524,30 @@
                 .then(response => response.json())
                 .then(data => {
                     const container = document.getElementById('stats-comparison-container');
-                    if (!data || data.length < 2) {
+                    if (!data || !data.id_partido) {
                         container.innerHTML = "<h2>Comparativa de Estadísticas</h2><p>Estadísticas no disponibles.</p>";
                         return;
                     }
 
-                    const localStats = data[0];
-                    const visitorStats = data[1];
-
                     const statsToShow = [
-                        { key: 'goles_anotados', label: 'Goles Anotados' },
-                        { key: 'disparos', label: 'Disparos' },
-                        { key: 'disparos_a_puerta', label: 'Disparos a Puerta' },
-                        { key: 'pases_completados', label: 'Pases Completados' },
-                        { key: 'tiros_de_esquina', label: 'Tiros de Esquina' },
-                        { key: 'faltas', label: 'Faltas' },
-                        { key: 'tarjetas_amarillas', label: 'Tarjetas Amarillas' },
-                        { key: 'tarjetas_rojas', label: 'Tarjetas Rojas' }
+                        { label: 'Goles',                 localKey: 'goles_local',                  visitorKey: 'goles_visitante' },
+                        { label: 'Posesión (%)',          localKey: 'posesion_local',               visitorKey: 'posesion_visitante' },
+                        { label: 'Goles Esperados (xG)',  localKey: 'xg_local',                     visitorKey: 'xg_visitante' },
+                        { label: 'Disparos',              localKey: 'disparos_local',               visitorKey: 'disparos_visitante' },
+                        { label: 'Disparos a Puerta',     localKey: 'disparos_a_puerta_local',      visitorKey: 'disparos_a_puerta_visitante' },
+                        { label: 'Pases',                 localKey: 'pases_local',                  visitorKey: 'pases_visitante' },
+                        { label: 'Tiros de Esquina',      localKey: 'tiros_de_esquina_local',       visitorKey: 'tiros_de_esquina_visitante' },
+                        { label: 'Faltas',                localKey: 'faltas_local',                 visitorKey: 'faltas_visitante' },
+                        { label: 'Tarjetas Amarillas',    localKey: 'tarjetas_amarillas_local',     visitorKey: 'tarjetas_amarillas_visitante' },
+                        { label: 'Tarjetas Rojas',        localKey: 'tarjetas_rojas_local',         visitorKey: 'tarjetas_rojas_visitante' }
                     ];
 
                     let finalHTML = '<h2>Comparativa de Estadísticas</h2>';
                     statsToShow.forEach(stat => {
-                        const localValue = parseFloat(localStats[stat.key]) || 0;
-                        const visitorValue = parseFloat(visitorStats[stat.key]) || 0;
+                        const localValue = parseFloat(data[stat.localKey]) || 0;
+                        const visitorValue = parseFloat(data[stat.visitorKey]) || 0;
                         const total = localValue + visitorValue;
 
-                        // Calculamos el porcentaje para la barra (con fallback para evitar división por cero)
                         let localPercentage = 50;
                         if (total > 0) {
                             localPercentage = (localValue / total) * 100;
@@ -552,11 +577,181 @@
                 });
             }
             
+            function dibujarCampoVertical(ctx){
+                const canvas = ctx.canvas;
+                const w = canvas.width;
+                const h = canvas.height;
+
+                // Fondo verde
+                ctx.fillStyle = '#2A8C4A';
+                ctx.fillRect(0, 0, w, h);
+
+                // Líneas del campo
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.lineWidth = 3;
+
+                // Línea de medio campo
+                ctx.beginPath();
+                ctx.moveTo(0, h / 2);
+                ctx.lineTo(w, h / 2);
+                ctx.stroke();
+
+                // Círculo central
+                ctx.beginPath();
+                ctx.arc(w / 2, h / 2, 50, 0, 2 * Math.PI);
+                ctx.stroke();
+
+                // Área visitante (arriba)
+                ctx.strokeRect(w * 0.15, 0, w * 0.7, h * 0.18);
+                // Área de meta visitante
+                ctx.strokeRect(w * 0.3, 0, w * 0.4, h * 0.07);
+
+                // Área local (abajo)
+                ctx.strokeRect(w * 0.15, h - h * 0.18, w * 0.7, h * 0.18);
+                // Área de meta local
+                ctx.strokeRect(w * 0.3, h - h * 0.07, w * 0.4, h * 0.07);
+            }
+
+            function dibujarDisparo(ctx, shot){
+                const canvas = ctx.canvas;
+                const w = canvas.width;
+                const h = canvas.height;
+
+                // --- Conversión de Coordenadas ---
+                // Asumimos que pitch_x (0-100) es la distancia desde la línea de gol que se ataca,
+                // y pitch_y (0-100) es la posición horizontal.
+                
+                // La posición horizontal es directa
+                const canvasX = (parseFloat(shot.pitch_y) / 100) * canvas.width;
+                
+                let canvasY;
+                // El visitante (es_local=0) ataca la portería de arriba
+                if (shot.es_local === 0) {
+                    canvasY = (parseFloat(shot.pitch_x) / 100) * (canvas.height / .9);
+                } else { // El local (es_local=1) ataca la portería de abajo
+                    canvasY = canvas.height - ((parseFloat(shot.pitch_x) / 100) * (canvas.height / .9));
+                }
+
+                // --- Estilo del Disparo ---
+                const radius = 4 + (parseFloat(shot.xg) * 20); // El tamaño del círculo depende del xG
+                const colorLocal = 'rgba(25, 118, 210, 0.9)'; // Azul
+                const colorVisitante = 'rgba(198, 40, 40, 0.9)'; // Rojo oscuro
+
+                // Asignamos el color de relleno según el equipo
+                ctx.fillStyle = shot.es_local === 1 ? colorLocal : colorVisitante;
+                
+                // Asignamos un color de borde para dar contraste (opcional pero recomendado)
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+                ctx.lineWidth = 1.5;
+                
+                // --- Lógica de Dibujo Modificada ---
+                ctx.beginPath();
+                ctx.arc(canvasX, canvasY, radius, 0, 2 * Math.PI);
+
+                // 1. Rellena SIEMPRE el círculo con el color del equipo
+                ctx.fill();
+                
+                // 2. Dibuja SIEMPRE un borde para que resalte más
+                ctx.stroke();
+
+                // 3. Si ADEMÁS fue gol, dibuja el icono del balón encima
+                if (shot.resultado === 'goal') {
+                    dibujarIconoBalon(ctx, canvasX, canvasY, radius * 0.7);
+                }
+
+                return { canvasX, canvasY, radius };
+            }
+
+            function dibujarIconoBalon(ctx, x, y, size) {
+                ctx.fillStyle = 'white';
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            function cargarMapaDeDisparos(partido){
+                fetch(`/mapa-disparos-partido/${partido}`)
+                .then(response => response.json())
+                .then(shots => {
+                    const container = document.querySelector('.shot-map-container');
+                    if (!shots || shots.length === 0) {
+                        container.innerHTML = "<h2>Mapa de Disparos</h2><p>No hay datos de disparos disponibles.</p>";
+                        return;
+                    }
+
+                    const canvas = document.getElementById('shot-map-canvas');
+                    if (!canvas.getContext) return;
+                    const ctx = canvas.getContext('2d');
+
+                    const shotsOnCanvas = [];
+
+
+                    dibujarCampoVertical(ctx);
+                    shots.forEach(shot => {
+                        const { canvasX, canvasY, radius } = dibujarDisparo(ctx, shot);
+                        shotsOnCanvas.push({
+                            x: canvasX,
+                            y: canvasY,
+                            radius: radius,
+                            info: shot // Guardamos el objeto original con toda la info
+                        });
+                    });
+
+                    const tooltip = document.getElementById('shot-tooltip');
+                    canvas.addEventListener('mousemove', (event) => {
+                        const rect = canvas.getBoundingClientRect();
+                        const mouseX = event.clientX - rect.left;
+                        const mouseY = event.clientY - rect.top;
+
+                        let hoveredShot = null;
+
+                        // Comprobamos si el ratón está sobre algún disparo
+                        for (const shot of shotsOnCanvas) {
+                            const dx = mouseX - shot.x;
+                            const dy = mouseY - shot.y;
+                            if (dx * dx + dy * dy < shot.radius * shot.radius) {
+                                hoveredShot = shot;
+                                break; // Encontramos uno, no necesitamos seguir buscando
+                            }
+                        }
+                        if (hoveredShot) {
+                            // Si estamos sobre un disparo, mostramos y rellenamos el tooltip
+                            const xgFormatted = parseFloat(hoveredShot.info.xg).toFixed(2);
+                            tooltip.innerHTML = `
+                                <strong>${hoveredShot.info.nombre}</strong><br>
+                                Minuto: ${hoveredShot.info.minuto}'<br>
+                                Resultado: ${hoveredShot.info.resultado}<br>
+                                xG: ${xgFormatted}
+                            `;
+                            // Posicionamos el tooltip cerca del cursor
+                            tooltip.style.display = 'block';
+                            tooltip.style.left = `${event.pageX + 10}px`;
+                            tooltip.style.top = `${event.pageY + 10}px`;
+                        } else {
+                            // Si no estamos sobre ningún disparo, ocultamos el tooltip
+                            tooltip.style.display = 'none';
+                        }
+                    });
+
+                    canvas.addEventListener('mouseleave', () => {
+                        tooltip.style.display = 'none';
+                    }); 
+
+                })
+                .catch(error => {
+                    console.error("Error al cargar el mapa de disparos:", error);
+                    document.querySelector('.shot-map-container').innerHTML = "<h2>Mapa de Disparos</h2><p>No se pudo cargar el mapa.</p>";
+                });
+            }
 
             cargarInfoPartido(partidoParam);
             cargarAlineacionLocal(partidoParam);
             cargarAlineacionVisitante(partidoParam);
             cargarComparacionStats(partidoParam);
+            cargarMapaDeDisparos(partidoParam);
 
         </script>
         
