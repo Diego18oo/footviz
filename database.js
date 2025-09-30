@@ -544,3 +544,98 @@ export async function getComparacionStatsEquipos(equipo1, equipo2) {
         return rows; 
     
 } 
+
+
+export async function getInfoPostPartido(partido) {
+    const [rows] = await pool.query(`
+        SELECT
+            p.id_partido,
+            p.jornada,
+            p.fecha,
+            t.nombre AS nombre_temporada,
+            el.id_equipo AS id_local,
+            el.nombre AS local_nombre,
+            el.url_imagen AS escudo_local,
+            ev.id_equipo AS id_visitante,
+            ev.nombre AS visitante_nombre,
+            ev.url_imagen AS escudo_visitante,
+            es.nombre AS estadio_nombre,
+            p.momio_local,
+            p.momio_empate,
+            p.momio_visitante,
+            p.momio_ganador, 
+            a.nombre AS arbitro_nombre
+            FROM partido p
+        LEFT JOIN arbitro a ON p.arbitro = a.id_arbitro
+        JOIN temporada t ON p.temporada = t.id_temporada
+        JOIN estadio es ON p.estadio = es.id_estadio
+        JOIN equipo el ON p.equipo_local = el.id_equipo
+        JOIN equipo ev ON p.equipo_visitante = ev.id_equipo
+        WHERE
+            p.id_partido = ?;
+        `, [partido])
+    return rows[0]; 
+    
+}
+
+export async function getEstadisticasPartido(partido) {
+    const [rows] = await pool.query(`
+        SELECT 
+            p.id_partido,
+            ee.goles_local,
+            ee.goles_visitante,
+            ee.tarjetas_amarillas_local,
+            ee.tarjetas_amarillas_visitante,
+            ee.tarjetas_rojas_local,
+            ee.tarjetas_rojas_visitante,
+            ee.posesion_local,
+            ee.posesion_visitante,
+            ee.pases_local,
+            ee.pases_visitante,
+            ee.tiros_de_esquina_local,
+            ee.tiros_de_esquina_visitante,
+            ee.disparos_local,
+            ee.disparos_visitante,
+            ee.disparos_a_puerta_local,
+            ee.disparos_a_puerta_visitante,
+            ee.faltas_local,
+            ee.faltas_visitante,
+            ee.entradas_local,
+            ee.entradas_visitante,
+            ee.xg_local,
+            ee.xg_visitante
+
+
+        FROM estadisticas_partido ee
+        LEFT JOIN partido p on ee.partido = p.id_partido
+        WHERE
+            p.id_partido = ?;
+        `, [partido])
+    return rows[0]; 
+    
+}
+
+export async function getMapaDeDisparosPartido(partido) {
+    const [rows] = await pool.query(`
+        SELECT 
+            j.id_jugador, j.nombre, 
+            p.id_partido,
+            mp.pitch_x,
+            mp.pitch_y,
+            mp.xg,
+            mp.minuto,
+            mp.goal_mouth_y,
+            mp.goal_mouth_z,
+            mp.es_local,
+            mp.resultado,
+            mp.parte_del_cuerpo
+            
+        FROM mapa_de_disparos mp
+        JOIN partido p on mp.partido = p.id_partido
+        JOIN jugador j on mp.jugador = j.id_jugador
+        WHERE
+            p.id_partido = ?;
+        `, [partido])
+    return rows; 
+    
+}

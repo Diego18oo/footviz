@@ -62,17 +62,17 @@ else:
         #insert_confirmed_lineups(engine, df_partidos_ayer.iloc[i])
         #print("Partido actualizado correctamente")
         #postmatch_odss(engine, df_partidos_ayer.iloc[i])
-        #insert_estadistica_partido(engine, df_partidos_ayer.iloc[i])
-        #print("Estadistica de partidos insertada correctamente")
-        #insert_mapa_de_calor(engine, driver, partido_sofascore)
-        #print(f"Mapa de calor de partido {partido_sofascore} insertado correctamente")
-        #insert_mapa_de_disparos(engine, driver, partido_sofascore)
+        insert_estadistica_partido(engine, df_partidos_ayer.iloc[i])
+        print("Estadistica de partidos insertada correctamente")
+        insert_mapa_de_calor(engine, driver, partido_sofascore)
+        print(f"Mapa de calor de partido {partido_sofascore} insertado correctamente")
+        insert_mapa_de_disparos(engine, driver, partido_sofascore)
          
-    #for i in range(len(ids_para_scrapear_temporada)):
-     #   liga_a_scrapear = ids_para_scrapear_temporada[i]
-      #  insert_tabla_posiciones(liga_a_scrapear, engine=engine,temporada=temporadas_ids[liga_a_scrapear-1], liga=ligas_ids[liga_a_scrapear-1])   #actualiza la tabla de posiciones de todas las ligas
-       # update_standings_evolution_graph(liga_a_scrapear,engine=engine, temporada=temporadas_ids[liga_a_scrapear-1])
-        #print(f"Tabla {liga_a_scrapear} insertada correctamente")
+    for i in range(len(ids_para_scrapear_temporada)):
+        liga_a_scrapear = ids_para_scrapear_temporada[i]
+        insert_tabla_posiciones(liga_a_scrapear, engine=engine,temporada=temporadas_ids[liga_a_scrapear-1], liga=ligas_ids[liga_a_scrapear-1])   #actualiza la tabla de posiciones de todas las ligas
+        update_standings_evolution_graph(liga_a_scrapear,engine=engine, temporada=temporadas_ids[liga_a_scrapear-1])
+        print(f"Tabla {liga_a_scrapear} insertada correctamente")
         
 #ultimos_partidos(engine, temporada = 4)
 #ultimos_partidos(engine, temporada = 5)

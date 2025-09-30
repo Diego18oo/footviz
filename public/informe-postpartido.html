@@ -2,8 +2,563 @@
 <html>
     <head>
         <title>PostPartido</title>
+        <style>
+            .divinfo {
+                display: flex; 
+                justify-content: space-between; 
+                align-items: center; 
+                padding: 20px;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                font-family: Arial, sans-serif;
+                max-width: 1240px;
+                margin: 20px auto; 
+            }
+
+            .info-partido {
+                text-align: center; 
+            }
+
+            .info-partido p {
+                margin: 4px 0;
+                font-size: 1em;
+                color: #333;
+                font-weight: bold;
+            }
+
+            .equipo img {
+                width: 100px; 
+                height: auto;
+            }
+
+            img {
+                vertical-align: middle; 
+            }
+
+            .alineaciones-wrapper {
+                display: flex;                 /* ¡La magia de Flexbox! */
+                justify-content: space-between;/* Empuja los hijos a los extremos */
+                max-width: 1240px;             /* Un ancho máximo para que quepan ambos canvas */
+                margin: 40px auto;             /* Centra el contenedor en la página */
+                gap: 20px;                     /* Añade un espacio entre los dos contenedores */
+                flex-wrap: wrap;               /* Permite que se apilen en pantallas pequeñas */
+            }
+            .alineacion-local-container,
+            .alineacion-visitante-container {
+                flex: 1; /* Permite que ambos contenedores crezcan y ocupen el espacio disponible */
+                min-width: 300px; /* Ancho mínimo antes de que se apilen */
+                max-width: 600px; 
+                padding: 20px;
+                background-color: white;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                text-align: center;
+                /* Eliminamos display:inline-block y margin-left */
+            }
+
+            /* Título para la formación */
+            #formacion-local-titulo,
+            #formacion-visitante-titulo {
+                font-size: 1.2em;
+                color: #333;
+                margin-top: 0;
+            }
+
+            #campo-local,
+            #campo-visitante {
+                border-radius: 8px;
+                max-width: 100%;
+                height: auto;
+            }
+            .dashboard-wrapper {
+                display: flex;
+                align-items: flex-start; /* Alinea las columnas en la parte superior */
+                gap: 20px;
+                max-width: 1240px;
+                margin: 40px auto;
+            }
+
+            /* 2. Columna Izquierda */
+            .dashboard-column-left {
+                flex: 2; /* Ocupa 2/3 del espacio */
+            }
+
+            /* 3. Columna Derecha */
+            .dashboard-column-right {
+                flex: 2; /* Ocupa 1/3 del espacio */
+                display: flex;
+                flex-direction: column; /* Apila sus hijos verticalmente */
+                gap: 20px; /* Espacio entre los enfrentamientos y el gráfico */
+            }
+
+            /* 4. Estilos ajustados para los contenedores de contenido */
+        /* Ahora ya no necesitan ser flex-items, solo bloques normales */
+            .stats-container{
+                padding: 20px;
+                background-color: white;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                width: 93%;
+            }
+            .enfrentamientos-container,
+            .grafico-container {
+                padding: 20px;
+                background-color: white;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                width: 100%;
+                box-sizing: border-box; /* <-- AÑADE ESTA LÍNEA MÁGICA */
+                
+            }
+
+            .stats-container h2,
+            .enfrentamientos-container h2,
+            .grafico-container h2 {
+                text-align: center;
+                margin-top: 0;
+            }
+
+            #ultimos-enfrentamientos p {
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+                margin-bottom: 10px;
+            }
+
+            #ultimos-enfrentamientos img {
+                width: 30px;
+            }
+
+            .stat-comparison {
+                margin-bottom: 20px;
+            }
+
+            .stat-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+                font-size: 14px;
+            }
+
+            .stat-label {
+                font-weight: bold;
+                color: #333;
+            }
+
+            .stat-value-local,
+            .stat-value-visitor {
+                padding: 4px 10px;
+                border-radius: 12px;
+                color: white;
+                font-weight: bold;
+                min-width: 40px;
+                text-align: center;
+            }
+
+            .stat-value-local { background-color: #00B140; }
+            .stat-value-visitor { background-color: #1976D2; }
+
+            .stat-bar-container {
+                width: 100%;
+                height: 10px;
+                background-color: #1976D2;
+                border-radius: 5px;
+                overflow: hidden;
+            }
+
+            .stat-bar-local {
+                height: 100%;
+                background-color: #00B140;
+                border-radius: 5px;
+            }
+        </style>
     </head>
     <body>
+        <div id="info-general" class="divinfo">
+            
+        </div>
+        <div class="alineaciones-wrapper">
+            <div class="alineacion-local-container" id="id-alineacion-local-container">
+                <h2>Alineación Local</h2>
+                <h3 id="formacion-local-titulo"></h3> <canvas id="campo-local" width="500" height="700"></canvas>
+            </div>
+
+            <div class="alineacion-visitante-container" id="id-alineacion-visitante-container">
+                <h2>Alineación Visitante</h2>
+                <h3 id="formacion-visitante-titulo"></h3> <canvas id="campo-visitante" width="500" height="700"></canvas>
+            </div>
+        </div>
+
+        <div class="dashboard-wrapper">
+
+            <!-- Columna Izquierda (más ancha) -->
+            <div class="dashboard-column-left">
+                <div class="stats-container" id="stats-comparison-container">
+                    <!-- El contenido de la Comparativa de Estadísticas se carga aquí -->
+                </div>
+            </div>
+
+            <!-- Columna Derecha (contiene los otros dos elementos) -->
+            <div class="dashboard-column-right">
+                <div class="enfrentamientos-container">
+                    <h2>Últimos Enfrentamientos</h2>
+                    <div id="ultimos-enfrentamientos">
+                        <!-- El contenido se carga aquí -->
+                    </div>
+                </div>
+
+                <div class="grafico-container">
+                    <h2>Evolución en la Temporada</h2>
+                    <canvas id="evolucionChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            const params = new URLSearchParams(window.location.search);
+            const partidoParam = params.get("partido");
+            const FORMACIONES = {
+                "4-4-2": [
+                    [0.5, 0.9],   // Portero
+                    // Defensas: LD, DFC, DFC, LI
+                    [0.9, 0.7], [0.63, 0.7], [0.37, 0.7], [0.1, 0.7], 
+                    // Medios: MD, MC, MC, MI
+                    [0.9, 0.45], [0.63, 0.45], [0.37, 0.45], [0.1, 0.45], 
+                    // Delanteros
+                    [0.63, 0.2], [0.37, 0.2]  
+                ],
+                "4-2-3-1": [
+                    [0.5, 0.9],   // Portero
+                    // Defensas: LD, DFC, DFC, LI
+                    [0.9, 0.7], [0.63, 0.7], [0.37, 0.7], [0.1, 0.7],
+                    // Medios defensivos (2)
+                    [0.63, 0.55], [0.37, 0.55], 
+                    // Medios ofensivos: MD, MCO, MI
+                    [0.85, 0.35], [0.5, 0.35], [0.15, 0.35], 
+                    // Delantero
+                    [0.5, 0.15]   
+                ],
+                "4-3-3": [
+                    [0.5, 0.9],   // Portero
+                    // Defensas: LD, DFC, DFC, LI
+                    [0.9, 0.7], [0.63, 0.7], [0.37, 0.7], [0.1, 0.7], 
+                    // Medios: Interior Derecho, Pivote, Interior Izquierdo
+                    [0.75, 0.5], [0.5, 0.45], [0.25, 0.5], 
+                    // Delanteros: Extremo Derecho, DC, Extremo Izquierdo
+                    [0.8, 0.2], [0.5, 0.15], [0.2, 0.2]  
+                ],
+                "3-5-2": [
+                    [0.5, 0.9], // Portero
+                    // Defensas (3): Central Derecho, Líbero, Central Izquierdo
+                    [0.75, 0.7], [0.5, 0.7], [0.25, 0.7], 
+                    // Medios (5): Carrilero Derecho, Interior, Pivote, Interior, Carrilero Izquierdo
+                    [0.9, 0.45], [0.7, 0.5], [0.5, 0.4], [0.3, 0.5], [0.1, 0.45], 
+                    // Delanteros (2)
+                    [0.63, 0.2], [0.37, 0.2] 
+                ],
+                "3-4-2-1": [
+                    [0.5, 0.9], // Portero
+                    // Defensas (3): Central Derecho, Líbero, Central Izquierdo
+                    [0.75, 0.7], [0.5, 0.7], [0.25, 0.7], 
+                    // Medios (4): Carrilero Derecho, Pivote Derecho, Pivote Izquierdo,  Carrilero Izquierdo
+                    [0.9, 0.45], [0.63, 0.50], [0.37, 0.50], [0.1, 0.45],  
+                    //Medios Ofensivos(2)
+                    [0.63, 0.3], [0.37, 0.3],
+                    // Delanteros (1)
+                    [0.50, 0.2] 
+                ]
+
+            };
+            
+            let nombreLocal = 'Equipo Local';
+            let nombreVisitante = 'Equipo Visitante';
+            function cargarInfoPartido(partido){
+                fetch(`/info-postpartido/${partido}`) 
+                .then(response => response.json())
+                .then(data => {
+                    if (!data) {
+                        console.error("No se encontraron datos para el partido:", partido);
+                        return;
+                    }
+
+                    nombreLocal = data.local_nombre;
+                    nombreVisitante = data.visitante_nombre;
+                    let infoPrincipal = document.getElementById("info-general")
+                    const fechaPartidoNormalizada = new Date(data.fecha);
+                    fechaPartidoNormalizada.setHours(0, 0, 0, 0);
+                    const anio = fechaPartidoNormalizada.getFullYear();
+                    const mesFormateado = String(fechaPartidoNormalizada.getMonth() + 1).padStart(2, '0');
+                    const diaFormateado = String(fechaPartidoNormalizada.getDate()).padStart(2, '0');
+                    const fechaParaMostrar = `${anio}-${mesFormateado}-${diaFormateado}`;
+                    
+                    const arbitro = data.arbitro_nombre || 'Arbitro no asignado';
+                    let momiosHTML = 'Momios no disponibles';
+                    if (data.momio_local && data.momio_empate && data.momio_visitante) {
+                        momiosHTML = `${data.momio_local} | ${data.momio_empate} | ${data.momio_visitante}`;
+                    }
+
+                    infoPrincipal.innerHTML = `
+                    <div class="equipo">
+                        <img src="${data.escudo_local}" alt="Escudo del equipo local">
+                    </div>
+                    <div class="info-partido">
+                        <p>${fechaParaMostrar}</p>
+                        <p>${data.estadio_nombre}</p> 
+                        <p>${arbitro}</p>  
+                        <p>${momiosHTML}</p> 
+                    </div> 
+                    <div class="equipo">
+                        <img src="${data.escudo_visitante}" alt="Escudo del equipo visitante">
+                    </div>
+                    `;
+
+
+                })
+            }
+            function precargarImagenesYDibujar(ctx, jugadores, formacion) {
+                // Creamos un array de promesas, una para cada imagen
+                const promesasDeImagenes = jugadores.map(jugador => {
+                    return new Promise((resolve, reject) => {
+                        const img = new Image();
+                        img.crossOrigin = "Anonymous"; // Necesario para cargar imágenes de otros dominios
+                        img.onload = () => resolve(img);
+                        img.onerror = () => reject(new Error(`No se pudo cargar: ${jugador.imgUrl}`));
+                        img.src = jugador.imgUrl;
+                    });
+                });
+
+                // Promise.all espera a que todas las promesas se resuelvan
+                Promise.all(promesasDeImagenes)
+                    .then(imagenesCargadas => {
+                        // Una vez cargadas, añadimos el objeto de imagen a cada jugador
+                        jugadores.forEach((jugador, index) => {
+                            jugador.imagenCargada = imagenesCargadas[index];
+                        });
+                        
+                        // ¡Ahora sí! Dibujamos todo en el canvas
+                        dibujarAlineacion(ctx, jugadores, formacion);
+                    })
+                    .catch(error => {
+                        console.error("Error al cargar las imágenes de los jugadores:", error);
+                        // Opcional: Aquí podrías dibujar los círculos azules como fallback
+                    });
+            }
+
+            function dibujarAlineacion(ctx, jugadores, formacion) {
+                // ... (Esta función no necesita cambios, ya era genérica)
+                const canvas = ctx.canvas;
+                const width = canvas.width;
+                const height = canvas.height;
+                ctx.fillStyle = '#2A8C4A';
+                ctx.fillRect(0, 0, width, height);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, height / 2);
+                ctx.lineTo(width, height / 2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(width / 2, height / 2, 60, 0, 2 * Math.PI, false);
+                ctx.stroke();
+                ctx.strokeRect(width * 0.15, height, width * 0.7, -height * 0.25);
+                
+                jugadores.forEach((jugador, index) => {
+                    if (formacion[index]) {
+                        const x = formacion[index][0] * width;
+                        const y = formacion[index][1] * height;
+                        dibujarJugador(ctx, x, y, jugador);
+                    }
+                });
+            }
+
+            function dibujarJugador(ctx, x, y, jugador) {
+                // ... (Esta función tampoco necesita cambios)
+                const radio = 22;
+                const imagen = jugador.imagenCargada;
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(x, y, radio, 0, 2 * Math.PI, true);
+                ctx.closePath();
+                ctx.clip();
+                ctx.drawImage(imagen, x - radio, y - radio, radio * 2, radio * 2);
+                ctx.restore();
+
+                // (Opcional) Dibujar un borde blanco alrededor de la imagen
+                ctx.beginPath();
+                ctx.arc(x, y, radio, 0, Math.PI * 2, true);
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Dibuja el nombre del jugador debajo
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                // Añadimos una pequeña sombra al texto para mejor legibilidad
+                ctx.shadowColor = 'black';
+                ctx.shadowBlur = 4;
+                ctx.fillText(jugador.nombre, x, y + radio + 14);
+                // Reseteamos la sombra para que no afecte a otros dibujos
+                ctx.shadowBlur = 0;
+            }
+
+            function cargarAlineacionLocal(partido){
+                fetch(`/alineaciones/${partido}`)
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('id-alineacion-local-container');
+                    if (!data || !data.nombre1) {
+                        console.warn("Los datos de la alineación no están disponibles.");
+                        // Reemplazamos el contenido del div con un mensaje
+                        container.innerHTML = `
+                            <h2>Posible Alineación Local</h2>
+                            <p style="padding: 40px 0; color: #555;">
+                                Las alineaciones aún no están disponibles.
+                            </p>
+                        `;
+                        return; // Detenemos la ejecución aquí
+                    }
+                    const canvas = document.getElementById('campo-local');
+                    if (!canvas.getContext) return;
+                    const ctx = canvas.getContext('2d');
+
+                    const jugadores = [];
+                    for (let i = 1; i <= 11; i++) {
+                        const dorsal = data[`dorsal${i}`] || data[`drosal${i}`];
+                        jugadores.push({
+                            nombre: data[`nombre${i}`],
+                            imgUrl: data[`img${i}`]
+                        });
+                    }
+
+                    // --- LÓGICA DINÁMICA DE FORMACIÓN ---
+                    // 1. Obtener la formación del JSON. Usar "4-4-2" como fallback.
+                    const formacionKey = data.formacion_local || "4-4-2";
+
+                    // 2. Actualizar el título en la página
+                    document.getElementById('formacion-local-titulo').innerText = `Formación: ${formacionKey}`;
+
+                    // 3. Seleccionar las coordenadas del diccionario. Si no existe, usar "4-4-2".
+                    const formacionCoordenadas = FORMACIONES[formacionKey] || FORMACIONES["4-4-2"];
+
+                    precargarImagenesYDibujar(ctx, jugadores, formacionCoordenadas);
+                })
+                .catch(error => console.error('Error al cargar las alineaciones:', error));
+            }
+
+            function cargarAlineacionVisitante(partido){
+                fetch(`/alineaciones/${partido}`)
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('id-alineacion-visitante-container');
+                    if (!data || !data.nombre1) {
+                        console.warn("Los datos de la alineación no están disponibles.");
+                        // Reemplazamos el contenido del div con un mensaje
+                        container.innerHTML = `
+                            <h2>Posible Alineación Local</h2>
+                            <p style="padding: 40px 0; color: #555;">
+                                Las alineaciones aún no están disponibles.
+                            </p>
+                        `;
+                        return; // Detenemos la ejecución aquí
+                    }
+                    const canvas = document.getElementById('campo-visitante');
+                    if (!canvas.getContext) return;
+                    const ctx = canvas.getContext('2d');
+
+                    const jugadores = [];
+                    for (let i = 12; i <= 22; i++) {
+                        const dorsal = data[`dorsal${i}`] || data[`drosal${i}`];
+                        jugadores.push({
+                            nombre: data[`nombre${i}`],
+                            imgUrl: data[`img${i}`]
+                        });
+                    }
+
+                    // --- LÓGICA DINÁMICA DE FORMACIÓN ---
+                    // 1. Obtener la formación del JSON. Usar "4-4-2" como fallback.
+                    const formacionKey = data.formacion_visitante || "4-4-2";
+
+                    // 2. Actualizar el título en la página
+                    document.getElementById('formacion-visitante-titulo').innerText = `Formación: ${formacionKey}`;
+
+                    // 3. Seleccionar las coordenadas del diccionario. Si no existe, usar "4-4-2".
+                    const formacionCoordenadas = FORMACIONES[formacionKey] || FORMACIONES["4-4-2"];
+                    precargarImagenesYDibujar(ctx, jugadores, formacionCoordenadas);
+                })
+                .catch(error => console.error('Error al cargar las alineaciones:', error));
+            }
+            
+            function cargarComparacionStats(partido){
+                fetch(`/estadisticas-partido/${partido}`)
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('stats-comparison-container');
+                    if (!data || data.length < 2) {
+                        container.innerHTML = "<h2>Comparativa de Estadísticas</h2><p>Estadísticas no disponibles.</p>";
+                        return;
+                    }
+
+                    const localStats = data[0];
+                    const visitorStats = data[1];
+
+                    const statsToShow = [
+                        { key: 'goles_anotados', label: 'Goles Anotados' },
+                        { key: 'disparos', label: 'Disparos' },
+                        { key: 'disparos_a_puerta', label: 'Disparos a Puerta' },
+                        { key: 'pases_completados', label: 'Pases Completados' },
+                        { key: 'tiros_de_esquina', label: 'Tiros de Esquina' },
+                        { key: 'faltas', label: 'Faltas' },
+                        { key: 'tarjetas_amarillas', label: 'Tarjetas Amarillas' },
+                        { key: 'tarjetas_rojas', label: 'Tarjetas Rojas' }
+                    ];
+
+                    let finalHTML = '<h2>Comparativa de Estadísticas</h2>';
+                    statsToShow.forEach(stat => {
+                        const localValue = parseFloat(localStats[stat.key]) || 0;
+                        const visitorValue = parseFloat(visitorStats[stat.key]) || 0;
+                        const total = localValue + visitorValue;
+
+                        // Calculamos el porcentaje para la barra (con fallback para evitar división por cero)
+                        let localPercentage = 50;
+                        if (total > 0) {
+                            localPercentage = (localValue / total) * 100;
+                        }
+                        
+                        // Creamos el bloque HTML para esta estadística
+                        finalHTML += `
+                            <div class="stat-comparison">
+                                <div class="stat-header">
+                                    <span class="stat-value-local">${localValue}</span>
+                                    <span class="stat-label">${stat.label}</span>
+                                    <span class="stat-value-visitor">${visitorValue}</span>
+                                </div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-local" style="width: ${localPercentage}%;"></div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = finalHTML;
+
+
+                })
+                .catch(error => {
+                    console.error("Error al cargar las estadísticas comparativas:", error);
+                    document.getElementById('stats-comparison-container').innerHTML = "<h2>Comparativa de Estadísticas</h2><p>No se pudieron cargar las estadísticas.</p>";
+                });
+            }
+            
+
+            cargarInfoPartido(partidoParam);
+            cargarAlineacionLocal(partidoParam);
+            cargarAlineacionVisitante(partidoParam);
+            cargarComparacionStats(partidoParam);
+
+        </script>
         
     </body>
-</html>
+</html> 

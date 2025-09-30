@@ -1586,7 +1586,7 @@ def pending_odds(engine, partidos):
 def insert_confirmed_lineups(engine, partido):
     meta = MetaData()
     meta.reflect(bind=engine)
-    df_alineaciones = pd.read_sql(f'SELECT id_alineacion FROM alineaciones WHERE partido = {partido['id_partido']}', engine)
+    df_alineaciones = pd.read_sql(f'SELECT id_alineacion FROM alineaciones WHERE partido = {partido['id_partido']}', engine) 
     df_jugadores = pd.read_sql('SELECT id_jugador, nombre FROM jugador', engine)
     mapa_jugadores = dict(zip(df_jugadores['nombre'], df_jugadores['id_jugador']))
     table_partidos = meta.tables['alineaciones'] 
@@ -1619,7 +1619,7 @@ def insert_confirmed_lineups(engine, partido):
             nombre_jugador22 = data['away']['players'][10]['player']['name']
 
             insert_alineaciones_stmt = insert(table_partidos).values(
-                id_alineacion = int(df_alineaciones['id_alineacion']),
+                #id_alineacion = int(df_alineaciones['id_alineacion']),
                 partido = partido['id_partido'],
                 formacion_local = data['home']['formation'],
                 formacion_visitante = data['away']['formation'],
@@ -1649,7 +1649,7 @@ def insert_confirmed_lineups(engine, partido):
             )
 
             update_alineaciones_stmt = insert_alineaciones_stmt.on_duplicate_key_update(
-                partido = insert_alineaciones_stmt.inserted.partido,
+                #partido = insert_alineaciones_stmt.inserted.partido,
                 formacion_local = insert_alineaciones_stmt.inserted.formacion_local,
                 formacion_visitante = insert_alineaciones_stmt.inserted.formacion_visitante,
                 jugador1 = insert_alineaciones_stmt.inserted.jugador1,

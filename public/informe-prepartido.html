@@ -281,7 +281,7 @@
             let nombreLocal = 'Equipo Local';
             let nombreVisitante = 'Equipo Visitante';
             function cargarInfoPartido(partido){
-                fetch(`/info-prepartido/${partido}`)
+                fetch(`/info-prepartido/${partido}`) 
                 .then(response => response.json())
                 .then(data => {
                     if (!data) {
@@ -329,7 +329,7 @@
             }
 
             function cargarAlineacionLocal(partido){
-                fetch(`/posibles-alineaciones/${partido}`)
+                fetch(`/alineaciones/${partido}`)
                 .then(response => response.json())
                 .then(data => {
                     const container = document.getElementById('id-alineacion-local-container');
@@ -371,6 +371,8 @@
                 })
                 .catch(error => console.error('Error al cargar las alineaciones:', error));
             }
+
+
             function precargarImagenesYDibujar(ctx, jugadores, formacion) {
                 // Creamos un array de promesas, una para cada imagen
                 const promesasDeImagenes = jugadores.map(jugador => {
@@ -403,7 +405,7 @@
             
 
             function cargarAlineacionVisitante(partido){
-                fetch(`/posibles-alineaciones/${partido}`)
+                fetch(`/alineaciones/${partido}`)
                 .then(response => response.json())
                 .then(data => {
                     const container = document.getElementById('id-alineacion-visitante-container');
@@ -590,6 +592,7 @@
                     document.getElementById('stats-comparison-container').innerHTML = "<h2>Comparativa de Estadísticas</h2><p>No se pudieron cargar las estadísticas.</p>";
                 });
             }
+            
             function cargarEvolucionEquipos(equipoLocal, equipoVisitante, totalEquiposLiga){
                 fetch(`/comparacion-evoluciones/${equipoLocal}/${equipoVisitante}`)
                 .then(response => response.json())
