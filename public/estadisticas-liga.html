@@ -1,93 +1,245 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Estadisticas Liga</title>
+        <title>FootViz - Estadisticas Liga</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
         <style>
-            table {
-                width: 80%;
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: 'Poppins', sans-serif;
+                background-color: #1a1a2e;
+                color: #e0e0e0;
+                padding: 20px;
+            }
+
+            /* --- Cabecera --- */
+            .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                max-width: 1400px;
+                margin: 0 auto 30px auto;
+                padding-bottom: 20px;
+                border-bottom: 1px solid #2a2a4a;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+                color: #ffffff;
+                font-weight: 700;
+            }
+
+            .header .controls-container, .card .chart-controls {
+                display: flex;
+                align-items: center;
+                gap: 20px;
+            }
+            
+            .control-group {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            label {
+                font-size: 0.9rem;
+                font-weight: 300;
+                color: #a0a0c0;
+            }
+
+            select {
+                background-color: #2a2a4a;
+                color: #e0e0e0;
+                border: 1px solid #4a4a6a;
+                border-radius: 8px;
+                padding: 10px 15px;
+                font-family: 'Poppins', sans-serif;
+                font-size: 0.9rem;
+                cursor: pointer;
+                transition: background-color 0.2s;
+            }
+            
+            select:hover {
+                background-color: #3a3a5a;
+            }
+
+            /* --- Estructura Principal --- */
+            .dashboard-wrapper {
+                display: flex;
+                gap: 30px;
+                max-width: 1400px;
                 margin: 0 auto;
+                align-items: flex-start;
+            }
+
+            .dashboard-column-left {
+                flex: 3;
+            }
+
+            .dashboard-column-right {
+                flex: 2;
+                display: flex;
+                flex-direction: column;
+                gap: 30px;
+            }
+
+            /* --- Estilo de Tarjeta --- */
+            .card {
+                background-color: #1e1e3f;
+                border-radius: 12px;
+                padding: 20px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                width: 100%;
+            }
+            
+            .card-title {
+                font-size: 1.2rem;
+                font-weight: 600;
+                color: #ffffff;
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+                border-bottom: 1px solid #4a4a6a;
+            }
+
+            /* --- Estilos de Tabla --- */
+            .table-container {
+                overflow-x: auto;
+            }
+            table {
+                width: 100%;
                 border-collapse: collapse;
             }
             th, td {
-                padding: 10px;
-                border: 1px solid #aaa;
+                padding: 12px 10px;
                 text-align: center;
+                white-space: nowrap;
+            }
+            thead tr {
+                border-bottom: 2px solid #4a4a6a;
             }
             th {
-                background-color: #f2f2f2;
+                font-weight: 600;
+                color: #ffffff;
+                font-size: 0.8rem;
+                text-transform: uppercase;
             }
+            tbody tr {
+                border-bottom: 1px solid #2a2a4a;
+            }
+            tbody tr:last-child { border-bottom: none; }
+            
+            #tabla-equipos th:nth-child(2),
+            #tabla-equipos td:nth-child(2) {
+                text-align: left;
+            }
+            
             img {
-                width: 32px;
-                height: auto;
+                width: 28px;
+                height: 28px;
                 vertical-align: middle;
-                margin-right: 10px;
+                margin-right: 12px;
+                border-radius: 50%;
             }
+            
+            /* --- Contenedores de Gráficos --- */
+            .chart-container {
+                position: relative;
+                width: 100%;
+                height: 350px; /* Altura estándar para gráficos */
+                margin-top: 20px;
+            }
+
         </style>
     </head>
     <body>
-        <form action="#">
-            <label for="liga">Selecciona una Liga</label>
-            <select id="liga">
-                <option value="premierleague" selected>Premier League</option>
-                <option value="laliga">La Liga</option>
-                <option value="seriea">Serie A</option>
-                <option value="bundesliga">Bundesliga</option>
-                <option value="ligueone">Ligue 1</option>
-            </select>
-        </form> 
-        <h1>Tabla</h1>
-        <table id="tabla-equipos">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Equipo</th>
-                    <th>PJ</th>
-                    <th>V</th>
-                    <th>E</th>
-                    <th>D</th>
-                    <th>Pts</th>
-                    <th>DG</th>
-                    <th>GA</th>
-                    <th>GC</th>
+        <header class="header">
+            <h1>FootViz</h1>
+            <div class="controls-container">
+                <div class="control-group">
+                    <label for="liga">Selecciona una Liga</label>
+                    <select id="liga">
+                        <option value="premierleague" selected>Premier League</option>
+                        <option value="laliga">La Liga</option>
+                        <option value="seriea">Serie A</option>
+                        <option value="bundesliga">Bundesliga</option>
+                        <option value="ligueone">Ligue 1</option>
+                    </select>
+                </div>
+            </div>
+        </header>
 
-                </tr>
-            </thead>
-            <tbody>
-                
-            </tbody>
-        </table>
-
-        <h3>Evolucion de los equipos</h3>
-        <form action="#">
-            <label for="equipo1">Selecciona un equipo</label>
-            <select id="equipo1">
-                
-            </select>
-        </form> 
-        <form action="#">
-            <label for="equipo2">Selecciona otro equipo</label>
-            <select id="equipo2">
-                
-            </select>
-        </form>
-        <div style="width: 800px; height: 800px;">
-            <canvas id="lineChart"></canvas>
-        </div>
+        <main class="dashboard-wrapper">
+            <div class="dashboard-column-left">
+                <div class="card">
+                    <div class="table-container">
+                        <table id="tabla-equipos">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Equipo</th>
+                                    <th>PJ</th>
+                                    <th>V</th>
+                                    <th>E</th>
+                                    <th>D</th>
+                                    <th>Pts</th>
+                                    <th>DG</th>
+                                    <th>GA</th>
+                                    <th>GC</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="dashboard-column-right">
+                <div class="card">
+                    <h2 class="card-title">Evolución en la Tabla</h2>
+                    <div class="chart-controls">
+                        <div class="control-group">
+                            <label for="equipo1">Equipo 1</label>
+                            <select id="equipo1"></select>
+                        </div>
+                        <div class="control-group">
+                            <label for="equipo2">Equipo 2</label>
+                            <select id="equipo2"></select>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="lineChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2 class="card-title">Promedios por Partido</h2>
+                    <div class="chart-controls">
+                        <div class="control-group">
+                            <label for="stat">Estadística</label>
+                            <select id="stat">
+                                <option value="goles" selected>Goles</option>
+                                <option value="disparos">Disparos</option>
+                                <option value="disparos_a_puerta">Disparos a puerta</option>
+                                <option value="faltas">Faltas</option>
+                                <option value="tiros_de_esquina">Tiros de esquina</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
         
-        <div style="width: 800px; height: 800px;">
-            <form action="#">
-                <label for="stat">Selecciona una Estadistica</label>
-                <select id="stat">
-                    <option value="goles" selected>Goles</option>
-                    <option value="disparos">Disparos</option>
-                    <option value="disparos_a_puerta">Disparos a puerta</option>
-                    <option value="faltas">Faltas</option>
-                    <option value="tiros_de_esquina">Tiros de esquina</option>
-                </select>
-            </form>
-            <p>Todas las estadisticas son promedios por partido</p>
-            <canvas id="barChart"></canvas>
-        </div>
+
+        
 
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -134,15 +286,10 @@
                                 datasets: []
                             },
                             options: {
-                                responsive: true,
+                                responsive: true, maintainAspectRatio: false,
                                 plugins: {
-                                    legend: {
-                                        position: 'top',
-                                    },
-                                    title: {
-                                        display: true,
-                                        text: `Comparacion de equipos`
-                                    }
+                                    legend: { position: 'top', labels: { color: '#e0e0e0' } },
+                                    title: { display: true, text: 'Comparación de Posición por Jornada', color: '#ffffff' }
                                 },
                                 scales: {
                                     y: {
@@ -150,18 +297,20 @@
                                         min: 0,
                                         max: totalEquiposLiga,   // límite superior (20 equipos)
                                         ticks: {
+                                            color: '#a0a0c0',
                                             stepSize: 1 // opcional, para que se vean todos los enteros
                                         },
+                                        grid: { color: 'rgba(224, 224, 224, 0.1)' },
                                         title: {
                                             display: true,
-                                            text: 'Posición'
+                                            text: 'Posición',
+                                            color: '#e0e0e0'
                                         }
                                     },
                                     x: {
-                                        title: {
-                                            display: true,
-                                            text: 'Jornadas'
-                                        }
+                                        ticks: { color: '#a0a0c0' },
+                                        grid: { color: 'rgba(224, 224, 224, 0.1)' },
+                                        title: { display: true, text: 'Jornada', color: '#e0e0e0' }
                                     }
                                 }
                                 
@@ -250,17 +399,18 @@
                                     }]
                                 },
                                 options: {
-                                    responsive: true,
+                                    responsive: true, maintainAspectRatio: false,
                                     layout: {
                                         padding: {
-                                            bottom: 90
+                                            bottom: 40
                                         }
                                     },
                                     plugins: {
-                                        legend: { display: true },
+                                        legend: { display: false },
                                         title: {
                                             display: true,
-                                            text: `Promedio de ${label} por partido (${nombres[ligaSeleccionada]})`
+                                            text: `Promedio de ${label} por partido (${nombres[ligaSeleccionada]})`,
+                                            color: '#ffffff'
                                         },
                                         tooltip: {
                                             callbacks: {
@@ -271,18 +421,12 @@
                                     scales: {
                                         y: {
                                             beginAtZero: true,
-                                            title: {
-                                                display: true,
-                                                text: `Promedio por partido`
-                                            }
+                                            ticks: { color: '#a0a0c0' },
+                                            grid: { color: 'rgba(224, 224, 224, 0.1)' },
+                                            title: { display: true, text: 'Promedio por Partido', color: '#e0e0e0' }
                                         },
                                         x: {
-                                            ticks: { 
-                                                display: false, 
-                                                autoSkip: false, 
-                                                maxRotation: 0, 
-                                                minRotation:0 
-                                            }
+                                            ticks: { display: false } // Ocultamos los nombres para poner logos
                                         }
                                     }
                                 },
@@ -295,8 +439,8 @@
                                             const logo = teamLogos[label];
                                             if (logo) {
                                                 const x = xAxis.getPixelForTick(index);
-                                                const y = yAxis.bottom + 10;
-                                                const size = 30;
+                                                const y = yAxis.bottom + 5;
+                                                const size = 24;
                                                 chart.ctx.drawImage(logo, x - size/2, y, size, size);
                                             }
                                         });

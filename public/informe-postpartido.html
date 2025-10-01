@@ -1,65 +1,101 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>PostPartido</title>
+        <title>FootViz - PostPartido</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
         <style>
-            .divinfo {
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: 'Poppins', sans-serif;
+                background-color: #1a1a2e;
+                color: #e0e0e0;
+                padding: 20px;
+            }
+
+            h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #4a4a6a;
+            text-align: center;
+            }
+
+            /* --- Estilo de Tarjeta Principal --- */
+            .card {
+                background-color: #1e1e3f;
+                border-radius: 12px;
+                padding: 20px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                width: 100%;
+                max-width: 1240px;
+                margin: 20px auto;
+            }
+
+            /* --- Info General del Partido --- */
+            #info-general {
                 display: flex; 
                 justify-content: space-between; 
                 align-items: center; 
-                padding: 20px;
-                border: 1px solid #ccc;
-                border-radius: 8px;
-                font-family: Arial, sans-serif;
-                max-width: 1240px;
-                margin: 20px auto; 
             }
 
             .info-partido {
                 text-align: center; 
             }
 
+            .info-partido .marcador {
+                font-size: 3rem;
+                font-weight: 700;
+                color: #ffffff;
+                margin: 10px 0;
+                border: none;
+                padding: 0;
+            }
+
             .info-partido p {
-                margin: 4px 0;
-                font-size: 1em;
-                color: #333;
-                font-weight: bold;
+                margin: 5px 0;
+                font-size: 0.9em;
+                color: #a0a0c0;
+                font-weight: 400;
             }
 
             .equipo img {
                 width: 100px; 
                 height: auto;
             }
-
-            img {
-                vertical-align: middle; 
-            }
-
+            
+            /* --- Alineaciones --- */
             .alineaciones-wrapper {
-                display: flex;                 
+                display: flex;
                 justify-content: space-between;
-                max-width: 1240px;             
-                margin: 40px auto;             
-                gap: 20px;                    
-                flex-wrap: wrap;               
+                max-width: 1240px;
+                margin: 20px auto;
+                gap: 20px;
+                flex-wrap: wrap;
             }
-            .alineacion-local-container,
-            .alineacion-visitante-container {
-                flex: 1; 
-                min-width: 300px; 
-                max-width: 600px; 
-                padding: 20px;
-                background-color: white;
-                border: 1px solid #ccc;
-                border-radius: 8px;
+
+            .alineacion-container {
+                flex: 1;
+                min-width: 400px;
                 text-align: center;
             }
 
             #formacion-local-titulo,
             #formacion-visitante-titulo {
-                font-size: 1.2em;
-                color: #333;
+                font-size: 1em;
+                color: #a0a0c0;
                 margin-top: 0;
+                margin-bottom: 15px;
+                font-weight: 400;
             }
 
             #campo-local,
@@ -68,65 +104,29 @@
                 max-width: 100%;
                 height: auto;
             }
+            
+            /* --- Dashboard de Estadísticas --- */
             .dashboard-wrapper {
                 display: flex;
-                align-items: flex-start; 
+                align-items: flex-start;
                 gap: 20px;
                 max-width: 1240px;
-                margin: 40px auto;
+                margin: 20px auto;
             }
 
-            .dashboard-column-left {
-                flex: 2; 
-            }
-
+            .dashboard-column-left,
             .dashboard-column-right {
-                flex: 2; 
                 display: flex;
-                flex-direction: column; 
-                gap: 20px; 
+                flex-direction: column;
+                gap: 20px;
             }
+            
+            .dashboard-column-left { flex: 2; }
+            .dashboard-column-right { flex: 2; }
 
-      
-            .stats-container{
-                padding: 20px;
-                background-color: white;
-                border: 1px solid #ccc;
-                border-radius: 8px;
-                width: 93%;
-            }
-            .enfrentamientos-container,
-            .grafico-container {
-                padding: 20px;
-                background-color: white;
-                border: 1px solid #ccc;
-                border-radius: 8px;
-                width: 100%;
-                box-sizing: border-box; 
-                
-            }
-
-            .stats-container h2,
-            .enfrentamientos-container h2,
-            .grafico-container h2 {
-                text-align: center;
-                margin-top: 0;
-            }
-
-            #ultimos-enfrentamientos p {
-                display: flex;
-                justify-content: space-around;
-                align-items: center;
-                margin-bottom: 10px;
-            }
-
-            #ultimos-enfrentamientos img {
-                width: 30px;
-            }
-
-            .stat-comparison {
-                margin-bottom: 20px;
-            }
+            /* --- Comparación de Estadísticas --- */
+            .stat-comparison { margin-bottom: 20px; }
+            .stat-comparison:last-child { margin-bottom: 0; }
 
             .stat-header {
                 display: flex;
@@ -138,7 +138,7 @@
 
             .stat-label {
                 font-weight: bold;
-                color: #333;
+                color: #e0e0e0;
             }
 
             .stat-value-local,
@@ -150,89 +150,79 @@
                 min-width: 40px;
                 text-align: center;
             }
-
-            .stat-value-local { background-color: #00B140; }
-            .stat-value-visitor { background-color: #1976D2; }
+            
+            .stat-value-local { background-color: #007bff; }
+            .stat-value-visitor { background-color: #ff4d4d; }
 
             .stat-bar-container {
                 width: 100%;
                 height: 10px;
-                background-color: #1976D2;
+                background-color: #ff4d4d;
                 border-radius: 5px;
                 overflow: hidden;
             }
 
             .stat-bar-local {
                 height: 100%;
-                background-color: #00B140;
+                background-color: #007bff;
                 border-radius: 5px;
+                transition: width 0.5s ease-in-out;
             }
 
-            .shot-map-container {
-                padding: 20px;
-                background-color: white;
-                border: 1px solid #ccc;
-                border-radius: 8px;
-                width: 100%;
-                box-sizing: border-box;
-                text-align: center;
-            }
-
-            .shot-map-container h2 {
-                text-align: center;
-                margin-top: 0;
-            }
-
+            /* --- Mapa de Disparos --- */
             #shot-map-canvas {
                 max-width: 100%;
                 height: auto;
                 border-radius: 8px;
-                /* El color de fondo lo aplica el JS */
+                display: block;
+                margin: 0 auto;
             }
 
-            .shot-tooltip {
-                position: absolute; /* Clave para poder posicionarlo con JS */
-                display: none;      /* Oculto por defecto */
-                background-color: rgba(0, 0, 0, 0.8);
-                color: white;
+            #shot-tooltip {
+                position: absolute;
+                display: none;
+                background: rgba(40, 40, 74, 0.9);
+                color: #fff;
                 padding: 8px 12px;
                 border-radius: 6px;
-                font-family: Arial, sans-serif;
-                font-size: 13px;
-                /* Evita que el propio tooltip intercepte los eventos del ratón */
-                pointer-events: none; 
-                white-space: nowrap; /* Evita que el texto se parta en varias líneas */
-                z-index: 100; /* Asegura que esté por encima de otros elementos */
+                font-family: 'Poppins', sans-serif;
+                font-size: 0.8rem;
+                pointer-events: none;
+                white-space: nowrap;
+                z-index: 100;
+                border: 1px solid #4a4a6a;
             }
         </style>
     </head>
     <body>
-        <div id="info-general" class="divinfo">
+        <div id="info-general" class="card">
             
         </div>
         <div class="alineaciones-wrapper">
-            <div class="alineacion-local-container" id="id-alineacion-local-container">
-                <h2>Alineación Local</h2>
-                <h3 id="formacion-local-titulo"></h3> <canvas id="campo-local" width="500" height="700"></canvas>
+            <div class="card alineacion-container" id="id-alineacion-local-container">
+                <h2>Alineacion Local</h2>
+                <h3 id="formacion-local-titulo"></h3> 
+                <canvas id="campo-local" width="500" height="700"></canvas>
             </div>
 
-            <div class="alineacion-visitante-container" id="id-alineacion-visitante-container">
-                <h2>Alineación Visitante</h2>
-                <h3 id="formacion-visitante-titulo"></h3> <canvas id="campo-visitante" width="500" height="700"></canvas>
+            <div class="card alineacion-container" id="id-alineacion-visitante-container">
+                <h2>Alineacion Visitante</h2>
+                <h3 id="formacion-visitante-titulo"></h3> 
+                <canvas id="campo-visitante" width="500" height="700"></canvas>
             </div>
         </div>
-        <div id="shot-tooltip" class="shot-tooltip"></div>
+        <div id="shot-tooltip"></div>
         <div class="dashboard-wrapper">
 
             <!-- Columna Izquierda (más ancha) -->
             <div class="dashboard-column-left">
-                <div class="stats-container" id="stats-comparison-container">
+                <div class="card" id="stats-comparison-container">
                 </div>
             </div>
 
             <!-- Columna Derecha (contiene los otros dos elementos) -->
             <div class="dashboard-column-right">
-                <div class="shot-map-container">
+                <div class="card">
                     <h2>Mapa de Disparos</h2>
                     <canvas id="shot-map-canvas" width="400" height="600"></canvas>
                 </div>
@@ -379,7 +369,7 @@
                 const canvas = ctx.canvas;
                 const width = canvas.width;
                 const height = canvas.height;
-                ctx.fillStyle = '#2A8C4A';
+                ctx.fillStyle = '#2a5f2a';
                 ctx.fillRect(0, 0, width, height);
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
                 ctx.lineWidth = 2;
@@ -402,33 +392,17 @@
             }
 
             function dibujarJugador(ctx, x, y, jugador) {
-                // ... (Esta función tampoco necesita cambios)
                 const radio = 22;
-                const imagen = jugador.imagenCargada;
                 ctx.save();
-                ctx.beginPath();
-                ctx.arc(x, y, radio, 0, 2 * Math.PI, true);
-                ctx.closePath();
-                ctx.clip();
-                ctx.drawImage(imagen, x - radio, y - radio, radio * 2, radio * 2);
+                ctx.beginPath(); ctx.arc(x, y, radio, 0, 2 * Math.PI); ctx.clip();
+                if (jugador.imagenCargada) {
+                    ctx.drawImage(jugador.imagenCargada, x - radio, y - radio, radio * 2, radio * 2);
+                }
                 ctx.restore();
-
-                // (Opcional) Dibujar un borde blanco alrededor de la imagen
-                ctx.beginPath();
-                ctx.arc(x, y, radio, 0, Math.PI * 2, true);
-                ctx.strokeStyle = '#FFFFFF';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-
-                // Dibuja el nombre del jugador debajo
-                ctx.fillStyle = '#FFFFFF';
-                ctx.font = 'bold 14px Arial';
-                ctx.textAlign = 'center';
-                // Añadimos una pequeña sombra al texto para mejor legibilidad
-                ctx.shadowColor = 'black';
-                ctx.shadowBlur = 4;
+                ctx.beginPath(); ctx.arc(x, y, radio, 0, 2 * Math.PI); ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 14px Poppins'; ctx.textAlign = 'center';
+                ctx.shadowColor = 'black'; ctx.shadowBlur = 4;
                 ctx.fillText(jugador.nombre, x, y + radio + 14);
-                // Reseteamos la sombra para que no afecte a otros dibujos
                 ctx.shadowBlur = 0;
             }
 
@@ -442,7 +416,7 @@
                         // Reemplazamos el contenido del div con un mensaje
                         container.innerHTML = `
                             <h2>Posible Alineación Local</h2>
-                            <p style="padding: 40px 0; color: #555;">
+                            <p style="padding: 40px 0; color: #a0a0c0;">
                                 Las alineaciones aún no están disponibles.
                             </p>
                         `;
@@ -486,7 +460,7 @@
                         // Reemplazamos el contenido del div con un mensaje
                         container.innerHTML = `
                             <h2>Posible Alineación Local</h2>
-                            <p style="padding: 40px 0; color: #555;">
+                            <p style="padding: 40px 0; color: #a0a0c0;">
                                 Las alineaciones aún no están disponibles.
                             </p>
                         `;
@@ -583,7 +557,7 @@
                 const h = canvas.height;
 
                 // Fondo verde
-                ctx.fillStyle = '#2A8C4A';
+                ctx.fillStyle = '#2a5f2a';
                 ctx.fillRect(0, 0, w, h);
 
                 // Líneas del campo

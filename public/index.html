@@ -3,114 +3,262 @@
 <head>
     <meta charset="UTF-8">
     <title>FootViz</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        table {
-            width: 80%;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #1a1a2e; /* Fondo oscuro principal */
+            color: #e0e0e0; /* Texto claro */
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto 30px auto;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #2a2a4a;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .header .form-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .header label {
+            font-size: 0.9rem;
+            font-weight: 300;
+        }
+
+        .header select {
+            background-color: #2a2a4a;
+            color: #e0e0e0;
+            border: 1px solid #4a4a6a;
+            border-radius: 8px;
+            padding: 10px 15px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .dashboard-wrapper {
+            display: flex;
+            gap: 30px;
+            max-width: 1400px;
             margin: 0 auto;
+            align-items: flex-start;
+        }
+
+        .dashboard-column-left {
+            flex: 2; /* Más espacio para la tabla principal */
+        }
+
+        .dashboard-column-right {
+            flex: 2; /* Menos espacio para las tarjetas secundarias */
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .card {
+            background-color: #1e1e3f; /* Un poco más claro que el fondo */
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            width: 100%;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 30px;
+        }
+
+        /* --- Estilos de Tablas --- */
+        table {
+            width: 100%;
             border-collapse: collapse;
         }
+
         th, td {
-            padding: 10px;
-            border: 1px solid #aaa;
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        thead tr {
+            border-bottom: 2px solid #4a4a6a;
+        }
+
+        th {
+            font-weight: 600;
+            color: #ffffff;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Alinear al centro algunas columnas de la tabla principal */
+        #tabla-equipos th:not(:nth-child(2)),
+        #tabla-equipos td:not(:nth-child(2)) {
             text-align: center;
         }
-        th {
-            background-color: #f2f2f2;
+
+        tbody tr {
+            border-bottom: 1px solid #2a2a4a;
+            transition: background-color 0.2s ease;
         }
+        
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background-color: #2a2a4a;
+            cursor: pointer;
+        }
+
         img {
-            width: 32px; 
-            height: auto;
+            width: 28px;
+            height: 28px;
             vertical-align: middle;
-            margin-right: 10px;
+            margin-right: 12px;
+            border-radius: 50%; /* Escudos redondos para un look moderno */
         }
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #4a4a6a;
+        }
+
+
     </style>
 </head>
 <body>
-    <h1 style="text-align:center;">FootViz</h1>
-    <form action="#">
-        <label for="liga">Selecciona una Liga</label>
-        <select id="liga">
-            <option value="premierleague" selected>Premier League</option>
-            <option value="laliga">La Liga</option>
-            <option value="seriea">Serie A</option>
-            <option value="bundesliga">Bundesliga</option>
-            <option value="ligueone">Ligue 1</option>
-        </select>
-    </form> 
+    <header class="header">
+        <h1>FootViz</h1>
+        <div class="form-container">
+            <label for="liga">Selecciona una Liga</label>
+            <select id="liga">
+                <option value="premierleague" selected>Premier League</option>
+                <option value="laliga">La Liga</option>
+                <option value="seriea">Serie A</option>
+                <option value="bundesliga">Bundesliga</option>
+                <option value="ligueone">Ligue 1</option>
+            </select>
+        </div>
+    </header>
     
-    <table id="tabla-equipos">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Equipo</th>
-                <th>PJ</th>
-                <th>V</th>
-                <th>E</th>
-                <th>D</th>
-                <th>Pts</th>
-                <th>DG</th>
-                <th>GA</th>
-                <th>GC</th>
+    <main class="dashboard-wrapper">
+        <div class="dashboard-column-left">
+            <div class="tabla-equipos-container">
+                <table id="tabla-equipos">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Equipo</th>
+                            <th>PJ</th>
+                            <th>V</th>
+                            <th>E</th>
+                            <th>D</th>
+                            <th>Pts</th>
+                            <th>DG</th>
+                            <th>GA</th>
+                            <th>GC</th>
 
-            </tr>
-        </thead>
-        <tbody>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                    </tbody>
+                </table>
+            </div>
             
-        </tbody>
-    </table>
+        </div>
 
-    <table id="ultimos-partidos">
-        <thead>
-            <tr>
-                <th colspan="4">Ultimos Partidos</th>
-            </tr>
-            <tr>
-                <th>Fecha</th>
-                <th>Local</th>
-                <th>Resultado</th>
-                
-                <th>Vistante</th>
-                
+        <div class="dashboard-column-right">
+            <div class="card" id="ultimos-partidos-container">
+                <table id="ultimos-partidos">
+                    <thead>
+                        <tr>
+                            <th colspan="4">Ultimos Partidos</th>
+                        </tr>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Local</th>
+                            <th>Resultado</th>
+                            
+                            <th>Vistante</th>
+                            
 
-            </tr>
-        </thead>
-        <tbody>
-            
-        </tbody>
-    </table>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                    </tbody>
+                </table>
+            </div>
+            <div class="stats-row">
+                <div class="card" id="maximos-goleadores-container">
+                    <table id="maximos-goleadores">
+                        <thead>
+                            <tr>
+                                <th colspan="2">Maximos Goleadores</th>
+                            </tr>
+                            <tr>
+                                <th>Jugadores</th>
+                                <th>Goles</th>
+                            </tr>
+                        
+                            
+                        </thead>
+                        <tbody>
+                            
+                        </tbody>
+                    </table>
+                </div>
 
-    <table id="maximos-goleadores">
-        <thead>
-            <tr>
-                <th colspan="2">Maximos Goleadores</th>
-            </tr>
-            <tr>
-                <th>Jugadores</th>
-                <th>Goles</th>
-            </tr>
-        
-            
-        </thead>
-        <tbody>
-            
-        </tbody>
-    </table>
+                <div class="card" id="mejores-valorados-container">
+                    <table id="mejores-valorados">
+                        <thead>
+                            <tr>
+                                <th colspan="2">Mejor Valoracion</th>
+                            </tr>
+                            <tr>
+                                <th>Jugador</th>
+                                <th>Rating</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                        </tbody>
+                    </table> 
+                </div>
 
-    <table id="mejores-valorados">
-        <thead>
-            <tr>
-                <th colspan="2">Mejor Valoracion</th>
-            </tr>
-            <tr>
-                <th>Jugador</th>
-                <th>Valoracion Promedio</th>
-            </tr>
-        </thead>
-        <tbody>
-            
-        </tbody>
-    </table>  
 
+            </div>
+        </div>
+    </main>
+    
+    
     <script> 
         document.querySelector("#maximos-goleadores tr").addEventListener("click", function() {
             window.location = "estadistica_ofensivas.html?liga=" + liga.value;

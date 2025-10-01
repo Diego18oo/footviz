@@ -2,56 +2,189 @@
 <html>
     <head> 
         <title>Footviz - Partidos</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+   
         <style>
-            table {
-                width: 80%;
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: 'Poppins', sans-serif;
+                background-color: #1a1a2e;
+                color: #e0e0e0;
+                padding: 20px;
+            }
+
+            /* --- Cabecera --- */
+            .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                max-width: 1400px;
+                margin: 0 auto 30px auto;
+                padding-bottom: 20px;
+                border-bottom: 1px solid #2a2a4a;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+                color: #ffffff;
+                font-weight: 700;
+            }
+
+            .header .controls-container {
+                display: flex;
+                align-items: center;
+                gap: 20px;
+            }
+            
+            
+            .control-group {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .header label {
+                font-size: 0.9rem;
+                font-weight: 300;
+            }
+
+            .header select {
+                background-color: #2a2a4a;
+                color: #e0e0e0;
+                border: 1px solid #4a4a6a;
+                border-radius: 8px;
+                padding: 10px 15px;
+                font-family: 'Poppins', sans-serif;
+                font-size: 0.9rem;
+                cursor: pointer;
+                transition: background-color 0.2s;
+            }
+            
+            .header select:hover {
+                background-color: #3a3a5a;
+            }
+            
+            /* --- Contenedor Principal --- */
+            .main-container {
+                max-width: 1400px;
                 margin: 0 auto;
+            }
+
+            /* --- Estilo de Tarjeta --- */
+            .card {
+                background-color: #1e1e3f;
+                border-radius: 12px;
+                padding: 20px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                width: 100%;
+            }
+
+            /* --- Estilos de Tabla --- */
+            table {
+                width: 100%;
                 border-collapse: collapse;
             }
             th, td {
-                padding: 10px;
-                border: 1px solid #aaa;
+                padding: 15px;
                 text-align: center;
             }
-            th {
-                background-color: #f2f2f2;
+            thead tr {
+                border-bottom: 2px solid #4a4a6a;
             }
+            th {
+                font-weight: 600;
+                color: #ffffff;
+                font-size: 0.8rem;
+                text-transform: uppercase;
+            }
+            tbody tr {
+                border-bottom: 1px solid #2a2a4a;
+                transition: background-color 0.2s ease;
+            }
+            tbody tr:last-child { 
+                border-bottom: none; 
+            }
+            tbody tr:hover { 
+                background-color: #2a2a4a;
+                cursor: pointer;
+            }
+            
             img {
                 width: 32px;
-                height: auto;
+                height: 32px;
                 vertical-align: middle;
-                margin-right: 10px;
+                border-radius: 50%;
+            }
+
+            /* --- Estilos específicos para la celda del partido --- */
+            .match-cell {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 20px;
+                font-size: 1.2rem;
+                font-weight: 600;
+            }
+
+            .match-cell .team {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+            }
+
+            .match-cell .team.local {
+                flex-direction: row-reverse;
+            }
+
+            .match-cell .score {
+                min-width: 80px; /* Ancho fijo para el marcador */
+                text-align: center;
             }
         </style>
     </head>
     <body>
-        <form action="#">
-            <label for="liga">Selecciona una Liga</label>
-            <select id="liga">
-                <option value="premierleague" selected>Premier League</option>
-                <option value="laliga">La Liga</option>
-                <option value="seriea">Serie A</option>
-                <option value="bundesliga">Bundesliga</option>
-                <option value="ligueone">Ligue 1</option>
-            </select>
-        </form> 
-        <form action="#">
-            <label for="jornada">Selecciona una jornada</label>
-            <select id="jornada">
-                
-            </select>
-        </form> 
-        <table id="tabla-partidos">
-            <thead>
-                <tr>
-                    <th>Partidos</th>
-                    <th>Fecha y Hora</th>
-                </tr>
-            </thead>
-            <tbody>
-                
-            </tbody>
-        </table>
+        <header class="header">
+            <h1>FootViz</h1>
+            <div class="controls-container">
+                <div class="control-group">
+                    <label for="liga">Liga</label>
+                    <select id="liga">
+                        <option value="premierleague" selected>Premier League</option>
+                        <option value="laliga">La Liga</option>
+                        <option value="seriea">Serie A</option>
+                        <option value="bundesliga">Bundesliga</option>
+                        <option value="ligueone">Ligue 1</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="jornada">Jornada</label>
+                    <select id="jornada"></select>
+                </div>
+            </div>
+        </header>
+        
+        <main class="main-container">
+            <div class="card">
+                <table id="tabla-partidos">
+                    <thead>
+                        <tr>
+                            <th>Partido</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+        </main>
+        
 
         <script>
             var tbody = document.querySelector("#tabla-partidos tbody");
@@ -110,7 +243,7 @@
                             const resultado = await resResponse.json();
                             const fila = document.createElement("tr");
                             fila.innerHTML = `
-                                <td>
+                                <td class="match-cell">
                                     <img src="${partido.escudo_local}" alt="Escudo local"> 
                                     ${resultado.goles_local} - ${resultado.goles_visitante} 
                                     <img src="${partido.escudo_visitante}" alt="Escudo visitante">
@@ -129,7 +262,8 @@
 
                             const fila = document.createElement("tr");
                             fila.innerHTML = `
-                                <td><img src="${partido.escudo_local}" alt="Escudo local">  -   <img src="${partido.escudo_visitante}" alt="Escudo visitante"></td>
+                                <td>
+                                    <img src="${partido.escudo_local}" alt="Escudo local">  -   <img src="${partido.escudo_visitante}" alt="Escudo visitante"></td>
                                 <td>${fechaParaMostrar}</td> 
                             `;
                             fila.addEventListener("click", function(){

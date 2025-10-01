@@ -22,7 +22,7 @@ print("Inicializando driver...")
 driver = init_driver()
 
 if today.day == 30: 
-    insert_update_plantilla_equipos(engine, driver, ligas_ids, temporadas_ids)
+    #insert_update_plantilla_equipos(engine, driver, ligas_ids, temporadas_ids)
     print("Todo las plantillas estan actualizadas")
 liga_fbref = [
     '9/Premier-League',
@@ -32,12 +32,12 @@ liga_fbref = [
     '13/Ligue-1'
 ]
 
-if len(df_partidos_futuros) > 0:
-    print("Entrando...")
-    for i in range(len(df_partidos_futuros)):
-        prematch_ref(engine, df_partidos_futuros.iloc[i] )
-        prematch_odds(engine, df_partidos_futuros.iloc[i])
-        insert_predicted_lineups(engine, df_partidos_futuros.iloc[i])
+#if len(df_partidos_futuros) > 0:
+    #print("Entrando...")
+    #for i in range(len(df_partidos_futuros)):
+      #  prematch_ref(engine, df_partidos_futuros.iloc[i] )
+       # prematch_odds(engine, df_partidos_futuros.iloc[i])
+      #  insert_predicted_lineups(engine, df_partidos_futuros.iloc[i])
 
 #verifica que si haya partidos el dia de ayer
 if len(df_partidos_ayer) == 0:
@@ -57,7 +57,7 @@ else:
         #links_totales.extend(lista_links)
     for i in range(len(df_partidos_ayer)):
         partido_sofascore = df_partidos_ayer['url_sofascore'][i].split(':')[2]  
-        lista_ids_sofascore.append(partido_sofascore)
+        #lista_ids_sofascore.append(partido_sofascore)
         #insert_update_partidos(engine, df_partidos_ayer.iloc[i]) 
         #insert_confirmed_lineups(engine, df_partidos_ayer.iloc[i])
         #print("Partido actualizado correctamente")
