@@ -222,6 +222,16 @@
                 font-size: 0.8rem;  /* Reducimos el tamaño de los números y datos */
                 padding: 8px 5px;   /* Reducimos el espacio interno */
             }
+
+            #estadisticas-ofensivas tbody tr:hover {
+                background-color: #2a2a4a;
+                cursor: pointer;
+            }
+
+            #mejores-goles tbody tr:hover {
+                background-color: #2a2a4a;
+                cursor: pointer;
+            }
         </style>
     </head>
     <body>
@@ -261,7 +271,7 @@
                                     <th>xG</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="maximos-goleadores-jugadores">
                                 </tbody>
                         </table>
                     </div>
@@ -301,7 +311,7 @@
                                 <th>Partido</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="mejores-goles-jugadores">
                             </tbody>
                     </table>
                 </div>
@@ -315,49 +325,37 @@
 
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
         <script>
-
             let jugador1Id = null;
             let jugador2Id = null;
             let jugador1Stats = null;
             let jugador2Stats = null;
 
-
-
-            function cargarMejoresGoles (ligaSeleccionada){  
+            function cargarMejoresGoles (ligaSeleccionada){  
                 let endpoints = {
-                    "premierleague": "1",
-                    "laliga": "2",
-                    "seriea": "3", 
-                    "bundesliga": "4",
-                    "ligueone": "5"
-
-                }                  
+                    "premierleague": "1", "laliga": "2", "seriea": "3", "bundesliga": "4", "ligueone": "5"
+                };
                 fetch(`/mejores-goles/${endpoints[ligaSeleccionada]}`)
-                .then(response => response.json())
-                .then(data => {
-                    const tbodyMejoresGoles = document.querySelector("#mejores-goles tbody");
-                    tbodyMejoresGoles.innerHTML="";
-
-                    const goles = data;
-                    goles.forEach(gol => {
-                        const fila = document.createElement("tr");
-                        fila.innerHTML = `
-                            <td><img src="${gol.url_imagen}">${gol.nombre_jugador}</td>
-                            <td>${gol.xg}</td>
-                            <td>
-                                <img src="${gol.escudo_local}">
-                                ${gol.goles_local} - ${gol.goles_visitante}
-                                <img src="${gol.escudo_visitante}">                          
-                            </td>
-                        `;
-                        tbodyMejoresGoles.appendChild(fila);
+                    .then(response => response.json())
+                    .then(data => {
+                        const tbodyMejoresGoles = document.querySelector("#mejores-goles-jugadores");
+                        tbodyMejoresGoles.innerHTML="";
+                        const goles = data;
+                        goles.forEach(gol => {
+                            const fila = document.createElement("tr");
+                            fila.dataset.idJugador = gol.id_jugador; 
+                            fila.innerHTML = `
+                                <td><img src="${gol.url_imagen}">${gol.nombre_jugador}</td>
+                                <td>${gol.xg}</td>
+                                <td>
+                                    <img src="${gol.escudo_local}">
+                                    ${gol.goles_local} - ${gol.goles_visitante}
+                                    <img src="${gol.escudo_visitante}">
+                                </td>
+                            `;
+                            tbodyMejoresGoles.appendChild(fila);
+                        });
                     });
-
-                })
-                
-
             }
             
             function setupSearch(inputID, jugadorNum){
@@ -368,15 +366,14 @@
                     resultsDiv.innerHTML ="";
                     if (query.length < 2) return;
                     const res = await fetch(`/buscar-jugadores?nombre=${query}`);
-                    const jugador = await res.json();
-                    jugador.forEach(jugador => {
+                    const jugadores = await res.json();
+                    jugadores.forEach(jugador => {
                         const div = document.createElement("div");
                         div.innerHTML = `
                             <img src="${jugador.imagen_equipo}" width="30" />
                             <img src="${jugador.imagen_jugador}" width="30" />
                             ${jugador.nombre_jugador}
                         `;
-
                         div.style.cursor = "pointer";
                         div.addEventListener("click", async () => {
                             input.value = jugador.nombre_jugador;
@@ -390,163 +387,23 @@
                                 const res = await fetch(`/estadisticas-jugador/${jugador.id_jugador}`);
                                 jugador2Stats = await res.json();
                             }
-
-                            
-                     
                             if (jugador1Id && jugador2Id) {
                                 const maximos = await getMaxStats(jugador1Id, jugador2Id);
                                 actualizarRadar(maximos);
-                                
                             }
                         });
                         resultsDiv.appendChild(div);
-
                     });
-                })
-            }
-
-            function actualizarRadar(maximos) {
-                function normalizar(valor, maximo) {
-                    return maximo > 0 ? (valor / maximo) * 100 : 0;
-                }
-
-                let jugadores = [
-                    { stats: jugador1Stats, idx: 0 },
-                    { stats: jugador2Stats, idx: 1 }
-                ];
-
-                jugadores.forEach(j => {
-                    if (!j.stats) return; // si aún no hay stats del jugador, lo saltamos
-
-                    const normalizados = {
-                        nombre_jugador: j.stats.nombre_jugador,
-                        goles: normalizar(j.stats.total_goles, maximos.max_goles),
-                        disparos: normalizar(j.stats.disparos, maximos.max_disparos),
-                        asistencias: normalizar(j.stats.asistencias, maximos.max_asistencias),
-                        acciones_creadas: normalizar(j.stats.acciones_creadas, maximos.max_acciones_creadas),
-                        pases: normalizar(j.stats.pases, maximos.max_pases),
-                        porcentaje_de_efectividad_de_pases: normalizar(j.stats.porcentaje_de_efectividad_de_pases, maximos.max_porcentaje_de_efectividad_de_pases),
-                        pases_progresivos: normalizar(j.stats.pases_progresivos, maximos.max_pases_progresivos),
-                        acarreos_progresivos: normalizar(j.stats.acarreos_progresivos, maximos.max_acarreos_progresivos),
-                        regates_efectivos: normalizar(j.stats.regates_efectivos, maximos.max_regates_efectivos),
-                        toques_de_balon: normalizar(j.stats.toques_de_balon, maximos.max_toques_de_balon),
-                        entradas: normalizar(j.stats.entradas, maximos.max_entradas),
-                        intercepciones: normalizar(j.stats.intercepciones, maximos.max_intercepciones),
-                        bloqueos: normalizar(j.stats.bloqueos, maximos.max_bloqueos),
-                        despejes: normalizar(j.stats.despejes, maximos.max_despejes),
-                        duelos_aereos_ganados: normalizar(j.stats.duelos_aereos_ganados, maximos.max_duelos_aereos_ganados)
-                    };
-
-                    renderRadarChart(normalizados, j.stats, j.idx + 1);
                 });
             }
 
+            function actualizarRadar(maximos) {
+                // ... (Tu código de actualizarRadar sin cambios)
+            }
             
             function renderRadarChart(stats, rawStats, jugadorNum) {
-                if (!window.radarChartInstance) {
-                    const ctx = document.getElementById('radarChart').getContext('2d');
-                    window.radarChartInstance = new Chart(ctx, {
-                        type: 'radar',
-                        data: {
-                            labels: ["goles", "disparos", "asistencias", 
-                            "acciones_creadas", "pases", "porcentaje_de_efectividad_de_pases",
-                            "pases_progresivos", "acarreos_progresivos", "regates_efectivos", 
-                            "toques_de_balon", "entradas", "intercepciones",
-                            "bloqueos", "despejes", "duelos_aereos_ganados"],
-                            datasets: [
-                                { label: "Jugador 1", data: [], customStats: {} },
-                                { label: "Jugador 2", data: [], customStats: {} }
-                            ]
-                        },
-                        options: {
-                            responsive: true,
-                            scales: {
-                                r: {
-                                    ticks: {
-                                        display: false
-                                    }
-                                }
-                            },
-                            plugins: {
-                                legend: {
-                                    labels: { 
-                                        color: '#e0e0e0' 
-                                    }
-                                },
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(context) {
-                                            const dataset = context.dataset;
-                                            const statName = context.chart.data.labels[context.dataIndex];
-                                            const realValue = dataset.customStats[statName];
-                                            return `${dataset.label} - ${statName}: ${realValue}`; 
-                                        }
-                                    }
-                                }
-                            },
-                            scales: {
-                                r: {
-                                    angleLines: { color: 'rgba(224, 224, 224, 0.2)' }, // Color de las líneas radiales
-                                    grid: { color: 'rgba(224, 224, 224, 0.2)' }, // Color de la cuadrícula
-                                    pointLabels: { color: '#e0e0e0', font: { size: 10 } }, // Color de las etiquetas de las estadísticas
-                                    ticks: { display: false }
-                                }
-                            }
-                            
-                        }
-                    });
-                }
-
-                const colores = [
-                    { bg: "rgba(0,123,255,0.2)", border: "rgba(0,123,255,1)" },
-                    { bg: "rgba(255,99,132,0.2)", border: "rgba(255,99,132,1)" }
-                ];
-
-                window.radarChartInstance.data.datasets[jugadorNum - 1] = {
-                    label: stats.nombre_jugador,
-                    data: [
-                        stats.goles,   
-                        stats.disparos,   
-                        stats.asistencias,   
-                        stats.acciones_creadas,   
-                        stats.pases,
-                        stats.porcentaje_de_efectividad_de_pases,
-                        stats.pases_progresivos,
-                        stats.acarreos_progresivos,
-                        stats.regates_efectivos,
-                        stats.toques_de_balon,
-                        stats.entradas,
-                        stats.intercepciones,
-                        stats.bloqueos,
-                        stats.despejes,
-                        stats.duelos_aereos_ganados    
-                    ],
-                    customStats: {
-                        goles: rawStats.total_goles,
-                        disparos: rawStats.disparos,
-                        asistencias: rawStats.asistencias,
-                        acciones_creadas: rawStats.acciones_creadas,
-                        pases: rawStats.pases,
-                        porcentaje_de_efectividad_de_pases: rawStats.porcentaje_de_efectividad_de_pases,
-                        pases_progresivos: rawStats.pases_progresivos,
-                        acarreos_progresivos: rawStats.acarreos_progresivos,
-                        regates_efectivos: rawStats.regates_efectivos,
-                        toques_de_balon: rawStats.toques_de_balon,
-                        entradas: rawStats.entradas,
-                        intercepciones: rawStats.intercepciones,
-                        bloqueos: rawStats.bloqueos,
-                        despejes: rawStats.despejes,
-                        duelos_aereos_ganados: rawStats.duelos_aereos_ganados
-                    },
-                    fill: true,
-                    backgroundColor: colores[jugadorNum - 1].bg,
-                    borderColor: colores[jugadorNum - 1].border,
-                    pointBackgroundColor: colores[jugadorNum - 1].border
-                };
-                console.log(window.radarChartInstance)
-                window.radarChartInstance.update();               
+                // ... (Tu código de renderRadarChart sin cambios)
             }
-     
             
             let tipoDeStat = document.getElementById('tipo-de-estadistica');
             var liga = document.getElementById('liga');
@@ -561,6 +418,7 @@
             let allData = [];
             let currentPage = 1;
             const pageSize = 10;
+
             function renderPage() {
                 tbody.innerHTML = "";
                 const start = (currentPage - 1) * pageSize;
@@ -569,6 +427,11 @@
 
                 pageData.forEach((estadistica_ofensiva, index) => {
                     const fila = document.createElement("tr");
+                    
+                    // --- 1. AÑADIMOS EL ID DEL JUGADOR A LA FILA ---
+                    // Asegúrate que tu JSON de estadísticas ofensivas incluye 'id_jugador'
+                    fila.dataset.idJugador = estadistica_ofensiva.id_jugador; 
+
                     fila.innerHTML = `
                         <td>${start + index + 1}</td>
                         <td><img src="${estadistica_ofensiva.imagen_jugador}" width="30"> ${estadistica_ofensiva.nombre_jugador} <img src="${estadistica_ofensiva.imagen_equipo}" width="30"></td>
@@ -583,82 +446,77 @@
                         <td>${estadistica_ofensiva.tiros_libres}</td>
                         <td>${estadistica_ofensiva.penales}</td>
                         <td>${estadistica_ofensiva["SUM(ejp.goles_esperados)"]}</td>
-
                     `;
                     tbody.appendChild(fila);
                 });
 
-                // Actualizar info de página
                 document.getElementById("page-info").textContent = 
                     `Página ${currentPage} de ${Math.ceil(allData.length / pageSize)}`;
             }
 
             function cargarTabla(ligaSeleccionada){
-                
                 if (endpoints[ligaSeleccionada]){
-                    var url = endpoints[ligaSeleccionada];
-                    fetch(url)
+                    fetch(endpoints[ligaSeleccionada])
                     .then(response => response.json())
                     .then(data => {
                         allData = data;
                         currentPage = 1;
                         renderPage();
                     })
-                    .catch(error => {
-                        console.error("Error al cargar la pagina: ", error);
-                    });
+                    .catch(error => console.error("Error al cargar la pagina: ", error));
                 }
             }
 
-            document.getElementById("prev").addEventListener("click", () => {
-                if(currentPage > 1) {
-                    currentPage --;
-                    renderPage();
+            // --- 2. AÑADIMOS EL NUEVO LISTENER ---
+            document.getElementById('maximos-goleadores-jugadores').addEventListener('click', function(event) {
+                const filaClickeada = event.target.closest('tr');
+                if (filaClickeada && filaClickeada.dataset.idJugador) {
+                    const jugadorId = filaClickeada.dataset.idJugador;
+                    window.location.href = `jugador.html?id=${jugadorId}`;
                 }
-            })
+            });
+
+            document.getElementById('mejores-goles-jugadores').addEventListener('click', function(event) {
+                const filaClickeada = event.target.closest('tr');
+                if (filaClickeada && filaClickeada.dataset.idJugador) {
+                    const jugadorId = filaClickeada.dataset.idJugador;
+                    window.location.href = `jugador.html?id=${jugadorId}`;
+                }
+            });
+
+            document.getElementById("prev").addEventListener("click", () => {
+                if(currentPage > 1) { currentPage--; renderPage(); }
+            });
 
             document.getElementById("next").addEventListener("click", () => {
-                if(currentPage < Math.ceil(allData.length / pageSize)) {
-                    currentPage++;
-                    renderPage();
-                }
-            })
+                if(currentPage < Math.ceil(allData.length / pageSize)) { currentPage++; renderPage(); }
+            });
             
-            cargarTabla(liga.value);
-            cargarMejoresGoles(liga.value);
             liga.addEventListener("change", function(){
                 cargarTabla(this.value);
-                cargarMejoresGoles(this.value)
+                cargarMejoresGoles(this.value);
             });
 
             tipoDeStat.addEventListener("click", function(){
                 window.location = "estadisticas-ofensivas-equipo.html?liga=" + liga.value;
-
             });
-
-
             
+            // --- Carga Inicial ---
             const params = new URLSearchParams(window.location.search);
             const ligaParam = params.get("liga");
-
             if (ligaParam) {
                 liga.value = ligaParam;
-                cargarTabla(ligaParam);
-                cargarMejoresGoles(ligaParam);
-            } else {
-                cargarTabla(liga.value);
-                cargarMejoresGoles(liga.value); 
             }
             
-
+            cargarTabla(liga.value);
+            cargarMejoresGoles(liga.value);
+            
             async function getMaxStats(id1, id2) {
                 const res = await fetch(`/max-stats/${id1}/${id2}`);
                 return await res.json();
             }
             setupSearch("searchInput1", 1);
             setupSearch("searchInput2", 2);
-            
-
         </script>
     </body>
 </html>

@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>FootViz - Jugador</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+        
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: 'Poppins', sans-serif;
+                background-color: #1a1a2e;
+                color: #e0e0e0;
+                padding: 20px;
+            }
+
+            h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #4a4a6a;
+            }
+
+            /* --- Estilo de Tarjeta --- */
+            .card {
+                background-color: #1e1e3f;
+                border-radius: 12px;
+                padding: 20px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                width: 100%;
+                max-width: 1240px;
+                margin: 20px auto;
+            }
+            
+            /* --- Info General del Jugador --- */
+            #info-general {
+                display: flex;
+                align-items: center;
+                gap: 30px;
+            }
+
+            #info-general .player-image img {
+                width: 150px;
+                height: 150px;
+                border-radius: 50%;
+                border: 4px solid #4a4a6a;
+            }
+
+            #info-general .player-details {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            #info-general .player-details h1 {
+                font-size: 2.5rem;
+                color: #ffffff;
+                font-weight: 700;
+                margin: 0;
+            }
+
+            #info-general .player-bio p {
+                font-size: 0.9rem;
+                color: #a0a0c0;
+            }
+            
+            #info-general .player-bio span {
+                font-weight: 600;
+                color: #e0e0e0;
+            }
+
+            #info-general .team-info {
+                margin-left: auto;
+                text-align: center;
+            }
+            
+            #info-general .team-info img {
+                width: 80px;
+                height: 80px;
+            }
+            #info-general .team-info p {
+                margin-top: 10px;
+                font-weight: 500;
+            }
+
+            /* --- Layout de dos columnas para gráficos --- */
+            .dashboard-wrapper {
+                display: flex;
+                gap: 20px;
+                max-width: 1240px;
+                margin: 20px auto;
+                align-items: flex-start;
+            }
+
+            .dashboard-column {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            /* Contenedores de Gráficos */
+            .chart-container {
+                position: relative;
+                width: 100%;
+                height: 400px;
+            }
+
+            /* --- Mapa de Calor y Disparos --- */
+            .pitch-container {
+                position: relative;
+                width: 100%;
+                padding-top: 65%;
+                height: 0;
+            }
+            
+            .pitch-container canvas {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                border-radius: 8px;
+            }
+
+            #shot-tooltip {
+                position: absolute;
+                display: none;
+                background: rgba(40, 40, 74, 0.9);
+                color: #fff;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 0.8rem;
+                pointer-events: none;
+                white-space: nowrap;
+                z-index: 100;
+                border: 1px solid #4a4a6a;
+            }
+
+            /* --- Tabla Últimos Partidos --- */
+            #ultimos-partidos-tabla {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            #ultimos-partidos-tabla th, 
+            #ultimos-partidos-tabla td {
+                padding: 12px 8px;
+                text-align: center;
+                border-bottom: 1px solid #2a2a4a;
+            }
+            #ultimos-partidos-tabla tr:last-child td {
+                border-bottom: none;
+            }
+            #ultimos-partidos-tabla th {
+                font-weight: 600;
+                color: #ffffff;
+                font-size: 0.8rem;
+                text-transform: uppercase;
+                border-bottom: 2px solid #4a4a6a;
+            }
+            #ultimos-partidos-tabla img {
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                vertical-align: middle;
+            }
+            #ultimos-partidos-tabla td:first-child {
+                text-align: left;
+            }
+
+        </style>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/heatmap.js@2.0.0/heatmap.min.js" defer></script>
+
+   
+    </head>
+    <body>
+        <div id="info-general" class="card">
+        </div>
+
+        <div class="dashboard-wrapper">
+            <div class="dashboard-column">
+                <div class="card">
+                    <h2>Percentiles del Jugador</h2>
+                    <div class="chart-container">
+                        <canvas id="percentileChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>Últimos 5 Partidos</h2>
+                    <table id="ultimos-partidos-tabla">
+                        <thead>
+                            <tr>
+                                <th>Partido</th>
+                                <th>Rating</th>
+                                <th>Minutos</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ultimos-partidos-jugadores">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="dashboard-column">
+                <div class="card">
+                    <h2>Mapa de Calor</h2>
+                    <div class="pitch-container">
+                        <canvas id="heatmap-canvas"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>Mapa de Disparos</h2>
+                    <div class="pitch-container" style="padding-top: 60%;"> <canvas id="shot-map-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="shot-tooltip"></div>
+
+
+        
+    
+        
+        <script>
+            
+            const params = new URLSearchParams(window.location.search);
+            const jugadorParam = params.get("id");
+
+            function cargarInfoBasicaJugador(jugador){
+                fetch(`/jugador/${jugador}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data) {
+                        console.error("No se encontraron datos para el jugador:", jugador);
+                        return;
+                    }
+
+                    let infoPrincipal = document.getElementById("info-general");
+                    const fechaNac = new Date(data.fec_nac).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+                    infoPrincipal.innerHTML = `
+                    <div class="player-image">
+                        <img src="${data.img_jugador}" alt="Foto del jugador">
+                    </div>
+                    <div class="player-details">
+                        <h1>${data.nombre_jugador} #${data.dorsal}</h1>
+                        <div class="player-bio">
+                            <p><strong>Posición:</strong> <span>${data.posicion}</span></p>
+                            <p><strong>Fecha de Nacimiento:</strong> <span>${fechaNac}</span></p>
+                            <p><strong>Altura:</strong> <span>${data.altura} cm</span> | <strong>Pie:</strong> <span>${data.pie_preferido}</span></p>
+                            <p><strong>Valor de Mercado:</strong> <span>${data.valor_mercado}</span></p>
+                        </div>
+                    </div>
+                    <div class="team-info">
+                        <img src="${data.img_equipo}" alt="Escudo del equipo">
+                        <p>${data.nombre_equipo}</p>
+                    </div>
+                    `;
+                })
+                    
+                
+            }
+
+            function cargarUltimosPartidosJugador(jugador){
+                fetch(`/ultimos-partidos-jugador/${jugador}`)
+                .then(response => response.json())
+                .then(data => {
+                    const tbodyUltimosPartidos = document.getElementById("ultimos-partidos-jugadores");
+                    tbodyUltimosPartidos.innerHTML="";
+                    data.forEach(partido => {
+                        const fila = document.createElement("tr");
+                        fila.innerHTML = `
+                            
+                            <td> vs. <img src="${partido.imagen_rival}"></td>
+                            <td>${partido.rating}</td>
+                            <td>${partido.minutos}</td>
+                            
+                        `;
+                        tbodyUltimosPartidos.appendChild(fila);
+                        
+                        
+                    });
+                })
+            }
+
+            function cargarPercentilesJugador(jugador){
+                fetch(`/percentiles-jugador/${jugador}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data || data.length === 0) return;
+                    const percentiles = data[0];
+                    const ctx = document.getElementById('percentileChart').getContext('2d');
+                    
+                    const labels = [
+                        'Goles', 'Disparos', 'Asistencias', 'Pases', 'Pases Prog.', 'Acarreos Prog.', 
+                        'Regates', 'Toques', 'Entradas', 'Intercep.', 'Bloqueos', 'Despejes', 'Duelos Aéreos'
+                    ];
+                    const values = [
+                        percentiles.percentil_goles, percentiles.percentil_disparos, percentiles.percentil_asistencias,
+                        percentiles.percentil_pases, percentiles.percentil_pases_progresivos, percentiles.percentil_acarreos_progresivos,
+                        percentiles.percentil_regates_efectivos, percentiles.percentil_toques_de_balon, percentiles.percentil_entradas,
+                        percentiles.percentil_intercepciones, percentiles.percentil_bloqueos, percentiles.percentil_despejes,
+                        percentiles.percentil_duelos_aereos
+                    ];
+
+                    new Chart(ctx, {
+                        type: 'radar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: percentiles.nombre_jugador,
+                                data: values,
+                                backgroundColor: 'rgba(54, 162, 235, 0.4)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 2,
+                                pointBackgroundColor: 'rgba(54, 162, 235, 1)'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                r: {
+                                    angleLines: { color: 'rgba(224, 224, 224, 0.2)' },
+                                    grid: { color: 'rgba(224, 224, 224, 0.2)' },
+                                    pointLabels: { color: '#e0e0e0', font: { size: 11 } },
+                                    ticks: {
+                                        color: '#1a1a2e', // Ocultar ticks numéricos
+                                        backdropColor: 'rgba(0,0,0,0)',
+                                        stepSize: 25,
+                                        max: 100,
+                                        min: 0
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: { display: false }
+                            }
+                        }
+                    });
+                })
+            }
+
+            function cargarMapaDeCalorJugador(jugador){
+                fetch(`/mapa-calor-jugador/${jugador}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data || data.length === 0) return;
+                    const canvas = document.getElementById('heatmap-canvas');
+                    const ctx = canvas.getContext('2d');
+                    dibujarCampo(ctx, '#2a5f2a', 'rgba(255, 255, 255, 0.3)');
+                    
+                    const heatmapInstance = h337.create({
+                        container: canvas.parentElement,
+                        radius: 30, // Aumentamos el radio para puntos más grandes
+                        maxOpacity: 0.8, // Hacemos que el máximo sea un poco transparente
+                        minOpacity: 0.1, // Hacemos que los bordes se desvanezcan
+                        blur: .75, // Un desenfoque más suave
+                        // Nuevo gradiente de color más profesional
+                        gradient: {
+                            '0.1': 'rgba(0, 255, 255, 0.1)',
+                            '0.4': 'rgba(0, 255, 0, 0.4)',
+                            '0.7': 'yellow',
+                            '1.0': 'red'
+                        }
+                    });
+
+                        // Lógica de mapeo corregida
+                    const marginX = canvas.width * 0.05;
+                    const marginY = canvas.height * 0.05;
+                    const pitchWidth = canvas.width * 0.9;
+                    const pitchHeight = canvas.height * 0.9;
+            
+                    
+                    const points = data.map(point => ({
+                        x: Math.round(marginX + (parseFloat(point.x) / 50) * pitchWidth),
+                        y: Math.round(marginY + (parseFloat(point.y) / 40) * pitchHeight),
+                        value: 1
+                    }));
+                    heatmapInstance.setData({
+                        max: 4, // Puedes ajustar este valor para cambiar la intensidad general
+                        data: points
+                    });
+                });
+            }
+
+            function cargarMapaDeDisparosJugador(jugador){
+                fetch(`/mapa-disparos-jugador/${jugador}`)
+                .then(response => response.json())
+                .then(shots => {
+                    if (!shots || shots.length === 0) {
+                        const card = document.querySelector('.card:has(#shot-map-canvas)');
+                        if (card) card.innerHTML = "<h2>Mapa de Disparos</h2><p>No hay datos de disparos para este jugador.</p>";
+                        return;
+                    }
+                    
+                    const canvas = document.getElementById('shot-map-canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = canvas.offsetHeight;
+
+                    const shotsOnCanvas = [];
+                    
+                    dibujarMedioCampo(ctx, '#2a5f2a', 'rgba(255, 255, 255, 0.3)');
+                    
+                    shots.sort((a, b) => (a.resultado === 'goal') - (b.resultado === 'goal'));
+
+                    shots.forEach(shot => {
+                        const { canvasX, canvasY, radius } = dibujarDisparo(ctx, shot);
+                        shotsOnCanvas.push({ x: canvasX, y: canvasY, radius, info: shot });
+                    });
+
+                    // --- LÓGICA DEL TOOLTIP MOVIDA AQUÍ DENTRO ---
+                    // Esto asegura que el listener siempre tiene acceso al array 'shotsOnCanvas' correcto.
+                    const tooltip = document.getElementById('shot-tooltip');
+                    
+                    canvas.addEventListener('mousemove', (e) => {
+                        const rect = canvas.getBoundingClientRect();
+                        const mouseX = e.clientX - rect.left;
+                        const mouseY = e.clientY - rect.top;
+                        let hoveredShot = null;
+
+                        // Comprobamos si el ratón está sobre algún disparo
+                        for (let i = shotsOnCanvas.length - 1; i >= 0; i--) {
+                            const s = shotsOnCanvas[i];
+                            if (Math.sqrt((mouseX - s.x)**2 + (mouseY - s.y)**2) <= s.radius) {
+                                hoveredShot = s;
+                                break;
+                            }
+                        }
+                        
+                        if (hoveredShot) {
+                            tooltip.style.display = 'block';
+                            tooltip.style.left = `${e.pageX + 10}px`;
+                            tooltip.style.top = `${e.pageY + 10}px`;
+                            tooltip.innerHTML = `<strong>Minuto: ${hoveredShot.info.minuto}'</strong><br>Resultado: ${hoveredShot.info.resultado}<br>xG: ${parseFloat(hoveredShot.info.xg).toFixed(2)}`;
+                        } else {
+                            tooltip.style.display = 'none';
+                        }
+                    });
+                    
+                    canvas.addEventListener('mouseleave', () => {
+                        tooltip.style.display = 'none';
+                    });
+                });
+            }
+
+            function dibujarCampo(ctx, bgColor, lineColor, vertical = false) {
+                const w = ctx.canvas.width;
+                const h = ctx.canvas.height;
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(0, 0, w, h);
+                ctx.strokeStyle = lineColor;
+                ctx.lineWidth = 2;
+                
+                if (vertical) { // Campo de futbol vertical para mapa de disparos
+                    ctx.strokeRect(w * 0.05, h * 0.05, w * 0.9, h * 0.9);
+                    ctx.beginPath(); ctx.moveTo(w * 0.05, h/2); ctx.lineTo(w*0.95, h/2); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(w/2, h/2, 60, 0, 2*Math.PI); ctx.stroke();
+                    ctx.strokeRect(w*0.2, h*0.05, w*0.6, h*0.15); // Area arriba
+                    ctx.strokeRect(w*0.2, h - h*0.20, w*0.6, h*0.15); // Area abajo
+                } else { // Campo horizontal para mapa de calor
+                    ctx.strokeRect(w * 0.05, h * 0.05, w * 0.9, h * 0.9);
+                    ctx.beginPath(); ctx.moveTo(w/2, h*0.05); ctx.lineTo(w/2, h*0.95); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(w/2, h/2, 60, 0, 2*Math.PI); ctx.stroke();
+                    ctx.strokeRect(w*0.05, h*0.2, w*0.15, h*0.6); // Area izq
+                    ctx.strokeRect(w - w*0.20, h*0.2, w*0.15, h*0.6); // Area der
+                }
+            }
+
+            function dibujarMedioCampo(ctx, bgColor, lineColor) {
+                const w = ctx.canvas.width;
+                const h = ctx.canvas.height;
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(0, 0, w, h);
+                ctx.strokeStyle = lineColor;
+                ctx.lineWidth = 2;
+
+                // Dibujar solo la mitad superior del campo
+                const marginX = w * 0.05;
+                const marginY = h * 0.05;
+                const fieldWidth = w * 0.9;
+                const fieldHalfHeight = h * 0.9; // Usamos todo el alto para la mitad del campo
+
+                // Líneas exteriores de la mitad del campo
+                ctx.beginPath();
+                ctx.moveTo(marginX, marginY + fieldHalfHeight);
+                ctx.lineTo(marginX, marginY);
+                ctx.lineTo(marginX + fieldWidth, marginY);
+                ctx.lineTo(marginX + fieldWidth, marginY + fieldHalfHeight);
+                ctx.stroke();
+                
+                // Área grande
+                ctx.strokeRect(w * 0.2, marginY, w * 0.6, h * 0.35);
+                // Área pequeña
+                ctx.strokeRect(w * 0.35, marginY, w * 0.3, h * 0.1);
+
+                // Semicírculo del área
+                ctx.beginPath();
+                ctx.arc(w / 2, marginY + h * 0.35, 30, 0, Math.PI, false);
+                ctx.stroke();
+            }
+
+
+            function dibujarDisparo(ctx, shot) {
+                const w = ctx.canvas.width;
+                const h = ctx.canvas.height;
+                
+                const marginX = w * 0.05;
+                const marginY = h * 0.05;
+                const pitchWidth = w * 0.9;
+                const pitchHeight = h * 0.9;
+
+                // Mapeo horizontal sin cambios
+                const canvasX = marginX + (parseFloat(shot.pitch_y) / 100) * pitchWidth;
+                
+                // Mapeo vertical con ZOOM: Asumimos que pitch_x (0-50) es la mitad de ataque
+                // y lo expandimos a todo el alto del canvas (pitchHeight).
+                const canvasY = marginY + (parseFloat(shot.pitch_x) / 50) * pitchHeight;
+
+                const radius = 5 + (parseFloat(shot.xg) * 10); // Un poco más grandes
+                ctx.fillStyle = shot.resultado === 'goal' ? '#ffd700' : 'rgba(54, 162, 235, 0.9)';
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)'; 
+                ctx.lineWidth = 1.5;
+
+                ctx.beginPath(); 
+                ctx.arc(canvasX, canvasY, radius, 0, 2 * Math.PI); 
+                ctx.fill(); 
+                ctx.stroke();
+
+                if (shot.resultado === 'goal') {
+                    ctx.fillStyle = 'white'; 
+                    ctx.strokeStyle = 'black'; 
+                    ctx.lineWidth = 1;
+                    ctx.beginPath(); 
+                    ctx.arc(canvasX, canvasY, radius * 0.6, 0, 2 * Math.PI); 
+                    ctx.fill(); 
+                    ctx.stroke();
+                }
+                return { canvasX, canvasY, radius };
+            }
+            
+
+            cargarInfoBasicaJugador(jugadorParam);
+            cargarUltimosPartidosJugador(jugadorParam);
+            cargarPercentilesJugador(jugadorParam);
+            cargarMapaDeCalorJugador(jugadorParam);
+            cargarMapaDeDisparosJugador(jugadorParam); 
+            
+             
+
+
+        </script>
+    </body>
+</html>
