@@ -21,14 +21,58 @@
                 padding: 20px;
             }
 
-            h2 {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #ffffff;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #4a4a6a;
+            .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                max-width: 1240px;
+                margin: 0 auto 30px auto;
+                padding-bottom: 20px;
+                border-bottom: 1px solid #2a2a4a;
             }
+            .header h1 {
+                font-size: 2rem;
+                color: #ffffff;
+                font-weight: 700;
+            }
+            .search-container {
+                position: relative;
+                width: 300px;
+            }
+            .search-container input {
+                width: 100%;
+                padding: 10px 15px;
+                background-color: #2a2a4a;
+                border: 1px solid #4a4a6a;
+                border-radius: 8px;
+                color: #e0e0e0;
+                font-family: 'Poppins', sans-serif;
+                font-size: 0.9rem;
+            }
+            .search-results {
+                position: absolute;
+                width: 100%;
+                background-color: #2a2a4a;
+                border: 1px solid #4a4a6a;
+                border-radius: 8px;
+                margin-top: 5px;
+                z-index: 100;
+                max-height: 300px;
+                overflow-y: auto;
+            }
+            .search-results div {
+                padding: 10px;
+                cursor: pointer;
+                border-bottom: 1px solid #1e1e3f;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-size: 0.9rem;
+            }
+            .search-results div:hover { background-color: #3a3a5a; }
+            .search-results img { width: 24px; height: 24px; border-radius: 50%; }
+            /* === FIN DE CAMBIOS PARA EL HEADER Y SEARCHBOX === */
+
 
             /* --- Estilo de Tarjeta --- */
             .card {
@@ -79,7 +123,7 @@
             }
 
             #info-general .team-info {
-                margin-left: auto;
+               
                 text-align: center;
             }
             
@@ -177,6 +221,8 @@
                 text-align: left;
             }
 
+            
+
         </style>
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
@@ -185,7 +231,14 @@
    
     </head>
     <body>
-        <div id="info-general" class="card">
+        <header class="header">
+            <h1>FootViz</h1>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Buscar otro jugador..." />
+                <div class="search-results" id="searchResults"></div>
+            </div>
+        </header>
+        <div id="info-general" class="card">            
         </div>
 
         <div class="dashboard-wrapper">
@@ -236,6 +289,7 @@
             
             const params = new URLSearchParams(window.location.search);
             const jugadorParam = params.get("id");
+
 
             function cargarInfoBasicaJugador(jugador){
                 fetch(`/jugador/${jugador}`)
@@ -384,7 +438,7 @@
                     
                     const points = data.map(point => ({
                         x: Math.round(marginX + (parseFloat(point.x) / 50) * pitchWidth),
-                        y: Math.round(marginY + (parseFloat(point.y) / 40) * pitchHeight),
+                        y: 360- (Math.round(marginY + (parseFloat(point.y) / 40) * pitchHeight)),
                         value: 1
                     }));
                     heatmapInstance.setData({
@@ -551,12 +605,46 @@
                 return { canvasX, canvasY, radius };
             }
             
+            function setupSearch(inputID, resultsID) {
+                const input = document.getElementById(inputID);
+                const resultsDiv = document.getElementById(resultsID);
+
+                input.addEventListener("input", async (e) => {
+                    const query = e.target.value;
+                    resultsDiv.innerHTML = "";
+                    if (query.length < 2) return;
+
+                    const res = await fetch(`/buscar-jugadores?nombre=${query}`);
+                    const jugadores = await res.json();
+                    
+                    jugadores.forEach(jugador => {
+                        const div = document.createElement("div");
+                        div.innerHTML = `
+                            <img src="${jugador.imagen_jugador}" />
+                            <span>${jugador.nombre_jugador}</span>
+                            <img src="${jugador.imagen_equipo}" style="margin-left: auto;" />
+                        `;
+                        div.addEventListener("click", () => {
+                            // Redirigir a la página del jugador seleccionado
+                            window.location.href = `jugador.html?id=${jugador.id_jugador}`;
+                        });
+                        resultsDiv.appendChild(div);
+                    });
+                });
+                // Opcional: Ocultar resultados si se hace clic fuera
+                document.addEventListener('click', function(event) {
+                    if (!input.contains(event.target)) {
+                        resultsDiv.innerHTML = '';
+                    }
+                });
+            }
 
             cargarInfoBasicaJugador(jugadorParam);
             cargarUltimosPartidosJugador(jugadorParam);
             cargarPercentilesJugador(jugadorParam);
             cargarMapaDeCalorJugador(jugadorParam);
             cargarMapaDeDisparosJugador(jugadorParam); 
+            setupSearch("searchInput", "searchResults");
             
              
 
