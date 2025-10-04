@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>FootViz - Comparar</title>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/heatmap.js@2.0.0/heatmap.min.js" defer></script>
+
+        <style>
+            /* --- Estilos Globales y de Cabecera (similares a jugador.html) --- */
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: 'Poppins', sans-serif; background-color: #1a1a2e; color: #e0e0e0; padding: 20px; }
+            .header { display: flex; justify-content: space-between; align-items: center; max-width: 1400px; margin: 0 auto 30px auto; padding-bottom: 20px; border-bottom: 1px solid #2a2a4a; }
+            .header h1 { font-size: 2rem; color: #ffffff; font-weight: 700; }
+            .card { background-color: #1e1e3f; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); width: 100%; }
+            h2 { font-size: 1.2rem; font-weight: 600; color: #ffffff; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #4a4a6a; }
+
+            /* --- Layout Principal de Comparación --- */
+            .comparison-wrapper {
+                display: flex;
+                gap: 20px;
+                max-width: 1400px;
+                margin: 20px auto;
+                align-items: flex-start;
+            }
+            .player-column {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            /* --- Estilos de la Tarjeta de Información del Jugador --- */
+            .info-card { display: flex; align-items: center; gap: 20px;  }
+            .info-card .player-image img { width: 120px; height: 120px; border-radius: 50%; border: 4px solid #4a4a6a; }
+            .info-card .player-details { display: flex; flex-direction: column; gap: 5px; }
+            .info-card .player-details h1 { font-size: 1.8rem; color: #ffffff; font-weight: 700; }
+            .info-card .player-bio p { font-size: 0.8rem; color: #a0a0c0; }
+            .info-card .player-bio span { font-weight: 600; color: #e0e0e0; }
+            .info-card .team-info { margin-left: auto; text-align: center; }
+            .info-card .team-info img { width: 60px; height: 60px; }
+            .info-card .team-info p { margin-top: 5px; font-weight: 500; font-size: 0.9rem; }
+
+            /* --- Estilos de los contenedores de gráficos --- */
+            .chart-container { position: relative; width: 100%; height: 350px; }
+            .pitch-container { position: relative; width: 100%; padding-top: 65%; height: 0; }
+            .pitch-container canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px; }
+            #shot-tooltip { position: absolute; display: none; background: rgba(40, 40, 74, 0.9); color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; pointer-events: none; white-space: nowrap; z-index: 100; border: 1px solid #4a4a6a; }
+            
+            /* --- Estilos para la columna derecha (placeholder y búsqueda) --- */
+            #add-player-container {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                min-height: 500px;
+                border: 2px dashed #2a2a4a;
+                border-radius: 12px;
+                padding: 20px;
+            }
+            #add-player-btn {
+                background-color: #007bff; color: #ffffff; border: none; border-radius: 8px; padding: 15px 30px;
+                font-family: 'Poppins', sans-serif; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s;
+            }
+            #add-player-btn:hover { background-color: #0056b3; }
+            
+            .search-container { position: relative; width: 100%; }
+            .search-container input { width: 100%; padding: 10px 15px; background-color: #2a2a4a; border: 1px solid #4a4a6a; border-radius: 8px; color: #e0e0e0; font-size: 0.9rem; }
+            .search-results { position: absolute; width: 100%; background-color: #2a2a4a; border: 1px solid #4a4a6a; border-radius: 8px; margin-top: 5px; z-index: 100; max-height: 300px; overflow-y: auto; }
+            .search-results div { padding: 10px; cursor: pointer; border-bottom: 1px solid #1e1e3f; display: flex; align-items: center; gap: 10px; font-size: 0.9rem; }
+            .search-results div:hover { background-color: #3a3a5a; }
+            .search-results img { width: 24px; height: 24px; border-radius: 50%; }
+
+        </style>
+
+    </head>
+    <body>
+        <header class="header">
+            <h1>FootViz - Comparar</h1>
+        </header>
+
+        
+
+        <div class="comparison-wrapper" id="comparison-wrapper">
+            <!-- Las columnas de los jugadores se generarán aquí -->
+        </div>
+
+        <div class="card">
+            <h2>Percentiles Comparados</h2>
+            <div class="chart-container">
+                <canvas id="percentileChart"></canvas>
+            </div>
+        </div>
+        <div id="shot-tooltip"></div>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const params = new URLSearchParams(window.location.search);
+                const initialPlayerId = params.get("id");
+                const comparisonWrapper = document.getElementById('comparison-wrapper');
+                let players = [];
+                let percentileChartInstance = null;
+                const playerColors = ['rgba(54, 162, 235, 1)', 'rgba(255, 99, 132, 1)', 'rgba(75, 192, 192, 1)', 'rgba(255, 206, 86, 1)'];
+                const playerBgColors = ['rgba(54, 162, 235, 0.2)', 'rgba(255, 99, 132, 0.2)', 'rgba(75, 192, 192, 0.2)', 'rgba(255, 206, 86, 0.2)'];
+
+                function init() {
+                    if (initialPlayerId) {
+                        addPlayer(initialPlayerId);
+                        
+                    } else {
+                        createAddPlayerPlaceholder(); // Si no hay jugador inicial, mostrar para agregar el primero
+                    }
+                }
+
+                function addPlayer(playerId) {
+                    if (players.length >= 4 || players.find(p => p.id === playerId)) return;
+
+                    const playerIndex = players.length;
+                    const newPlayer = { id: playerId, index: playerIndex, color: playerColors[playerIndex], bgColor: playerBgColors[playerIndex] };
+                    players.push(newPlayer);
+
+                    // Eliminar el placeholder si existe
+                    const placeholder = document.getElementById('add-player-placeholder');
+                    if (placeholder) placeholder.remove();
+
+                    // Crear y añadir la nueva columna del jugador
+                    const column = document.createElement('div');
+                    column.className = 'player-column';
+                    column.id = `player-column-${playerId}`;
+                    column.innerHTML = `
+                        <div class="card info-card" id="info-general-${playerId}">
+                            <button class="remove-btn" data-player-id="${playerId}">×</button>
+                            <!-- Contenido se carga dinámicamente -->
+                        </div>
+                        <div class="card">
+                            <h2>Mapa de Calor</h2>
+                            <div class="pitch-container"><canvas id="heatmap-canvas-${playerId}"></canvas></div>
+                        </div>
+                        <div class="card">
+                            <h2>Mapa de Disparos</h2>
+                            <div class="pitch-container" style="padding-top: 80%;"><canvas id="shot-map-canvas-${playerId}"></canvas></div>
+                        </div>
+                        <div class="card info-card" >
+                            <div id="stats-general-${playerId}">
+                            
+                            </div>
+                            
+                            
+                        </div>`
+                        ;
+                    comparisonWrapper.appendChild(column);
+
+                    // Cargar todos los datos del nuevo jugador
+                    cargarInfoBasicaJugador(newPlayer);
+                    cargarPercentilesJugador(newPlayer);
+                    cargarMapaDeCalorJugador(newPlayer);
+                    cargarMapaDeDisparosJugador(newPlayer);
+                    cargarEstadisticasJugador(newPlayer);
+
+                    // Si aún hay espacio, crear un nuevo placeholder
+                    if (players.length < 4) {
+                        createAddPlayerPlaceholder();
+                    }
+
+                    // Añadir listener al nuevo botón de eliminar
+                    column.querySelector('.remove-btn').addEventListener('click', (e) => {
+                        removePlayer(e.target.dataset.playerId);
+                    });
+                }
+                
+                
+                function removePlayer(playerId) {
+                    document.getElementById(`player-column-${playerId}`).remove();
+                    players = players.filter(p => p.id != playerId);
+
+                    if (percentileChartInstance) {
+                        percentileChartInstance.data.datasets = percentileChartInstance.data.datasets.filter(ds => ds.playerId != playerId);
+                        percentileChartInstance.update();
+                    }
+
+                    if (!document.getElementById('add-player-placeholder') && players.length < 4) {
+                        createAddPlayerPlaceholder();
+                    }
+                }
+
+                function createAddPlayerPlaceholder() {
+                    const placeholder = document.createElement('div');
+                    placeholder.className = 'player-column';
+                    placeholder.id = 'add-player-placeholder';
+                    placeholder.innerHTML = `<div class="card" id="add-player-container"><button id="add-player-btn">+ Agregar Jugador</button></div>`;
+                    comparisonWrapper.appendChild(placeholder);
+                    
+                    document.getElementById('add-player-btn').addEventListener('click', () => {
+                        const container = document.getElementById('add-player-container');
+                        container.innerHTML = `
+                            <h2>Buscar Jugador</h2>
+                            <div class="search-container">
+                                <input type="text" id="searchInput" placeholder="Escribe un nombre..." />
+                                <div class="search-results" id="searchResults"></div>
+                            </div>`;
+                        setupSearch('searchInput', 'searchResults');
+                        document.getElementById('searchInput').focus();
+                    });
+                }
+                
+                
+
+                
+                // --- FUNCIONES REUTILIZABLES ---
+                
+                function loadPlayerColumn(jugadorId, playerIndex) {
+                    const column = document.getElementById(`player-column-${playerIndex}`);
+                    // Inyectar la estructura HTML necesaria para un jugador
+                    column.innerHTML = `
+                        <div class="card info-card" id="info-general-${playerIndex}"></div>
+                        <div class="card">
+                            <h2>Percentiles</h2>
+                            <div class="chart-container">
+                                <canvas id="percentileChart-${playerIndex}"></canvas>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <h2>Mapa de Calor</h2>
+                            <div class="pitch-container">
+                                <canvas id="heatmap-canvas-${playerIndex}"></canvas>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <h2>Mapa de Disparos</h2>
+                            <div class="pitch-container" style="padding-top: 80%;">
+                                <canvas id="shot-map-canvas-${playerIndex}"></canvas>
+                            </div>
+                        </div>`;
+                    
+                    // Llamar a todas las funciones de carga para ese jugador y columna
+                    cargarInfoBasicaJugador(jugadorId, playerIndex);
+                    cargarPercentilesJugador(jugadorId, playerIndex);
+                    cargarMapaDeCalorJugador(jugadorId, playerIndex);
+                    cargarMapaDeDisparosJugador(jugadorId, playerIndex);
+                }
+
+                function setupSearch(inputId, resultsId) {
+                    const input = document.getElementById(inputId);
+                    const resultsDiv = document.getElementById(resultsId);
+                    input.addEventListener("input", async (e) => {
+                        const query = e.target.value;
+                        resultsDiv.innerHTML = "";
+                        if (query.length < 2) return;
+                        const res = await fetch(`/buscar-jugadores?nombre=${query}`);
+                        const jugadores = await res.json();
+                        jugadores.forEach(jugador => {
+                            const div = document.createElement("div");
+                            div.innerHTML = `<img src="${jugador.imagen_jugador}"><span>${jugador.nombre_jugador}</span><img src="${jugador.imagen_equipo}" style="margin-left: auto;">`;
+                            div.addEventListener("click", () => addPlayer(jugador.id_jugador));
+                            resultsDiv.appendChild(div);
+                        });
+                    });
+                }
+
+                function cargarInfoBasicaJugador(player) {
+                    fetch(`/jugador/${player.id}`).then(r => r.json()).then(data => {
+                        if (!data) return;
+                        const infoContainer = document.getElementById(`info-general-${player.id}`);
+                        const fechaNac = new Date(data.fec_nac).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+                        infoContainer.insertAdjacentHTML('beforeend', `
+                            <div class="player-image"><img src="${data.img_jugador}" alt="Foto"></div>
+                            <div class="player-details">
+                                <h1>${data.nombre_jugador} #${data.dorsal}</h1>
+                                <div class="player-bio">
+                                    <p><strong>Posición:</strong> <span>${data.posicion}</span></p>
+                                    <p><strong>Nacimiento:</strong> <span>${fechaNac}</span></p>
+                                </div>
+                            </div>
+                            <div class="team-info"><img src="${data.img_equipo}" alt="Escudo"><p>${data.nombre_equipo}</p></div>`);
+                    });
+                }
+
+                function cargarPercentilesJugador(player) {
+                    fetch(`/percentiles-jugador/${player.id}`).then(r => r.json()).then(data => {
+                        if (!data || data.length === 0) return;
+                        const percentiles = data[0];
+                        const ctx = document.getElementById('percentileChart').getContext('2d');
+                        const labels = ['Goles', 'Disparos', 'Asistencias', 'Pases', 'Pases Prog.', 'Acarreos Prog.', 'Regates', 'Toques', 'Entradas', 'Intercep.', 'Bloqueos', 'Despejes', 'Duelos Aéreos'];
+                        const values = [percentiles.percentil_goles, percentiles.percentil_disparos, percentiles.percentil_asistencias, percentiles.percentil_pases, percentiles.percentil_pases_progresivos, percentiles.percentil_acarreos_progresivos, percentiles.percentil_regates_efectivos, percentiles.percentil_toques_de_balon, percentiles.percentil_entradas, percentiles.percentil_intercepciones, percentiles.percentil_bloqueos, percentiles.percentil_despejes, percentiles.percentil_duelos_aereos];
+
+                        if (!percentileChartInstance) {
+                            percentileChartInstance = new Chart(ctx, {
+                                type: 'radar',
+                                data: { labels, datasets: [] },
+                                options: { responsive: true, maintainAspectRatio: false, scales: { r: { angleLines: { color: 'rgba(224, 224, 224, 0.2)' }, grid: { color: 'rgba(224, 224, 224, 0.2)' }, pointLabels: { color: '#e0e0e0', font: { size: 10 } }, ticks: { display: false, max: 100, min: 0 }}}, plugins: { legend: { labels: { color: '#e0e0e0' }}}}
+                            });
+                        }
+
+                        const newDataset = {
+                            label: percentiles.nombre_jugador, data: values,
+                            backgroundColor: player.bgColor, borderColor: player.color,
+                            borderWidth: 2, pointBackgroundColor: player.color,
+                            playerId: player.id // Identificador para poder eliminarlo después
+                        };
+                        percentileChartInstance.data.datasets.push(newDataset);
+                        percentileChartInstance.update();
+                    });
+                }
+
+
+                function cargarMapaDeCalorJugador(player) {
+                    fetch(`/mapa-calor-jugador/${player.id}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data || data.length === 0) return;
+                        const canvas = document.getElementById(`heatmap-canvas-${player.id}`);
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
+                        dibujarCampo(ctx, '#2a5f2a', 'rgba(255, 255, 255, 0.3)');
+                        const heatmapInstance = h337.create({ container: canvas.parentElement, radius: 25, maxOpacity: 0.8, minOpacity: 0.1, blur: .75, gradient: { '.2': 'blue', '.5': 'lime', '.8': 'yellow', '1': 'red' } });
+                        const marginX = canvas.width * 0.05, marginY = canvas.height * 0.05;
+                        const pitchWidth = canvas.width * 0.9, pitchHeight = canvas.height * 0.9;
+                        const points = data.map(point => ({ 
+                            x: Math.round(marginX + (point.x / 100) * pitchWidth), 
+                            y: pitchHeight - Math.round(marginY + (point.y / 115) * pitchHeight), 
+                            value: 1 
+                        }));
+                        heatmapInstance.setData({ max: 4, data: points });
+                    });
+                }
+                
+                function cargarMapaDeDisparosJugador(player) {
+                    fetch(`/mapa-disparos-jugador/${player.id}`)
+                    .then(response => response.json())
+                    .then(shots => {
+                        if (!shots || shots.length === 0) return;
+                        const canvas = document.getElementById(`shot-map-canvas-${player.id}`);
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
+                        const shotsOnCanvas = [];
+                        dibujarMedioCampo(ctx, '#2a5f2a', 'rgba(255, 255, 255, 0.3)');
+                        shots.sort((a, b) => (a.resultado === 'goal') - (b.resultado === 'goal'));
+                        shots.forEach(shot => {
+                            const { canvasX, canvasY, radius } = dibujarDisparo(ctx, shot);
+                            shotsOnCanvas.push({ x: canvasX, y: canvasY, radius, info: shot });
+                        });
+                        const tooltip = document.getElementById('shot-tooltip');
+                        canvas.addEventListener('mousemove', (e) => {
+                            const rect = canvas.getBoundingClientRect();
+                            const mouseX = e.clientX - rect.left, mouseY = e.clientY - rect.top;
+                            let hoveredShot = null;
+                            for (let i = shotsOnCanvas.length - 1; i >= 0; i--) {
+                                const s = shotsOnCanvas[i];
+                                if (Math.sqrt((mouseX - s.x)**2 + (mouseY - s.y)**2) <= s.radius) { hoveredShot = s; break; }
+                            }
+                            if (hoveredShot) {
+                                tooltip.style.display = 'block';
+                                tooltip.style.left = `${e.pageX + 10}px`; tooltip.style.top = `${e.pageY + 10}px`;
+                                tooltip.innerHTML = `<strong>Minuto: ${hoveredShot.info.minuto}'</strong><br>Resultado: ${hoveredShot.info.resultado}<br>xG: ${parseFloat(hoveredShot.info.xg).toFixed(2)}`;
+                            } else { tooltip.style.display = 'none'; }
+                        });
+                        canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+                    });
+                }
+
+                function cargarEstadisticasJugador(player){
+                    fetch(`/jugador/${player.id}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data) {
+                            console.error("No se encontraron datos para el jugador:", player);
+                            return;
+                        }
+
+                        if (data.posicion == 'G'){
+                            fetch(`/estadisticas-portero/${player.id}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                const statsContainer = document.getElementById(`stats-general-${player.id}`);
+                                statsContainer.innerHTML=`
+                                    <h2>Estadisticas</h2>
+                                    <p>Goles Recibidos: ${data.goles_recibidos}</p>
+                                    <p>Goles Recibidos /90: ${data.goles_recibidos_por_90}</p>
+                                    <p>Tiros a Puerta Recibidos: ${data.tiros_a_puerta_recibidos}</p>
+                                    <p>Atajadas: ${data.atajadas}</p>
+                                    <p>% Atajadas: ${data.porcentaje_de_atajadas}</p>
+                                    <p>Porterias Imbatidas: ${data.porterias_imbatidas}</p>
+                                    <p>Penales en Contra: ${data.penales_en_contra}</p>
+                                    <p>Penales Atajados: ${data.penales_atajados}</p>
+                                    <p>Pases: ${data.pases}</p>
+                                    <p>Centros Recibidos: ${data.centros_recibidos}</p>
+                                    <p>Centros Interceptados: ${data.centros_interceptados}</p>
+                                    <p>Acciones Fuera del Area: ${data.acciones_fuera_del_area}</p>
+                                    
+                                `;
+
+                            })
+                        }
+                        else{
+                            fetch(`/estadisticas-jugador/${player.id}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                const statsContainer = document.getElementById(`stats-general-${player.id}`);
+                                statsContainer.innerHTML=`
+                                    <h2>Estadisticas</h2>
+                                    <p>Goles: ${data.total_goles}</p>
+                                    <p>Disparos: ${data.disparos}</p>
+                                    <p>Asistencias: ${data.asistencias}</p>
+                                    <p>Acciones Creadas: ${data.acciones_creadas}</p>
+                                    <p>Pases: ${data.pases}</p>
+                                    <p>% Efectividad Pases: ${data.porcentaje_de_efectividad_de_pases}</p>
+                                    <p>Pases Progresivos: ${data.pases_progresivos}</p>
+                                    <p>Acarreos Progresivos: ${data.acarreos_progresivos}</p>
+                                    <p>Regates: ${data.regates_efectivos}</p>
+                                    <p>Toques: ${data.toques_de_balon}</p>
+                                    <p>Entradas: ${data.entradas}</p>
+                                    <p>Intercepciones: ${data.intercepciones}</p>
+                                    <p>Bloqueos: ${data.bloqueos}</p>
+                                    <p>Despejes: ${data.despejes}</p>
+                                    <p>Duelos Aereos Ganados: ${data.duelos_aereos_ganados}</p>
+                                `;
+
+                            })
+             
+                        }
+                    });
+
+                    
+                }
+
+                function dibujarCampo(ctx, bgColor, lineColor) {
+                    const w = ctx.canvas.width, h = ctx.canvas.height;
+                    ctx.fillStyle = bgColor; ctx.fillRect(0, 0, w, h);
+                    ctx.strokeStyle = lineColor; ctx.lineWidth = 2;
+                    ctx.strokeRect(w*0.05, h*0.05, w*0.9, h*0.9);
+                    ctx.beginPath(); ctx.moveTo(w/2, h*0.05); ctx.lineTo(w/2, h*0.95); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(w/2, h/2, 40, 0, 2*Math.PI); ctx.stroke();
+                    ctx.strokeRect(w*0.05, h*0.2, w*0.15, h*0.6);
+                    ctx.strokeRect(w - w*0.20, h*0.2, w*0.15, h*0.6);
+                }
+                function dibujarMedioCampo(ctx, bgColor, lineColor) {
+                    const w = ctx.canvas.width, h = ctx.canvas.height;
+                    ctx.fillStyle = bgColor; ctx.fillRect(0, 0, w, h);
+                    ctx.strokeStyle = lineColor; ctx.lineWidth = 2;
+                    const marginX = w*0.05, marginY = h*0.05;
+                    const fieldWidth = w*0.9, fieldHalfHeight = h*0.9;
+                    ctx.beginPath(); ctx.moveTo(marginX, marginY + fieldHalfHeight); ctx.lineTo(marginX, marginY); ctx.lineTo(marginX + fieldWidth, marginY); ctx.lineTo(marginX + fieldWidth, marginY + fieldHalfHeight); ctx.stroke();
+                    ctx.strokeRect(w*0.2, marginY, w*0.6, h*0.25);
+                    ctx.strokeRect(w*0.35, marginY, w*0.3, h*0.1);
+                    ctx.beginPath(); ctx.arc(w/2, marginY + h*0.25, 30, 0, Math.PI, false); ctx.stroke();
+                }
+                function dibujarDisparo(ctx, shot) {
+                    const w = ctx.canvas.width, h = ctx.canvas.height;
+                    const marginX = w*0.05, marginY = h*0.05;
+                    const pitchWidth = w*0.9, pitchHeight = h*0.9;
+                    const canvasX = marginX + (parseFloat(shot.pitch_y) / 100) * pitchWidth;
+                    const canvasY = marginY + (parseFloat(shot.pitch_x) / 50) * pitchHeight;
+                    const radius = 5 + (parseFloat(shot.xg) * 15);
+                    ctx.fillStyle = shot.resultado === 'goal' ? '#ffd700' : 'rgba(54, 162, 235, 0.9)';
+                    ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 1.5;
+                    ctx.beginPath(); ctx.arc(canvasX, canvasY, radius, 0, 2*Math.PI); ctx.fill(); ctx.stroke();
+                    if (shot.resultado === 'goal') {
+                        ctx.fillStyle = 'white'; ctx.strokeStyle = 'black'; ctx.lineWidth = 1;
+                        ctx.beginPath(); ctx.arc(canvasX, canvasY, radius*0.6, 0, 2*Math.PI); ctx.fill(); ctx.stroke();
+                    }
+                    return { canvasX, canvasY, radius };
+                }
+            
+            
+                init();
+            });
+        </script>
+    </body>
+</html>

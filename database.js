@@ -145,7 +145,7 @@ export async function getEstadisticasOfensivas(temporada) {
 export async function getStatsJugador(id_jugador) {
     const [rows] = await pool.query(`
         SELECT
-            j.id_jugador,
+            j.id_jugador, 
             j.url_imagen AS imagen_jugador,
             j.nombre AS nombre_jugador,
             e.nombre AS nombre_equipo,
@@ -781,6 +781,78 @@ export async function getPercentilesJugador(jugador) {
     
 }
 
+export async function getPercentilesPortero(jugador) {
+    const [rows] = await pool.query(`
+        WITH EstadisticasPorJugador AS (
+            -- Paso 1: Esto no cambia. Sigue siendo la parte pesada de agregación.
+            SELECT
+                j.id_jugador,
+                j.url_imagen AS imagen_jugador,
+                j.nombre AS nombre_jugador,
+                e.nombre AS nombre_equipo,
+                e.url_imagen AS imagen_equipo,
+                sj.atajadas,
+     			sj.porterias_imbatidas,
+     			sj.penales_atajados,
+     			sj.porcentaje_de_atajadas,
+     			sj.acciones_fuera_del_area,
+     			sj.centros_interceptados
+            FROM estadistica_jugador_portero ejp
+            JOIN jugador j ON ejp.jugador = j.id_jugador
+            JOIN estadistica_portero sj ON j.id_jugador = sj.jugador
+            LEFT JOIN (
+                SELECT pe.jugador, MAX(pe.id_plantilla) as max_id FROM plantilla_equipos pe GROUP BY pe.jugador
+            ) AS ultima_plantilla ON j.id_jugador = ultima_plantilla.jugador
+            LEFT JOIN plantilla_equipos pe ON ultima_plantilla.max_id = pe.id_plantilla
+            LEFT JOIN equipo e ON pe.equipo = e.id_equipo
+            GROUP BY 
+                j.id_jugador, e.nombre, e.url_imagen,sj.atajadas,
+     			sj.porterias_imbatidas,
+     			sj.penales_atajados,
+     			sj.porcentaje_de_atajadas,
+     			sj.acciones_fuera_del_area,
+     			sj.centros_interceptados
+        ),
+        MaximosGlobales AS (
+            -- Paso 2: NUEVO. Calculamos TODOS los máximos en una sola pasada.
+            -- Esto nos dará una única fila con todos los valores máximos.
+            SELECT
+                MAX(atajadas) AS max_atajadas,
+                MAX(porterias_imbatidas) AS max_porterias_imbatidas,
+                MAX(penales_atajados) AS max_penales_atajados,
+                MAX(porcentaje_de_atajadas) AS max_porcentaje_de_atajadas,
+                MAX(acciones_fuera_del_area) AS max_acciones_fuera_del_area,
+                MAX(centros_interceptados) AS max_centros_interceptados
+            FROM
+                EstadisticasPorJugador
+        )
+        -- Paso 3: Unimos las estadísticas de TODOS los jugadores con la fila de MÁXIMOS
+        -- y luego filtramos por el jugador que queremos.
+        SELECT
+            epj.id_jugador,
+            epj.imagen_jugador,
+            epj.nombre_jugador,
+            epj.nombre_equipo,
+            epj.imagen_equipo,
+            
+            -- Los cálculos ahora son una simple división contra la tabla de máximos
+            (CAST(epj.atajadas AS DECIMAL) * 100.0 / NULLIF(mg.max_atajadas, 0)) AS percentil_atajadas,
+            (CAST(epj.porterias_imbatidas AS DECIMAL) * 100.0 / NULLIF(mg.max_porterias_imbatidas, 0)) AS percentil_porterias_imbatidas,
+            (CAST(epj.penales_atajados AS DECIMAL) * 100.0 / NULLIF(mg.max_penales_atajados, 0)) AS percentil_penales_atajados,
+            (CAST(epj.porcentaje_de_atajadas AS DECIMAL) * 100.0 / NULLIF(mg.max_porcentaje_de_atajadas, 0)) AS percentil_porcentaje_de_atajadas,
+            (CAST(epj.acciones_fuera_del_area AS DECIMAL) * 100.0 / NULLIF(mg.max_acciones_fuera_del_area, 0)) AS percentil_acciones_fuera_del_area,
+            (CAST(epj.centros_interceptados AS DECIMAL) * 100.0 / NULLIF(mg.max_centros_interceptados, 0)) AS percentil_centros_interceptados
+        FROM
+            EstadisticasPorJugador AS epj
+        CROSS JOIN -- Unimos cada jugador con la única fila de máximos
+            MaximosGlobales AS mg
+        WHERE
+            epj.id_jugador = ?;
+        `, [jugador])
+    return rows; 
+    
+}
+
 export async function getUltimosPartidosJugador(jugador) {
     const [rows] = await pool.query(`
         SELECT 
@@ -854,4 +926,117 @@ export async function getInfoJugador(jugador) {
         `, [jugador])
     return rows[0]; 
     
+}
+
+export async function getUltimosPartidosPortero(jugador) {
+    const [rows] = await pool.query(`
+        SELECT 
+            p.fecha,
+            ejp.minutos,
+            ejp.rating,
+            j.id_jugador,
+            j.nombre AS nombre_jugador,
+            mi_equipo.id_equipo as id_equipo,
+            mi_equipo.nombre as nombre_mi_equipo,
+            mi_equipo.url_imagen as imagen_equipo,
+            p.id_partido,
+
+            -- Información del RIVAL
+            rival.nombre AS nombre_rival,
+            rival.url_imagen AS imagen_rival,
+            rival.id_equipo as id_rival
+
+        FROM 
+            estadistica_jugador_portero ejp 
+        JOIN 
+            jugador j ON ejp.jugador = j.id_jugador
+        JOIN 
+            partido p ON ejp.partido = p.id_partido
+
+        -- === EL CAMBIO CLAVE ESTÁ AQUÍ ===
+        -- Unimos con plantilla_equipos para descubrir para cuál de los dos equipos
+        -- (local o visitante) jugó nuestro jugador.
+        JOIN 
+            plantilla_equipos pe ON pe.jugador = j.id_jugador 
+            AND (pe.equipo = p.equipo_local OR pe.equipo = p.equipo_visitante)
+
+        
+            
+        -- Unimos la tabla equipo para obtener el nombre del equipo del jugador.
+        JOIN 
+            equipo mi_equipo ON pe.equipo = mi_equipo.id_equipo
+
+        -- Unimos la tabla equipo OTRA VEZ, pero para el RIVAL, usando el CASE.
+        JOIN 
+            equipo rival ON rival.id_equipo = (
+                CASE 
+                    WHEN pe.equipo = p.equipo_local THEN p.equipo_visitante
+                    ELSE p.equipo_local
+                END
+            )
+
+        WHERE 
+            j.id_jugador = ?
+
+        -- No olvides ordenar para obtener los "últimos" partidos
+        ORDER BY 
+            p.fecha DESC 
+            
+        LIMIT 5;
+        `, [jugador])
+    return rows; 
+    
+}
+
+
+export async function getEstadisticasPortero(jugador) {
+    const [rows] = await pool.query(`
+        SELECT
+            j.id_jugador, 
+            j.url_imagen AS imagen_jugador,
+            j.nombre AS nombre_jugador,
+            e.nombre AS nombre_equipo,
+            e.url_imagen AS imagen_equipo,
+            sj.goles_recibidos,
+            sj.goles_recibidos_por_90,
+            sj.tiros_a_puerta_recibidos,
+            sj.atajadas,
+            sj.porcentaje_de_atajadas,
+            sj.porterias_imbatidas,
+            sj.penales_en_contra,
+            sj.penales_atajados,
+            sj.pases,
+            sj.centros_recibidos,
+            sj.centros_interceptados,
+            sj.acciones_fuera_del_area
+        FROM estadistica_jugador_portero ejp
+        JOIN partido p ON ejp.partido = p.id_partido
+        JOIN jugador j ON ejp.jugador = j.id_jugador
+        JOIN plantilla_equipos pe ON j.id_jugador = pe.jugador
+        JOIN equipo e ON pe.equipo = e.id_equipo
+        JOIN estadistica_portero sj ON j.id_jugador = sj.jugador
+        WHERE j.id_jugador = 1814
+        GROUP BY 
+            j.id_jugador,
+            ejp.jugador, 
+            j.url_imagen, 
+            j.nombre, 
+            e.nombre, 
+            e.url_imagen, 
+            sj.goles_recibidos,
+            sj.goles_recibidos_por_90,
+            sj.tiros_a_puerta_recibidos,
+            sj.atajadas,
+            sj.porcentaje_de_atajadas,
+            sj.porterias_imbatidas,
+            sj.penales_en_contra,
+            sj.penales_atajados,
+            sj.pases,
+            sj.centros_recibidos,
+            sj.centros_interceptados,
+            sj.acciones_fuera_del_area
+        ORDER BY pe.id_plantilla DESC;
+
+        `, [jugador])
+    return rows 
 }

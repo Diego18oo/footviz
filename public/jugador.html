@@ -35,6 +35,12 @@
                 color: #ffffff;
                 font-weight: 700;
             }
+            /* Contenedor para agrupar controles a la derecha */
+            .header-controls {
+                display: flex;
+                align-items: center;
+                gap: 20px;
+            }
             .search-container {
                 position: relative;
                 width: 300px;
@@ -48,6 +54,22 @@
                 color: #e0e0e0;
                 font-family: 'Poppins', sans-serif;
                 font-size: 0.9rem;
+            }
+            /* Estilo para el nuevo botón */
+            .header-button {
+                background-color: #007bff;
+                color: #ffffff;
+                border: none;
+                border-radius: 8px;
+                padding: 10px 20px;
+                font-family: 'Poppins', sans-serif;
+                font-size: 0.9rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: background-color 0.2s;
+            }
+            .header-button:hover {
+                background-color: #0056b3;
             }
             .search-results {
                 position: absolute;
@@ -71,7 +93,6 @@
             }
             .search-results div:hover { background-color: #3a3a5a; }
             .search-results img { width: 24px; height: 24px; border-radius: 50%; }
-            /* === FIN DE CAMBIOS PARA EL HEADER Y SEARCHBOX === */
 
 
             /* --- Estilo de Tarjeta --- */
@@ -223,6 +244,8 @@
 
             
 
+            
+
         </style>
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
@@ -233,9 +256,12 @@
     <body>
         <header class="header">
             <h1>FootViz</h1>
-            <div class="search-container">
-                <input type="text" id="searchInput" placeholder="Buscar otro jugador..." />
-                <div class="search-results" id="searchResults"></div>
+            <div class="header-controls">
+                <div class="search-container">
+                    <input type="text" id="searchInput" placeholder="Buscar otro jugador..." />
+                    <div class="search-results" id="searchResults"></div>
+                </div>
+                <button id="botonComparar" class="header-button">Comparar</button>
             </div>
         </header>
         <div id="info-general" class="card">            
@@ -289,7 +315,8 @@
             
             const params = new URLSearchParams(window.location.search);
             const jugadorParam = params.get("id");
-
+            const boton = document.getElementById("botonComparar");
+            
 
             function cargarInfoBasicaJugador(jugador){
                 fetch(`/jugador/${jugador}`)
@@ -299,6 +326,9 @@
                         console.error("No se encontraron datos para el jugador:", jugador);
                         return;
                     }
+
+                    
+                    
 
                     let infoPrincipal = document.getElementById("info-general");
                     const fechaNac = new Date(data.fec_nac).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -326,28 +356,187 @@
             }
 
             function cargarUltimosPartidosJugador(jugador){
-                fetch(`/ultimos-partidos-jugador/${jugador}`)
+                fetch(`/jugador/${jugador}`)
                 .then(response => response.json())
                 .then(data => {
-                    const tbodyUltimosPartidos = document.getElementById("ultimos-partidos-jugadores");
-                    tbodyUltimosPartidos.innerHTML="";
-                    data.forEach(partido => {
-                        const fila = document.createElement("tr");
-                        fila.innerHTML = `
-                            
-                            <td> vs. <img src="${partido.imagen_rival}"></td>
-                            <td>${partido.rating}</td>
-                            <td>${partido.minutos}</td>
-                            
-                        `;
-                        tbodyUltimosPartidos.appendChild(fila);
-                        
-                        
-                    });
-                })
+                    if (!data) {
+                        console.error("No se encontraron datos para el jugador:", jugador);
+                        return;
+                    }
+
+                    if (data.posicion == 'G'){
+                        fetch(`/ultimos-partidos-portero/${jugador}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const tbodyUltimosPartidos = document.getElementById("ultimos-partidos-jugadores");
+                            tbodyUltimosPartidos.innerHTML="";
+                            data.forEach(partido => {
+                                const fila = document.createElement("tr");
+                                fila.innerHTML = `
+                                    
+                                    <td> vs. <img src="${partido.imagen_rival}"></td>
+                                    <td>${partido.rating}</td>
+                                    <td>${partido.minutos}</td>
+                                    
+                                `;
+                                tbodyUltimosPartidos.appendChild(fila);
+                                
+                                
+                            });
+                        })
+                    }
+                    else{
+                        fetch(`/ultimos-partidos-jugador/${jugador}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const tbodyUltimosPartidos = document.getElementById("ultimos-partidos-jugadores");
+                            tbodyUltimosPartidos.innerHTML="";
+                            data.forEach(partido => {
+                                const fila = document.createElement("tr");
+                                fila.innerHTML = `
+                                    
+                                    <td> vs. <img src="${partido.imagen_rival}"></td>
+                                    <td>${partido.rating}</td>
+                                    <td>${partido.minutos}</td>
+                                    
+                                `;
+                                tbodyUltimosPartidos.appendChild(fila);
+                                
+                                
+                            });
+                        })
+                    }
+                });
+
+                
             }
 
             function cargarPercentilesJugador(jugador){
+                fetch(`/jugador/${jugador}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data) {
+                        console.error("No se encontraron datos para el jugador:", jugador);
+                        return;
+                    }
+
+                    if (data.posicion == 'G'){
+                        fetch(`/percentiles-portero/${jugador}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (!data || data.length === 0) return;
+                            const percentiles = data[0];
+                            const ctx = document.getElementById('percentileChart').getContext('2d');
+                            
+                            const labels = [
+                                'Atajadas', 'Porterias Imbatidas', 'Penales Atajados', '% de Atajadas', 'Acc. Fuera del Area', 'Centros Interceptados'
+                            ];
+                            const values = [
+                                percentiles.percentil_atajadas, percentiles.percentil_porterias_imbatidas, percentiles.percentil_penales_atajados,
+                                percentiles.percentil_porcentaje_de_atajadas, percentiles.percentil_acciones_fuera_del_area, percentiles.percentil_centros_interceptados
+                            ];
+
+                            new Chart(ctx, {
+                                type: 'radar',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        label: percentiles.nombre_jugador,
+                                        data: values,
+                                        backgroundColor: 'rgba(54, 162, 235, 0.4)',
+                                        borderColor: 'rgba(54, 162, 235, 1)',
+                                        borderWidth: 2,
+                                        pointBackgroundColor: 'rgba(54, 162, 235, 1)'
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    scales: {
+                                        r: {
+                                            angleLines: { color: 'rgba(224, 224, 224, 0.2)' },
+                                            grid: { color: 'rgba(224, 224, 224, 0.2)' },
+                                            pointLabels: { color: '#e0e0e0', font: { size: 11 } },
+                                            ticks: {
+                                                color: '#1a1a2e', // Ocultar ticks numéricos
+                                                backdropColor: 'rgba(0,0,0,0)',
+                                                stepSize: 25,
+                                                max: 100,
+                                                min: 0
+                                            }
+                                        }
+                                    },
+                                    plugins: {
+                                        legend: { display: false }
+                                    }
+                                }
+                            });
+                        })
+          
+
+                    }
+                    else{
+                        fetch(`/percentiles-jugador/${jugador}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (!data || data.length === 0) return;
+                            const percentiles = data[0];
+                            const ctx = document.getElementById('percentileChart').getContext('2d');
+                            
+                            const labels = [
+                                'Goles', 'Disparos', 'Asistencias', 'Pases', 'Pases Prog.', 'Acarreos Prog.', 
+                                'Regates', 'Toques', 'Entradas', 'Intercep.', 'Bloqueos', 'Despejes', 'Duelos Aéreos'
+                            ];
+                            const values = [
+                                percentiles.percentil_goles, percentiles.percentil_disparos, percentiles.percentil_asistencias,
+                                percentiles.percentil_pases, percentiles.percentil_pases_progresivos, percentiles.percentil_acarreos_progresivos,
+                                percentiles.percentil_regates_efectivos, percentiles.percentil_toques_de_balon, percentiles.percentil_entradas,
+                                percentiles.percentil_intercepciones, percentiles.percentil_bloqueos, percentiles.percentil_despejes,
+                                percentiles.percentil_duelos_aereos
+                            ];
+
+                            new Chart(ctx, {
+                                type: 'radar',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        label: percentiles.nombre_jugador,
+                                        data: values,
+                                        backgroundColor: 'rgba(54, 162, 235, 0.4)',
+                                        borderColor: 'rgba(54, 162, 235, 1)',
+                                        borderWidth: 2,
+                                        pointBackgroundColor: 'rgba(54, 162, 235, 1)'
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    scales: {
+                                        r: {
+                                            angleLines: { color: 'rgba(224, 224, 224, 0.2)' },
+                                            grid: { color: 'rgba(224, 224, 224, 0.2)' },
+                                            pointLabels: { color: '#e0e0e0', font: { size: 11 } },
+                                            ticks: {
+                                                color: '#1a1a2e', // Ocultar ticks numéricos
+                                                backdropColor: 'rgba(0,0,0,0)',
+                                                stepSize: 25,
+                                                max: 100,
+                                                min: 0
+                                            }
+                                        }
+                                    },
+                                    plugins: {
+                                        legend: { display: false }
+                                    }
+                                }
+                            });
+                        })
+          
+                    }
+                });
+
+
+
                 fetch(`/percentiles-jugador/${jugador}`)
                 .then(response => response.json())
                 .then(data => {
@@ -645,7 +834,10 @@
             cargarMapaDeCalorJugador(jugadorParam);
             cargarMapaDeDisparosJugador(jugadorParam); 
             setupSearch("searchInput", "searchResults");
-            
+            boton.addEventListener("click", () => {
+                // Redirigir a la página del jugador seleccionado
+                window.location.href = `comparar.html?id=${jugadorParam}`;
+            });
              
 
 

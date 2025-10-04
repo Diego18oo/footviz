@@ -296,9 +296,13 @@ def get_arbitro(driver, url_sofascore):
     match_id = url_sofascore.split(':')[-1]
     url = f"api/v1/event/{match_id}"
     data = get_sofascore_api_data(driver, path=url)
-    arbitro = data['event']['referee']
-    return arbitro
-
+    try: 
+        arbitro = data['event']['referee']
+        return arbitro
+    except KeyError:
+        print("No hubo data de arbitro")
+        return
+    
 def insert_arbitro(engine, arbitro_data, tabla_arbitro, conn):
     df_pais = pd.read_sql('SELECT id_pais, nombre FROM pais', engine)
     mapa_pais = dict(zip(df_pais['nombre'], df_pais['id_pais']))
@@ -355,7 +359,7 @@ def insert_update_partidos(engine, partido):
         jornada = partido[1]
         temporada = partido[5]
         url_sofascore = partido[3]
-        fecha = verificar_fecha_partido(driver, url_sofascore, jornada, temporada)
+        fecha = partido[4]
         equipo_local = partido[6]
         equipo_visitante = partido[7]
         nombre_equipo_local = pd.read_sql(f'SELECT nombre FROM equipo WHERE id_equipo = {equipo_local}', engine)
@@ -384,43 +388,46 @@ def insert_update_partidos(engine, partido):
         estadio = partido[8]
         arbitro_data = get_arbitro(driver, url_sofascore)
         print("Data de arbitro obtenida")
-        arbitro_nombre = arbitro_data['name']
-        id_arbitro = mapa_arbitro.get(arbitro_nombre, None)
-        if id_arbitro is None:
-            print(f"Insertando a {arbitro_nombre}...")
-            insert_arbitro(engine, arbitro_data, tabla_arbitro, conn)
-            print(f"{arbitro_nombre} insertado correctamente")
-            df_arbitro_actualizado = pd.read_sql('SELECT id_arbitro, nombre FROM arbitro', engine)
-            mapa_arbitro.update(dict(zip(df_arbitro_actualizado['nombre'], df_arbitro_actualizado['id_arbitro'])))
-            id_arbitro = mapa_arbitro.get(arbitro_nombre)
-        insert_partido_stmt = insert(tabla_partido).values(
-            id_partido = id_partido,
-            jornada=jornada,
-            url_fbref=url_fbref,
-            url_sofascore=url_sofascore,
-            fecha=fecha,
-            temporada=temporada,
-            equipo_local=equipo_local,
-            equipo_visitante=equipo_visitante,
-            estadio=estadio,
-            arbitro=id_arbitro
-        )
+        try:
+            arbitro_nombre = arbitro_data['name']
+            id_arbitro = mapa_arbitro.get(arbitro_nombre, None)
+            if id_arbitro is None:
+                print(f"Insertando a {arbitro_nombre}...")
+                insert_arbitro(engine, arbitro_data, tabla_arbitro, conn)
+                print(f"{arbitro_nombre} insertado correctamente")
+                df_arbitro_actualizado = pd.read_sql('SELECT id_arbitro, nombre FROM arbitro', engine)
+                mapa_arbitro.update(dict(zip(df_arbitro_actualizado['nombre'], df_arbitro_actualizado['id_arbitro'])))
+                id_arbitro = mapa_arbitro.get(arbitro_nombre)
+            insert_partido_stmt = insert(tabla_partido).values(
+                id_partido = id_partido,
+                jornada=jornada,
+                url_fbref=url_fbref,
+                url_sofascore=url_sofascore,
+                fecha=fecha,
+                temporada=temporada,
+                equipo_local=equipo_local,
+                equipo_visitante=equipo_visitante,
+                estadio=estadio,
+                arbitro=id_arbitro
+            )
 
-        update_partido_stmt=insert_partido_stmt.on_duplicate_key_update(
-            id_partido=insert_partido_stmt.inserted.id_partido,
-            jornada=insert_partido_stmt.inserted.jornada,
-            url_fbref=insert_partido_stmt.inserted.url_fbref,
-            url_sofascore=insert_partido_stmt.inserted.url_sofascore,
-            fecha=insert_partido_stmt.inserted.fecha,
-            temporada=insert_partido_stmt.inserted.temporada,
-            equipo_local=insert_partido_stmt.inserted.equipo_local,
-            equipo_visitante=insert_partido_stmt.inserted.equipo_visitante,
-            estadio=insert_partido_stmt.inserted.estadio,
-            arbitro=insert_partido_stmt.inserted.arbitro
-        )
+            update_partido_stmt=insert_partido_stmt.on_duplicate_key_update(
+                id_partido=insert_partido_stmt.inserted.id_partido,
+                jornada=insert_partido_stmt.inserted.jornada,
+                url_fbref=insert_partido_stmt.inserted.url_fbref,
+                url_sofascore=insert_partido_stmt.inserted.url_sofascore,
+                fecha=insert_partido_stmt.inserted.fecha,
+                temporada=insert_partido_stmt.inserted.temporada,
+                equipo_local=insert_partido_stmt.inserted.equipo_local,
+                equipo_visitante=insert_partido_stmt.inserted.equipo_visitante,
+                estadio=insert_partido_stmt.inserted.estadio,
+                arbitro=insert_partido_stmt.inserted.arbitro
+            )
 
-        conn.execute(update_partido_stmt)
-        print(f"Partido {equipo_local} - {equipo_visitante} actualizado correctamente")
+            conn.execute(update_partido_stmt)
+            print(f"Partido {equipo_local} - {equipo_visitante} actualizado correctamente")
+        except TypeError:
+            print("Partido a revision")
 
     driver.quit()
     return 
@@ -442,75 +449,77 @@ def insert_estadistica_partido(engine, df_partido):
         id_sofascore = url_sofascore.split(':')[-1]
         url = f"api/v1/event/{id_sofascore}"
         raw_data = get_sofascore_api_data(driver, path=url)
-        
-        data = get_sofascore_api_data(driver, path=f"{url}/statistics")
-        info = data['statistics'][0]['groups'][0]['statisticsItems']
-        print("Data del partido obtenida")
-        yellow_cards = get_stat(info, "Yellow cards", default={"home": 0, "away": 0})
-        red_cards = get_stat(info, "Red cards", default={"home": 0, "away": 0})
-        ball_possession = get_stat(info, "Ball possession", default={"home": 0, "away": 0})
-        passes = get_stat(info, "Passes", default={"home": 0, "away": 0})
-        corners = get_stat(info, "Corner kicks", default={"home": 0, "away": 0})
-        shots = get_stat(info, "Total shots", default={"home": 0, "away": 0})
-        fouls = get_stat(info, "Fouls", default={"home": 0, "away": 0})
-        tackles = get_stat(info, "Tackles", default={"home": 0, "away": 0})
-        xg = get_stat(info, "Expected goals", default={"home":0, "away":0})
+        try:
+            data = get_sofascore_api_data(driver, path=f"{url}/statistics")
+            info = data['statistics'][0]['groups'][0]['statisticsItems']
+            print("Data del partido obtenida")
+            yellow_cards = get_stat(info, "Yellow cards", default={"home": 0, "away": 0})
+            red_cards = get_stat(info, "Red cards", default={"home": 0, "away": 0})
+            ball_possession = get_stat(info, "Ball possession", default={"home": 0, "away": 0})
+            passes = get_stat(info, "Passes", default={"home": 0, "away": 0})
+            corners = get_stat(info, "Corner kicks", default={"home": 0, "away": 0})
+            shots = get_stat(info, "Total shots", default={"home": 0, "away": 0})
+            fouls = get_stat(info, "Fouls", default={"home": 0, "away": 0})
+            tackles = get_stat(info, "Tackles", default={"home": 0, "away": 0})
+            xg = get_stat(info, "Expected goals", default={"home":0, "away":0})
 
 
 
-        insert_estadistica_partido_stmt = insert(tabla_estadistica_partido).values(
-            partido = df_partido[0],
-            goles_local = raw_data['event']['homeScore']['current'],
-            goles_visitante = raw_data['event']['awayScore']['current'],
-            tarjetas_amarillas_local = yellow_cards['home'],
-            tarjetas_amarillas_visitante = yellow_cards['away'],
-            tarjetas_rojas_local = red_cards['home'],
-            tarjetas_rojas_visitante = red_cards['away'],
-            posesion_local = ball_possession['homeValue'],
-            posesion_visitante = ball_possession['awayValue'],
-            pases_local = passes['home'],
-            pases_visitante = passes['away'],
-            tiros_de_esquina_local = corners['home'],
-            tiros_de_esquina_visitante = corners['away'],
-            disparos_local = shots['home'],
-            disparos_visitante = shots['away'],
-            disparos_a_puerta_local = data['statistics'][0]['groups'][1]['statisticsItems'][1]['home'],
-            disparos_a_puerta_visitante = data['statistics'][0]['groups'][1]['statisticsItems'][1]['away'],
-            faltas_local = fouls['home'],
-            faltas_visitante = fouls['away'],
-            entradas_local = tackles['home'],
-            entradas_visitante = tackles['away'],
-            xg_local = xg['home'],
-            xg_visitante = xg['away']
-        )
+            insert_estadistica_partido_stmt = insert(tabla_estadistica_partido).values(
+                partido = df_partido[0],
+                goles_local = raw_data['event']['homeScore']['current'],
+                goles_visitante = raw_data['event']['awayScore']['current'],
+                tarjetas_amarillas_local = yellow_cards['home'],
+                tarjetas_amarillas_visitante = yellow_cards['away'],
+                tarjetas_rojas_local = red_cards['home'],
+                tarjetas_rojas_visitante = red_cards['away'],
+                posesion_local = ball_possession['homeValue'],
+                posesion_visitante = ball_possession['awayValue'],
+                pases_local = passes['home'],
+                pases_visitante = passes['away'],
+                tiros_de_esquina_local = corners['home'],
+                tiros_de_esquina_visitante = corners['away'],
+                disparos_local = shots['home'],
+                disparos_visitante = shots['away'],
+                disparos_a_puerta_local = data['statistics'][0]['groups'][1]['statisticsItems'][1]['home'],
+                disparos_a_puerta_visitante = data['statistics'][0]['groups'][1]['statisticsItems'][1]['away'],
+                faltas_local = fouls['home'],
+                faltas_visitante = fouls['away'],
+                entradas_local = tackles['home'],
+                entradas_visitante = tackles['away'],
+                xg_local = xg['home'],
+                xg_visitante = xg['away']
+            )
 
-        update_estadistica_partido_stmt = insert_estadistica_partido_stmt.on_duplicate_key_update(
-            partido=insert_estadistica_partido_stmt.inserted.partido,
-            goles_local=insert_estadistica_partido_stmt.inserted.goles_local,
-            goles_visitante=insert_estadistica_partido_stmt.inserted.goles_visitante,
-            tarjetas_amarillas_local=insert_estadistica_partido_stmt.inserted.tarjetas_amarillas_local,
-            tarjetas_amarillas_visitante=insert_estadistica_partido_stmt.inserted.tarjetas_amarillas_visitante,
-            tarjetas_rojas_local=insert_estadistica_partido_stmt.inserted.tarjetas_rojas_local,
-            tarjetas_rojas_visitante=insert_estadistica_partido_stmt.inserted.tarjetas_rojas_visitante,
-            posesion_local=insert_estadistica_partido_stmt.inserted.posesion_local,
-            posesion_visitante=insert_estadistica_partido_stmt.inserted.posesion_visitante,
-            pases_local=insert_estadistica_partido_stmt.inserted.pases_local,
-            pases_visitante=insert_estadistica_partido_stmt.inserted.pases_visitante,
-            tiros_de_esquina_local=insert_estadistica_partido_stmt.inserted.tiros_de_esquina_local,
-            tiros_de_esquina_visitante=insert_estadistica_partido_stmt.inserted.tiros_de_esquina_visitante,
-            disparos_local=insert_estadistica_partido_stmt.inserted.disparos_local,
-            disparos_visitante=insert_estadistica_partido_stmt.inserted.disparos_visitante,
-            disparos_a_puerta_local=insert_estadistica_partido_stmt.inserted.disparos_a_puerta_local,
-            disparos_a_puerta_visitante=insert_estadistica_partido_stmt.inserted.disparos_a_puerta_visitante,
-            faltas_local=insert_estadistica_partido_stmt.inserted.faltas_local,
-            faltas_visitante=insert_estadistica_partido_stmt.inserted.faltas_visitante,
-            entradas_local=insert_estadistica_partido_stmt.inserted.entradas_local,
-            entradas_visitante=insert_estadistica_partido_stmt.inserted.entradas_visitante,
-            xg_local = insert_estadistica_partido_stmt.inserted.xg_local,
-            xg_visitante = insert_estadistica_partido_stmt.inserted.xg_visitante            
-        )
+            update_estadistica_partido_stmt = insert_estadistica_partido_stmt.on_duplicate_key_update(
+                partido=insert_estadistica_partido_stmt.inserted.partido,
+                goles_local=insert_estadistica_partido_stmt.inserted.goles_local,
+                goles_visitante=insert_estadistica_partido_stmt.inserted.goles_visitante,
+                tarjetas_amarillas_local=insert_estadistica_partido_stmt.inserted.tarjetas_amarillas_local,
+                tarjetas_amarillas_visitante=insert_estadistica_partido_stmt.inserted.tarjetas_amarillas_visitante,
+                tarjetas_rojas_local=insert_estadistica_partido_stmt.inserted.tarjetas_rojas_local,
+                tarjetas_rojas_visitante=insert_estadistica_partido_stmt.inserted.tarjetas_rojas_visitante,
+                posesion_local=insert_estadistica_partido_stmt.inserted.posesion_local,
+                posesion_visitante=insert_estadistica_partido_stmt.inserted.posesion_visitante,
+                pases_local=insert_estadistica_partido_stmt.inserted.pases_local,
+                pases_visitante=insert_estadistica_partido_stmt.inserted.pases_visitante,
+                tiros_de_esquina_local=insert_estadistica_partido_stmt.inserted.tiros_de_esquina_local,
+                tiros_de_esquina_visitante=insert_estadistica_partido_stmt.inserted.tiros_de_esquina_visitante,
+                disparos_local=insert_estadistica_partido_stmt.inserted.disparos_local,
+                disparos_visitante=insert_estadistica_partido_stmt.inserted.disparos_visitante,
+                disparos_a_puerta_local=insert_estadistica_partido_stmt.inserted.disparos_a_puerta_local,
+                disparos_a_puerta_visitante=insert_estadistica_partido_stmt.inserted.disparos_a_puerta_visitante,
+                faltas_local=insert_estadistica_partido_stmt.inserted.faltas_local,
+                faltas_visitante=insert_estadistica_partido_stmt.inserted.faltas_visitante,
+                entradas_local=insert_estadistica_partido_stmt.inserted.entradas_local,
+                entradas_visitante=insert_estadistica_partido_stmt.inserted.entradas_visitante,
+                xg_local = insert_estadistica_partido_stmt.inserted.xg_local,
+                xg_visitante = insert_estadistica_partido_stmt.inserted.xg_visitante            
+            )
 
-        conn.execute(update_estadistica_partido_stmt)
+            conn.execute(update_estadistica_partido_stmt)
+        except KeyError: 
+            print("partido en revision")
 
     return 
 
@@ -1649,7 +1658,7 @@ def insert_confirmed_lineups(engine, partido):
             )
 
             update_alineaciones_stmt = insert_alineaciones_stmt.on_duplicate_key_update(
-                #partido = insert_alineaciones_stmt.inserted.partido,
+                partido = insert_alineaciones_stmt.inserted.partido,
                 formacion_local = insert_alineaciones_stmt.inserted.formacion_local,
                 formacion_visitante = insert_alineaciones_stmt.inserted.formacion_visitante,
                 jugador1 = insert_alineaciones_stmt.inserted.jugador1,
