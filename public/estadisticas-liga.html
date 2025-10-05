@@ -159,7 +159,7 @@
 
         </style>
     </head>
-    <body>
+    <body> 
         <header class="header">
             <h1>FootViz</h1>
             <div class="controls-container">
@@ -195,7 +195,9 @@
                                     <th>GC</th>
                                 </tr>
                             </thead>
-                            <tbody></tbody>
+                            <tbody id="tabla-equipos-clubes">
+
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -477,7 +479,9 @@
                                 return b.goles_anotados - a.goles_anotados;
                             });
                             equipos.forEach((equipo, index) => {
+                                
                                 const fila = document.createElement("tr");
+                                fila.dataset.idClub = equipo.id_equipo;
                              
                                 fila.innerHTML = `
                                     <td>${index +1}</td> 
@@ -552,6 +556,17 @@
                 cargarOpciones(this.value);
                 cargarGraficaPromedios(this.value);
             });
+
+            document.getElementById("tabla-equipos-clubes").addEventListener("click", 
+                function(event) {
+                    const filaClickeada = event.target.closest('tr');
+                    if (filaClickeada) {
+                        const clubId = filaClickeada.dataset.idClub;
+                        if (clubId) {
+                            window.location.href = `club.html?id=${clubId}`;
+                        } 
+                    }
+                });
             
         </script>
     </body>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>FootViz - Club</title>
+    </head>
+    <body>
+
+
+        <script>
+            const params = new URLSearchParams(window.location.search);
+            const clubParam = params.get("id");
+
+            function cargarInfoClub(club){
+                fetch(`/info-club/${club}`)
+                .then(response => response.json())
+                .then(data => {
+
+                })
+            }
+
+            function cargarUltimosPartidos(club){
+                fetch(`/ultimos-partidos-club/${club}`)
+                .then(response => response.json())
+                .then(data => {
+
+                })
+            }   
+
+            function cargarAlineacion(club){
+                fetch(`/alineacion-club/${club}`)
+                .then(response => response.json())
+                .then(data => {
+
+                })
+            }
+
+            function cargarEvolucion(club){
+                fetch(`/evolucion-equipos/${club}`)
+                .then(response => response.json())
+                .then(data => {
+
+                })
+            }
+
+            function cargarMapaDisparos(club){
+                fetch(`/mapa-disparos/${club}`)
+                .then(response => response.json())
+                .then(data => {
+
+                })
+            }
+
+            function cargarPlantilla(club){
+                fetch(`/plantilla-club/${club}`)
+                .then(response => response.json())
+                .then(data => {
+
+                })
+            }
+
+            cargarInfoClub(clubParam);
+            cargarUltimosPartidos(clubParam);
+            cargarAlineacion(clubParam);
+            cargarEvolucion(clubParam);
+            cargarMapaDisparos(clubParam);
+            cargarPlantilla(clubParam);
+
+
+        </script>
+    </body>
+</html>

@@ -318,7 +318,7 @@
 
                     infoPrincipal.innerHTML = `
                     <div class="equipo">
-                        <img src="${data.escudo_local}" alt="Escudo del equipo local">
+                        <img src="${data.escudo_local}" alt="Escudo del equipo local" id="clubImgLocal">
                     </div>
                     <div class="info-partido">
                         <h2 class="marcador">${data.goles_local ?? '-'} - ${data.goles_visitante ?? '-'}</h2>
@@ -328,9 +328,18 @@
                         <p>${momiosHTML}</p> 
                     </div> 
                     <div class="equipo">
-                        <img src="${data.escudo_visitante}" alt="Escudo del equipo visitante">
+                        <img src="${data.escudo_visitante}" alt="Escudo del equipo visitante" id="clubImgVisitante">
                     </div>
                     `;
+
+                    const imgClub = document.getElementById("clubImgLocal");
+                    imgClub.addEventListener("click", () => {
+                        window.location.href = `club.html?id=${data.id_local}`;
+                    })
+                    const imgClub2 = document.getElementById("clubImgVisitante");
+                    imgClub2.addEventListener("click", () => {
+                        window.location.href = `club.html?id=${data.id_visitante}`;
+                    })
 
 
                 })

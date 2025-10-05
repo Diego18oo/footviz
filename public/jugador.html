@@ -346,10 +346,14 @@
                         </div>
                     </div>
                     <div class="team-info">
-                        <img src="${data.img_equipo}" alt="Escudo del equipo">
+                        <img src="${data.img_equipo}" alt="Escudo del equipo" id="clubImg">
                         <p>${data.nombre_equipo}</p>
                     </div>
-                    `;
+                    `; 
+                    const imgClub = document.getElementById("clubImg");
+                    imgClub.addEventListener("click", () => {
+                        window.location.href = `club.html?id=${data.id_equipo}`;
+                    })
                 })
                     
                 
@@ -838,7 +842,9 @@
                 // Redirigir a la página del jugador seleccionado
                 window.location.href = `comparar.html?id=${jugadorParam}`;
             });
-             
+
+            
+              
 
 
         </script>

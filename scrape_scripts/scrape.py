@@ -36,11 +36,11 @@ ids_para_scrapear_temporada = df_partidos_ayer['temporada'].unique()
 #insert_estadistica_jugador(engine,  ids_para_scrapear_temporada)
 
 #if len(df_partidos_futuros) > 0:
- #   print("Entrando...")
-  #  for i in range(len(df_partidos_futuros)):
-   #     prematch_ref(engine, df_partidos_futuros.iloc[i] )
-    #    prematch_odds(engine, df_partidos_futuros.iloc[i])
-     #   insert_predicted_lineups(engine, df_partidos_futuros.iloc[i])
+    #print("Entrando...")
+    #for i in range(len(df_partidos_futuros)):
+        #prematch_ref(engine, df_partidos_futuros.iloc[i] )
+        #prematch_odds(engine, df_partidos_futuros.iloc[i])
+        #insert_predicted_lineups(engine, df_partidos_futuros.iloc[i])
 
 #verifica que si haya partidos el dia de ayer
 if len(df_partidos_ayer) == 0:
@@ -57,9 +57,9 @@ else:
       #  lista_links = get_all_urls_fbref(driver, liga_url=url)
        # links_totales.extend(lista_links)
     #for i in range(len(df_partidos_ayer)):
-     #   partido_sofascore = df_partidos_ayer['url_sofascore'][i].split(':')[2]  
-      #  lista_ids_sofascore.append(partido_sofascore)
-       # insert_update_partidos(engine, df_partidos_ayer.iloc[i]) 
+        #partido_sofascore = df_partidos_ayer['url_sofascore'][i].split(':')[2]  
+        #lista_ids_sofascore.append(partido_sofascore)
+        #insert_update_partidos(engine, df_partidos_ayer.iloc[i]) 
         #insert_confirmed_lineups(engine, df_partidos_ayer.iloc[i])
         #print("Partido actualizado correctamente")
         #postmatch_odss(engine, df_partidos_ayer.iloc[i])

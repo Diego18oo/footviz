@@ -1039,4 +1039,118 @@ export async function getEstadisticasPortero(jugador) {
 
         `, [jugador])
     return rows 
+} 
+
+export async function getInfoClub(club) {
+    const [rows] = await pool.query(`
+        SELECT
+            e.id_equipo, e.nombre as nombre_equipo, e.url_imagen as img_equipo, est.id_estadio, est.nombre as nombre_estadio, ent.id_entrenador, ent.nombre as nombre_entrenador, ent.url_imagen as img_entrenador
+        FROM equipo e 
+        JOIN estadio est on e.estadio = est.id_estadio
+        JOIN entrenador ent on e.entrenador = ent.id_entrenador
+        WHERE e.id_equipo = ?;
+
+        `, [club])
+    return rows;
+} 
+
+export async function getUltimosPartidosClub(club) {
+    const [rows] = await pool.query(`
+        SELECT 
+            p.id_partido, p.jornada, p.fecha, el.id_equipo as id_local, el.nombre as nombre_local, el.url_imagen as img_local, ev.id_equipo as id_visitante, ev.nombre as nombre_visitante, ev.url_imagen as img_visitante,
+            ep.goles_local, ep.goles_visitante
+        FROM estadisticas_partido ep
+        JOIN partido p on ep.partido = p.id_partido
+        JOIN equipo el on p.equipo_local =  el.id_equipo
+        JOIN equipo ev on p.equipo_visitante = ev.id_equipo
+        WHERE el.id_equipo = ? or ev.id_equipo = ?
+                
+        ORDER BY p.fecha DESC
+        LIMIT 5 ;
+
+
+
+        `, [club, club])
+    return rows;
+}
+
+export async function getAlineacionClub(club) {
+    const [rows] = await pool.query(`
+        SELECT
+            al.formacion_local,
+            j1.id_jugador as id_jugador1, j1.nombre as nombre_jugador1, j1.url_imagen as img_jugador1,
+            j2.id_jugador as id_jugador2, j2.nombre as nombre_jugador2, j2.url_imagen as img_jugador2,
+            j3.id_jugador as id_jugador3, j3.nombre as nombre_jugador3, j3.url_imagen as img_jugador3,
+            j4.id_jugador as id_jugador4, j4.nombre as nombre_jugador4, j4.url_imagen as img_jugador4,
+            j5.id_jugador as id_jugador5, j5.nombre as nombre_jugador5, j5.url_imagen as img_jugador5,
+            j6.id_jugador as id_jugador6, j6.nombre as nombre_jugador6, j6.url_imagen as img_jugador6,
+            j7.id_jugador as id_jugador7, j7.nombre as nombre_jugador7, j7.url_imagen as img_jugador7,
+            j8.id_jugador as id_jugador8, j8.nombre as nombre_jugador8, j8.url_imagen as img_jugador8,
+            j9.id_jugador as id_jugador9, j9.nombre as nombre_jugador9, j9.url_imagen as img_jugador9,
+            j10.id_jugador as id_jugador10, j10.nombre as nombre_jugador10, j10.url_imagen as img_jugador10,
+            j11.id_jugador as id_jugador11, j11.nombre as nombre_jugador11, j11.url_imagen as img_jugador11
+        FROM alineaciones al
+
+        JOIN jugador j1 on al.jugador1 = j1.id_jugador
+        JOIN jugador j2 on al.jugador2 = j2.id_jugador
+        JOIN jugador j3 on al.jugador3 = j3.id_jugador
+        JOIN jugador j4 on al.jugador4 = j4.id_jugador
+        JOIN jugador j5 on al.jugador5 = j5.id_jugador
+        JOIN jugador j6 on al.jugador6 = j6.id_jugador
+        JOIN jugador j7 on al.jugador7 = j7.id_jugador
+        JOIN jugador j8 on al.jugador8 = j8.id_jugador
+        JOIN jugador j9 on al.jugador9 = j9.id_jugador
+        JOIN jugador j10 on al.jugador10 = j10.id_jugador
+        JOIN jugador j11 on al.jugador11 = j11.id_jugador
+
+        JOIN partido p on al.partido = p.id_partido
+        JOIN equipo e on p.equipo_local = e.id_equipo
+        WHERE e.id_equipo = ?
+        ORDER BY p.fecha DESC
+        LIMIT 1;
+
+
+
+
+        `, [club])
+    return rows;
+}
+
+
+export async function getPlantillaClub(club) {
+    const [rows] = await pool.query(`
+        
+        WITH UltimoEquipoPorJugador AS (
+            SELECT
+                pe.jugador,
+                pe.equipo,
+                -- Calculamos el registro más reciente para CADA jugador en TODA la tabla
+                ROW_NUMBER() OVER(PARTITION BY pe.jugador ORDER BY pe.id_plantilla DESC) AS rn
+            FROM
+                plantilla_equipos pe
+            -- IMPORTANTE: Quitamos el "WHERE pe.equipo = 15" de aquí
+            )
+            SELECT
+            j.id_jugador,
+            j.nombre,
+            j.dorsal,
+            j.fec_nac,
+            j.posicion,
+            j.valor_mercado,
+            j.url_imagen
+            FROM
+            jugador j
+            JOIN
+            UltimoEquipoPorJugador uepj ON j.id_jugador = uepj.jugador
+            WHERE
+            -- Aplicamos los dos filtros AL FINAL:
+            -- 1. Queremos solo el registro más reciente de cada jugador (el que tiene el número 1)
+            uepj.rn = 1
+            -- 2. Y de esos, solo nos interesan los que actualmente pertenecen al equipo 15
+            AND uepj.equipo = ?;
+
+
+
+        `, [club])
+    return rows;
 }

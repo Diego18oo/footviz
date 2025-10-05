@@ -293,7 +293,7 @@
                 ]
 
             };
-            
+             
             let nombreLocal = 'Equipo Local';
             let nombreVisitante = 'Equipo Visitante';
             function cargarInfoPartido(partido){
@@ -323,7 +323,7 @@
                     }
                     infoPrincipal.innerHTML = `
                     <div class="equipo">
-                        <img src="${data.escudo_local}" alt="Escudo del equipo local">
+                        <img src="${data.escudo_local}" alt="Escudo del equipo local" id="clubImgLocal">
                     </div>
                     <div class="info-partido">
                         <p>${fechaParaMostrar}</p>
@@ -332,9 +332,17 @@
                         <p style="font-size: 0.9em; color: #a0a0c0; font-weight: 400;">${momiosHTML}</p>  
                     </div> 
                     <div class="equipo">
-                        <img src="${data.escudo_visitante}" alt="Escudo del equipo visitante">
+                        <img src="${data.escudo_visitante}" alt="Escudo del equipo visitante" id="clubImgVisitante">
                     </div>
                     `;
+                    const imgClub = document.getElementById("clubImgLocal");
+                    imgClub.addEventListener("click", () => {
+                        window.location.href = `club.html?id=${data.id_local}`;
+                    })
+                    const imgClub2 = document.getElementById("clubImgVisitante");
+                    imgClub2.addEventListener("click", () => {
+                        window.location.href = `club.html?id=${data.id_visitante}`;
+                    })
 
                     cargarEvolucionEquipos(data.id_local, data.id_visitante, totalEquiposLiga);
                     cargarComparacionStats(data.id_local, data.id_visitante);

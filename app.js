@@ -1,10 +1,73 @@
 import express from 'express'
-import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero} from './database.js'
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub} from './database.js'
  
 
 const app = express() 
 app.use(express.static("public"))
 
+app.get("/plantilla-club/:id", async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const info = await getPlantillaClub(id);
+
+        if (info.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del club" });
+        }
+
+        res.json(info);   
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del club" });
+    }
+});
+
+app.get("/alineacion-club/:id", async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const info = await getAlineacionClub(id);
+
+        if (info.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del club" });
+        }
+
+        res.json(info);   
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del club" });
+    }
+});
+
+app.get("/ultimos-partidos-club/:id", async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const info = await getUltimosPartidosClub(id);
+
+        if (info.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del club" });
+        }
+
+        res.json(info);   
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del club" });
+    }
+});
+
+app.get("/info-club/:id", async(req, res) => {
+    try {
+        const { id } = req.params; 
+        const infoClub = await getInfoClub(id);
+
+        if (infoClub.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del club" });
+        }
+
+        res.json(infoClub[0]); // devuelves solo el club, no array
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del club" });
+    }
+})
 
 app.get("/estadisticas-portero/:id", async(req, res) => {
     try {
