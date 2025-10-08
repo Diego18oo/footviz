@@ -15,19 +15,21 @@
 
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #1a1a2e; /* Fondo oscuro principal */
-            color: #e0e0e0; /* Texto claro */
+            background-color: #1a1a2e;
+            color: #e0e0e0;
             padding: 20px;
+            transition: background-color 0.3s, color 0.3s; /* Transición suave */
         }
 
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            max-width: 1400px;
+            max-width: 1240px;
             margin: 0 auto 30px auto;
             padding-bottom: 20px;
             border-bottom: 1px solid #2a2a4a;
+            transition: border-bottom-color 0.3s;
         }
 
         .header h1 {
@@ -56,6 +58,7 @@
             font-family: 'Poppins', sans-serif;
             font-size: 1rem;
             cursor: pointer;
+            transition: background-color 0.3s, border-color 0.3s, color 0.3s;
         }
 
         .dashboard-wrapper {
@@ -76,9 +79,44 @@
             flex-direction: column;
             gap: 30px;
         }
+        .header-button {
+            background-color: #007bff;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .header-button:hover {
+            background-color: #0056b3;
+        }
 
+        /* --- BOTÓN PARA CAMBIAR TEMA --- */
+        .theme-toggle-button {
+            background: #2a2a4a;
+            border: 1px solid #4a4a6a;
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        .theme-toggle-button:hover {
+            background: #3a3a5a;
+            transform: scale(1.1);
+        }
+        
         .card {
-            background-color: #1e1e3f; /* Un poco más claro que el fondo */
+            background-color: #1e1e3f;
             border-radius: 12px;
             padding: 20px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
@@ -103,6 +141,7 @@
 
         thead tr {
             border-bottom: 2px solid #4a4a6a;
+            transition: border-bottom-color 0.3s;
         }
 
         th {
@@ -121,7 +160,7 @@
 
         tbody tr {
             border-bottom: 1px solid #2a2a4a;
-            transition: background-color 0.2s ease;
+            transition: background-color 0.2s ease, border-bottom-color 0.3s;
         }
         
         tbody tr:last-child {
@@ -149,6 +188,59 @@
             border-bottom: 1px solid #4a4a6a;
         }
 
+        /* ------------------------- */
+        /* --- ESTILOS MODO LUZ --- */
+        /* ------------------------- */
+        body.light-mode {
+            background-color: #f4f4f9;
+            color: #333333;
+        }
+        body.light-mode .header {
+            border-bottom-color: #e0e0e0;
+        }
+        body.light-mode .header h1 {
+            color: #1a1a2e;
+        }
+        body.light-mode .header select {
+            background-color: #ffffff;
+            border-color: #d1d1d1;
+            color: #333333;
+        }
+        body.light-mode .theme-toggle-button {
+            background: #ffffff;
+            border-color: #d1d1d1;
+            color: #333;
+        }
+        body.light-mode .theme-toggle-button:hover {
+            background: #f0f0f0;
+        }
+        body.light-mode .card {
+            background-color: #ffffff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        /* --- AJUSTES PARA TABLAS EN MODO LUZ --- */
+        body.light-mode th,
+        body.light-mode .card-title {
+            color: #1a1a2e; /* Color oscuro para los títulos */
+        }
+
+        body.light-mode thead tr {
+            border-bottom-color: #d1d1d1; /* Borde más claro para cabeceras */
+        }
+        
+        body.light-mode tbody tr {
+            border-bottom-color: #e0e0e0; /* Borde más claro para filas */
+        }
+
+        /* Corregido: El hover que mencionaste */
+        body.light-mode tbody tr:hover {
+            background-color: #e9e9f3; /* Un color de fondo suave para el hover */
+        }
+
+        body.light-mode .card-title {
+            border-bottom-color: #e0e0e0;
+        }
 
     </style>
 </head>
@@ -165,6 +257,7 @@
                 <option value="ligueone">Ligue 1</option>
             </select>
         </div>
+        <button id="theme-toggle" class="theme-toggle-button">☀️</button>
     </header>
     
     <main class="dashboard-wrapper">
@@ -260,6 +353,40 @@
     
     
     <script> 
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeToggleButton = document.getElementById('theme-toggle');
+            const body = document.body;
+
+            // Función para aplicar el tema y actualizar el botón
+            const applyTheme = (theme) => {
+                if (theme === 'light') {
+                    body.classList.add('light-mode');
+                    themeToggleButton.textContent = '🌙'; // Luna para modo claro
+                } else {
+                    body.classList.remove('light-mode');
+                    themeToggleButton.textContent = '☀️'; // Sol para modo oscuro
+                }
+            };
+
+            // Cargar el tema guardado al iniciar la página
+            const savedTheme = localStorage.getItem('theme') || 'dark'; // 'dark' es el default
+            applyTheme(savedTheme);
+
+            // Event listener para el botón
+            themeToggleButton.addEventListener('click', () => {
+                // Comprobar si el modo claro está activo para decidir a qué cambiar
+                const isLightMode = body.classList.contains('light-mode');
+                if (isLightMode) {
+                    localStorage.setItem('theme', 'dark');
+                    applyTheme('dark');
+                } else {
+                    localStorage.setItem('theme', 'light');
+                    applyTheme('light');
+                }
+            });
+        });
+            
+            
         const ligaSelect = document.getElementById('liga');
         const tbodyEquipos = document.querySelector("#tabla-equipos tbody");
         const endpoints = {

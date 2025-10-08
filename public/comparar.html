@@ -8,32 +8,71 @@
         <script src="https://cdn.jsdelivr.net/npm/heatmap.js@2.0.0/heatmap.min.js" defer></script>
 
         <style>
-            /* --- Estilos Globales y de Cabecera (similares a jugador.html) --- */
+            /* --- Estilos Globales y de Cabecera --- */
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: 'Poppins', sans-serif; background-color: #1a1a2e; color: #e0e0e0; padding: 20px; }
-            .header { display: flex; justify-content: space-between; align-items: center; max-width: 1400px; margin: 0 auto 30px auto; padding-bottom: 20px; border-bottom: 1px solid #2a2a4a; }
+            body { 
+                font-family: 'Poppins', sans-serif; 
+                background-color: #1a1a2e; 
+                color: #e0e0e0; 
+                padding: 20px; 
+                transition: background-color 0.3s, color 0.3s;
+            }
+            .header { 
+                display: flex; 
+                justify-content: space-between; 
+                align-items: center; 
+                max-width: 1400px; 
+                margin: 0 auto 30px auto; 
+                padding-bottom: 20px; 
+                border-bottom: 1px solid #2a2a4a;
+                transition: border-bottom-color 0.3s;
+            }
             .header h1 { font-size: 2rem; color: #ffffff; font-weight: 700; }
-            .card { background-color: #1e1e3f; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); width: 100%; }
-            h2 { font-size: 1.2rem; font-weight: 600; color: #ffffff; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #4a4a6a; }
+            .card { 
+                background-color: #1e1e3f; 
+                border-radius: 12px; 
+                padding: 20px; 
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); 
+                width: 100%;
+                transition: background-color 0.3s, box-shadow 0.3s;
+            }
+            h2 { 
+                font-size: 1.2rem; 
+                font-weight: 600; 
+                color: #ffffff; 
+                margin-bottom: 20px; 
+                padding-bottom: 10px; 
+                border-bottom: 1px solid #4a4a6a;
+                transition: color 0.3s, border-bottom-color 0.3s;
+            }
+
+            /* --- BOTÓN PARA CAMBIAR TEMA --- */
+            .theme-toggle-button {
+                background: #2a2a4a;
+                border: 1px solid #4a4a6a;
+                color: #fff;
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                cursor: pointer;
+                font-size: 1.2rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s ease;
+            }
+            .theme-toggle-button:hover {
+                background: #3a3a5a;
+                transform: scale(1.1);
+            }
 
             /* --- Layout Principal de Comparación --- */
-            .comparison-wrapper {
-                display: flex;
-                gap: 20px;
-                max-width: 1400px;
-                margin: 20px auto;
-                align-items: flex-start;
-            }
-            .player-column {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                gap: 20px;
-            }
+            .comparison-wrapper { display: flex; gap: 20px; max-width: 1400px; margin: 20px auto; align-items: flex-start; }
+            .player-column { flex: 1; display: flex; flex-direction: column; gap: 20px; }
 
             /* --- Estilos de la Tarjeta de Información del Jugador --- */
             .info-card { display: flex; align-items: center; gap: 20px;  }
-            .info-card .player-image img { width: 120px; height: 120px; border-radius: 50%; border: 4px solid #4a4a6a; }
+            .info-card .player-image img { width: 120px; height: 120px; border-radius: 50%; border: 4px solid #4a4a6a; transition: border-color 0.3s; }
             .info-card .player-details { display: flex; flex-direction: column; gap: 5px; }
             .info-card .player-details h1 { font-size: 1.8rem; color: #ffffff; font-weight: 700; }
             .info-card .player-bio p { font-size: 0.8rem; color: #a0a0c0; }
@@ -50,14 +89,9 @@
             
             /* --- Estilos para la columna derecha (placeholder y búsqueda) --- */
             #add-player-container {
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                min-height: 500px;
-                border: 2px dashed #2a2a4a;
-                border-radius: 12px;
-                padding: 20px;
+                display: flex; flex-direction: column; justify-content: center; align-items: center;
+                min-height: 500px; border: 2px dashed #2a2a4a; border-radius: 12px; padding: 20px;
+                transition: border-color 0.3s;
             }
             #add-player-btn {
                 background-color: #007bff; color: #ffffff; border: none; border-radius: 8px; padding: 15px 30px;
@@ -66,11 +100,33 @@
             #add-player-btn:hover { background-color: #0056b3; }
             
             .search-container { position: relative; width: 100%; }
-            .search-container input { width: 100%; padding: 10px 15px; background-color: #2a2a4a; border: 1px solid #4a4a6a; border-radius: 8px; color: #e0e0e0; font-size: 0.9rem; }
+            .search-container input { width: 100%; padding: 10px 15px; background-color: #2a2a4a; border: 1px solid #4a4a6a; border-radius: 8px; color: #e0e0e0; font-size: 0.9rem; transition: background-color 0.3s, border-color 0.3s, color 0.3s; }
             .search-results { position: absolute; width: 100%; background-color: #2a2a4a; border: 1px solid #4a4a6a; border-radius: 8px; margin-top: 5px; z-index: 100; max-height: 300px; overflow-y: auto; }
             .search-results div { padding: 10px; cursor: pointer; border-bottom: 1px solid #1e1e3f; display: flex; align-items: center; gap: 10px; font-size: 0.9rem; }
             .search-results div:hover { background-color: #3a3a5a; }
             .search-results img { width: 24px; height: 24px; border-radius: 50%; }
+
+            /* ------------------------- */
+            /* --- ESTILOS MODO LUZ --- */
+            /* ------------------------- */
+            body.light-mode { background-color: #f4f4f9; color: #333333; }
+            body.light-mode .header { border-bottom-color: #e0e0e0; }
+            body.light-mode .header h1,
+            body.light-mode h2,
+            body.light-mode .info-card .player-details h1 { color: #1a1a2e; }
+            body.light-mode .card { background-color: #ffffff; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); }
+            body.light-mode h2 { border-bottom-color: #e0e0e0; }
+            body.light-mode .theme-toggle-button { background: #ffffff; border-color: #d1d1d1; color: #333; }
+            body.light-mode .theme-toggle-button:hover { background: #f0f0f0; }
+            body.light-mode .info-card .player-image img { border-color: #e0e0e0; }
+            body.light-mode .info-card .player-bio p { color: #666666; }
+            body.light-mode .info-card .player-bio span { color: #333333; }
+            body.light-mode #shot-tooltip { background: rgba(255, 255, 255, 0.9); color: #333; border-color: #d1d1d1; }
+            body.light-mode #add-player-container { border-color: #d1d1d1; }
+            body.light-mode .search-container input { background-color: #ffffff; border-color: #d1d1d1; color: #333333; }
+            body.light-mode .search-results { background-color: #ffffff; border-color: #d1d1d1; }
+            body.light-mode .search-results div { border-bottom-color: #f0f0f0; }
+            body.light-mode .search-results div:hover { background-color: #f5f5f5; }
 
         </style>
 
@@ -78,6 +134,7 @@
     <body>
         <header class="header">
             <h1>FootViz - Comparar</h1>
+            <button id="theme-toggle" class="theme-toggle-button">☀️</button>
         </header>
 
         
@@ -96,14 +153,49 @@
         
         <script>
             document.addEventListener("DOMContentLoaded", function() {
-                const params = new URLSearchParams(window.location.search);
-                const initialPlayerId = params.get("id");
-                const comparisonWrapper = document.getElementById('comparison-wrapper');
+                // --- DECLARACIÓN DE VARIABLES PRINCIPALES (CORREGIDO) ---
                 let players = [];
                 let percentileChartInstance = null;
                 const playerColors = ['rgba(54, 162, 235, 1)', 'rgba(255, 99, 132, 1)', 'rgba(75, 192, 192, 1)', 'rgba(255, 206, 86, 1)'];
                 const playerBgColors = ['rgba(54, 162, 235, 0.2)', 'rgba(255, 99, 132, 0.2)', 'rgba(75, 192, 192, 0.2)', 'rgba(255, 206, 86, 0.2)'];
+                const themeToggleButton = document.getElementById('theme-toggle');
+                const body = document.body;
 
+                // --- LÓGICA DE TEMA ---
+                const darkChartOptions = { responsive: true, maintainAspectRatio: false, scales: { r: { angleLines: { color: 'rgba(224, 224, 224, 0.2)' }, grid: { color: 'rgba(224, 224, 224, 0.2)' }, pointLabels: { color: '#e0e0e0', font: { size: 10 } }, ticks: { display: false, max: 100, min: 0 }}}, plugins: { legend: { labels: { color: '#e0e0e0' }}}};
+                const lightChartOptions = { responsive: true, maintainAspectRatio: false, scales: { r: { angleLines: { color: 'rgba(0, 0, 0, 0.1)' }, grid: { color: 'rgba(0, 0, 0, 0.1)' }, pointLabels: { color: '#666', font: { size: 10 } }, ticks: { display: false, max: 100, min: 0 }}}, plugins: { legend: { labels: { color: '#333' }}}};
+
+                const applyTheme = (theme) => {
+                    if (theme === 'light') {
+                        body.classList.add('light-mode');
+                        themeToggleButton.textContent = '🌙';
+                        if (percentileChartInstance) {
+                            percentileChartInstance.options = lightChartOptions;
+                            percentileChartInstance.update();
+                        }
+                    } else {
+                        body.classList.remove('light-mode');
+                        themeToggleButton.textContent = '☀️';
+                        if (percentileChartInstance) {
+                            percentileChartInstance.options = darkChartOptions;
+                            percentileChartInstance.update();
+                        }
+                    }
+                };
+                
+                const savedTheme = localStorage.getItem('theme') || 'dark';
+                applyTheme(savedTheme);
+
+                themeToggleButton.addEventListener('click', () => {
+                    const newTheme = body.classList.contains('light-mode') ? 'dark' : 'light';
+                    localStorage.setItem('theme', newTheme);
+                    applyTheme(newTheme);
+                });
+
+                const params = new URLSearchParams(window.location.search);
+                const initialPlayerId = params.get("id");
+                const comparisonWrapper = document.getElementById('comparison-wrapper');
+                
                 function init() {
                     if (initialPlayerId) {
                         addPlayer(initialPlayerId);

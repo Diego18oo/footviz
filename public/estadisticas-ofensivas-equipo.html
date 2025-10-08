@@ -7,19 +7,14 @@
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
    
         <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
-
+            * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
                 font-family: 'Poppins', sans-serif;
                 background-color: #1a1a2e;
                 color: #e0e0e0;
                 padding: 20px;
+                transition: background-color 0.3s, color 0.3s;
             }
-
             /* --- Cabecera --- */
             .header {
                 display: flex;
@@ -29,20 +24,10 @@
                 margin: 0 auto 30px auto;
                 padding-bottom: 20px;
                 border-bottom: 1px solid #2a2a4a;
+                transition: border-bottom-color 0.3s;
             }
-
-            .header h1 {
-                font-size: 2rem;
-                color: #ffffff;
-                font-weight: 700;
-            }
-
-            .header .controls-container {
-                display: flex;
-                align-items: center;
-                gap: 20px;
-            }
-
+            .header h1 { font-size: 2rem; color: #ffffff; font-weight: 700; }
+            .header .controls-container { display: flex; align-items: center; gap: 20px; }
             .header select, .header button {
                 background-color: #2a2a4a;
                 color: #e0e0e0;
@@ -52,47 +37,38 @@
                 font-family: 'Poppins', sans-serif;
                 font-size: 0.9rem;
                 cursor: pointer;
-                transition: background-color 0.2s;
+                transition: background-color 0.2s, color 0.3s, border-color 0.3s;
             }
-            
-            .header select:hover, .header button:hover {
-                background-color: #3a3a5a;
-            }
-            
-            /* --- Contenedor Principal del Dashboard --- */
-            .dashboard-wrapper {
+            .header select:hover, .header button:hover { background-color: #3a3a5a; }
+            /* --- BOTÓN PARA CAMBIAR TEMA --- */
+            .theme-toggle-button {
+                background: #2a2a4a;
+                border: 1px solid #4a4a6a;
+                color: #fff;
+                width: 42px;
+                height: 42px;
+                padding: 10px;
+                border-radius: 50%;
+                font-size: 1.2rem;
                 display: flex;
-                gap: 30px;
-                max-width: 1400px;
-                margin: 0 auto;
-                align-items: flex-start;
+                align-items: center;
+                justify-content: center;
             }
-
-            .dashboard-column-left {
-                flex: 2;
-            }
-
-            .dashboard-column-right {
-                flex: 2;
-                display: flex;
-                flex-direction: column;
-                gap: 30px;
-            }
-
-            .full-width-wrapper {
-                max-width: 750px;
-                margin: 30px auto 0 auto; /* Espacio superior para separarlo */
-            }
-            
-            /* --- Estilo de Tarjeta para cada Contenedor --- */
+            .theme-toggle-button:hover { background: #3a3a5a; transform: scale(1.1); }
+            /* --- Contenedor Principal --- */
+            .dashboard-wrapper { display: flex; gap: 30px; max-width: 1400px; margin: 0 auto; align-items: flex-start; }
+            .dashboard-column-left { flex: 2; }
+            .dashboard-column-right { flex: 2; display: flex; flex-direction: column; gap: 30px; }
+            .full-width-wrapper { max-width: 750px; margin: 30px auto 0 auto; }
+            /* --- Estilo de Tarjeta --- */
             .card {
                 background-color: #1e1e3f;
                 border-radius: 12px;
                 padding: 20px;
                 box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
                 width: 100%;
+                transition: background-color 0.3s, box-shadow 0.3s;
             }
-            
             .card-title {
                 font-size: 1.2rem;
                 font-weight: 600;
@@ -100,100 +76,49 @@
                 margin-bottom: 20px;
                 padding-bottom: 10px;
                 border-bottom: 1px solid #4a4a6a;
+                transition: color 0.3s, border-bottom-color 0.3s;
             }
-
             /* --- Estilos de Tablas --- */
-            .table-container {
-                overflow-x: auto;
-            }
-            table {
-                width: 100%;
-                border-collapse: collapse;
-            }
-            th, td {
-                padding: 12px 10px;
-                text-align: center;
-                white-space: nowrap;
-            }
-            thead tr {
-                border-bottom: 2px solid #4a4a6a;
-            }
-            th {
-                font-weight: 600;
-                color: #ffffff;
-                font-size: 0.8rem;
-                text-transform: uppercase;
-            }
-            tbody tr {
-                border-bottom: 1px solid #2a2a4a;
-                transition: background-color 0.2s ease;
-            }
+            .table-container { overflow-x: auto; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { padding: 12px 10px; text-align: center; white-space: nowrap; }
+            thead tr { border-bottom: 2px solid #4a4a6a; transition: border-bottom-color 0.3s; }
+            th { font-weight: 600; color: #ffffff; font-size: 0.8rem; text-transform: uppercase; }
+            tbody tr { border-bottom: 1px solid #2a2a4a; transition: background-color 0.2s ease, border-bottom-color 0.3s; }
             tbody tr:last-child { border-bottom: none; }
             tbody tr:hover { background-color: #2a2a4a; }
-            
             #estadisticas-ofensivas-equipo th:first-child, 
-            #estadisticas-ofensivas-equipo td:first-child {
-                text-align: left;
-            }
-
-            img {
-                width: 28px;
-                height: 28px;
-                vertical-align: middle;
-                margin-right: 12px;
-                border-radius: 50%;
-            }
-            
-            /* --- Estilo del botón de acción en la tabla --- */
-            .btn-estadisticas {
-                background-color: #4a4a6a;
-                border: none;
-                color: white;
-                padding: 8px;
-                font-size: 1rem;
-                width: 35px;
-                height: 35px;
-                border-radius: 50%;
-                cursor: pointer;
-                transition: background-color 0.2s;
-            }
-            .btn-estadisticas:hover {
-                background-color: #007bff;
-            }
-
-            /* --- Contenedores de Visualizaciones --- */
-            .chart-container, .pitch-container, .goal-container {
-                position: relative;
-                width: 100%;
-            }
+            #estadisticas-ofensivas-equipo td:first-child { text-align: left; }
+            img { width: 28px; height: 28px; vertical-align: middle; margin-right: 12px; border-radius: 50%; }
+            .btn-estadisticas { background-color: #4a4a6a; border: none; color: white; padding: 8px; font-size: 1rem; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; transition: background-color 0.2s; }
+            .btn-estadisticas:hover { background-color: #007bff; }
+            /* --- Visualizaciones --- */
+            .chart-container, .pitch-container, .goal-container { position: relative; width: 100%; }
             .chart-container { height: 300px; }
             .pitch-container { height: 300px; margin-top: 15px; }
             .goal-container { height: 250px; margin-top: 15px; }
+            canvas { width: 100%; height: 100%; }
+            #label-equipo { font-weight: 600; color: #ffffff; padding-bottom: 10px; margin-bottom: 15px; border-bottom: 1px solid #4a4a6a; transition: color 0.3s, border-bottom-color 0.3s; }
+            #tooltip { position: absolute; display: none; background: rgba(40, 40, 74, 0.9); color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; pointer-events: none; border: 1px solid #4a4a6a; }
             
-            canvas {
-                width: 100%;
-                height: 100%;
-            }
-
-            #label-equipo {
-                font-weight: 600;
-                color: #ffffff;
-                padding-bottom: 10px;
-                margin-bottom: 15px;
-                border-bottom: 1px solid #4a4a6a;
-            }
-            
-            #tooltip {
-                position: absolute;
-                display: none;
-                background: rgba(40, 40, 74, 0.9);
-                color: #fff;
-                padding: 8px 12px;
-                border-radius: 6px;
-                font-size: 0.8rem;
-                pointer-events: none; /* Evita que el tooltip interfiera con el mouse */
-                border: 1px solid #4a4a6a;
-            }
+            /* ------------------------- */
+            /* --- ESTILOS MODO LUZ --- */
+            /* ------------------------- */
+            body.light-mode { background-color: #f4f4f9; color: #333333; }
+            body.light-mode .header { border-bottom-color: #e0e0e0; }
+            body.light-mode .header h1, body.light-mode .card-title, body.light-mode th, body.light-mode #label-equipo { color: #1a1a2e; }
+            body.light-mode .header select, body.light-mode .header button { background-color: #ffffff; border-color: #d1d1d1; color: #333333; }
+            body.light-mode .header select:hover, body.light-mode .header button:hover { background-color: #f0f0f0; }
+            body.light-mode .theme-toggle-button { background: #ffffff; border-color: #d1d1d1; color: #333; }
+            body.light-mode .theme-toggle-button:hover { background: #f0f0f0; }
+            body.light-mode .card { background-color: #ffffff; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); }
+            body.light-mode .card-title, body.light-mode #label-equipo { border-bottom-color: #e0e0e0; }
+            body.light-mode thead tr { border-bottom-color: #d1d1d1; }
+            body.light-mode tbody tr { border-bottom-color: #e0e0e0; }
+            body.light-mode tbody tr:hover { background-color: #e9e9f3; }
+            body.light-mode .btn-estadisticas { background-color: #e9e9f3; color: #333; }
+            body.light-mode .btn-estadisticas:hover { background-color: #007bff; color: white; }
+            body.light-mode #tooltip { background: rgba(255, 255, 255, 0.95); color: #333; border-color: #d1d1d1; }
         </style>
     </head>
     <body> 
@@ -208,6 +133,7 @@
                     <option value="ligueone">Ligue 1</option>
                 </select>
                 <button id="tipo-de-estadistica">Estadísticas Individuales</button>
+                <button id="theme-toggle" class="theme-toggle-button">☀️</button>
             </div>
         </header>
 
@@ -268,248 +194,238 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
         <script>
-            const ligaSelect = document.getElementById('liga');
-            const tipoDeStatBtn = document.getElementById('tipo-de-estadistica');
-            const tooltip = document.getElementById("tooltip");
-            
-            tipoDeStatBtn.addEventListener("click", function() {
-                window.location = "estadistica_ofensivas.html?liga=" + ligaSelect.value;
-            });
-            
-            function cargarTablaStats(ligaSeleccionada){
-                let endpoints = {
-                    "premierleague": "1",
-                    "laliga": "2",
-                    "seriea": "3", 
-                    "bundesliga": "4",
-                    "ligueone": "5"
+            document.addEventListener('DOMContentLoaded', function() {
+                // --- DECLARACIÓN DE VARIABLES ---
+                const ligaSelect = document.getElementById('liga');
+                const tipoDeStatBtn = document.getElementById('tipo-de-estadistica');
+                const tooltip = document.getElementById("tooltip");
+                let disparosGuardados = [];
+                let disparosPorteriaGuardados = [];
+                let lineChartInstance = null;
+                
+                // --- LÓGICA DE TEMA ---
+                const themeToggleButton = document.getElementById('theme-toggle');
+                const body = document.body;
 
-                } 
-                fetch(`/estadisticas-ofensivas-equipo/${endpoints[ligaSeleccionada]}`)
-                .then(response => response.json())
-                .then(data => {
-                    const tbodyStatsOfensivas = document.querySelector("#estadisticas-ofensivas-equipo tbody");
-                    tbodyStatsOfensivas.innerHTML="";
-                    const stats = data;
-                    stats.forEach(stat => {
-                        const fila = document.createElement("tr");
-                        fila.innerHTML = `
-                            <td><img src="${stat.url_imagen}">${stat.nombre}</td>
-                            <td>${stat.partidos_jugados}</td>
-                            <td>${stat.goles_anotados}</td>
-                            <td>${stat.disparos}</td>
-                            <td>${stat.disparos_a_puerta}</td>
-                            <td>${stat.porcentaje_disparos_a_puerta}</td>
-                            <td>${stat.xg}</td>
-                            <td>${stat.disparos_por_90}</td>
-                            <td><button class="btn-estadisticas" data-equipo="${stat.id_equipo}">🥅</button></td>
-                        `;
-                        tbodyStatsOfensivas.appendChild(fila);
-                        
-                        
+                const darkLineOptions = { responsive: true, maintainAspectRatio: false, scales: { y: { ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(224, 224, 224, 0.1)' } }, x: { ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(224, 224, 224, 0.1)' } } }, plugins: { legend: { labels: { color: '#e0e0e0' } } } };
+                const lightLineOptions = { responsive: true, maintainAspectRatio: false, scales: { y: { ticks: { color: '#666' }, grid: { color: 'rgba(0, 0, 0, 0.1)' } }, x: { ticks: { color: '#666' }, grid: { color: 'rgba(0, 0, 0, 0.1)' } } }, plugins: { legend: { labels: { color: '#333' } } } };
+
+                const applyTheme = (theme) => {
+                    if (theme === 'light') {
+                        body.classList.add('light-mode');
+                        themeToggleButton.textContent = '🌙';
+                        if (lineChartInstance) { lineChartInstance.options = lightLineOptions; lineChartInstance.update(); }
+                    } else {
+                        body.classList.remove('light-mode');
+                        themeToggleButton.textContent = '☀️';
+                        if (lineChartInstance) { lineChartInstance.options = darkLineOptions; lineChartInstance.update(); }
+                    }
+                    // Vuelve a dibujar los canvas de disparos si ya hay datos
+                    if (document.querySelectorAll(".btn-estadisticas").length > 0) {
+                        const activeButton = document.querySelector(".btn-estadisticas[data-active='true']");
+                        if(activeButton) activeButton.click();
+                    }
+                };
+
+                const savedTheme = localStorage.getItem('theme') || 'dark';
+                applyTheme(savedTheme);
+
+                themeToggleButton.addEventListener('click', () => {
+                    const newTheme = body.classList.contains('light-mode') ? 'dark' : 'light';
+                    localStorage.setItem('theme', newTheme);
+                    applyTheme(newTheme);
+                });
+                
+                
+                tipoDeStatBtn.addEventListener("click", function() {
+                    window.location = "estadistica_ofensivas.html?liga=" + ligaSelect.value;
+                });
+                
+                function cargarTablaStats(ligaSeleccionada){
+                    let endpoints = { "premierleague": "1", "laliga": "2", "seriea": "3", "bundesliga": "4", "ligueone": "5" };
+                    fetch(`/estadisticas-ofensivas-equipo/${endpoints[ligaSeleccionada]}`).then(r => r.json()).then(data => {
+                        const tbodyStatsOfensivas = document.querySelector("#estadisticas-ofensivas-equipo tbody");
+                        tbodyStatsOfensivas.innerHTML = "";
+                        data.forEach(stat => {
+                            const fila = document.createElement("tr");
+                            fila.innerHTML = `
+                                <td><img src="${stat.url_imagen}">${stat.nombre}</td>
+                                <td>${stat.partidos_jugados}</td> <td>${stat.goles_anotados}</td>
+                                <td>${stat.disparos}</td> <td>${stat.disparos_a_puerta}</td>
+                                <td>${stat.porcentaje_disparos_a_puerta}</td> <td>${stat.xg}</td>
+                                <td>${stat.disparos_por_90}</td>
+                                <td><button class="btn-estadisticas" data-equipo-id="${stat.id_equipo}" data-equipo-nombre="${stat.nombre}">🥅</button></td>
+                            `;
+                            tbodyStatsOfensivas.appendChild(fila);
+                        });
+                        addEventListenersToButtons();
                     });
-                    addEventListenersToButtons();
+                    
 
-                })
+                }
+                
+                
+                function dibujarCampo(ctx) {
+                    const w = ctx.canvas.width, h = ctx.canvas.height;
+                    const isLight = body.classList.contains('light-mode');
+                    ctx.clearRect(0, 0, w, h);
+                    ctx.fillStyle = isLight ? "#d4e9d4" : "#2a5f2a"; // Verde claro / oscuro
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.strokeStyle = isLight ? "rgba(0, 0, 0, 0.4)" : "rgba(255, 255, 255, 0.5)";
+                    ctx.lineWidth = 2;
+                    const marginX = w * 0.05, marginY = h * 0.05;
+                    const fieldW = w - 2 * marginX, fieldH = h - 2 * marginY;
+                    ctx.strokeRect(marginX, marginY, fieldW, fieldH);
+                    ctx.beginPath(); ctx.moveTo(w / 2, marginY); ctx.lineTo(w / 2, h - marginY); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(w / 2, h / 2, fieldW * 0.1, 0, Math.PI * 2); ctx.stroke();
+                    ctx.strokeRect(marginX, h / 2 - fieldH * 0.3, fieldW * 0.15, fieldH * 0.6);
+                    ctx.strokeRect(w - marginX - fieldW * 0.15, h / 2 - fieldH * 0.3, fieldW * 0.15, fieldH * 0.6);
+                }
 
+                function dibujarPorteria(ctx) {
+                    const w = ctx.canvas.width, h = ctx.canvas.height;
+                    const isLight = body.classList.contains('light-mode');
+                    ctx.clearRect(0, 0, w, h);
+                    ctx.strokeStyle = isLight ? "rgba(0, 0, 0, 0.7)" : "rgba(255, 255, 255, 0.8)";
+                    ctx.lineWidth = 4;
+                    const goalW = w * 0.8, goalH = h * 0.8;
+                    const startX = (w - goalW) / 2, startY = (h - goalH) / 2;
+                    ctx.strokeRect(startX, startY, goalW, goalH);
+                }
                 
 
-            }
-            
-            
-            function dibujarCampo(ctx) {
-                const w = ctx.canvas.width;
-                const h = ctx.canvas.height;
-                ctx.clearRect(0, 0, w, h);
-                ctx.fillStyle = "#2a5f2a"; // Verde oscuro
-                ctx.fillRect(0, 0, w, h);
-                
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
-                ctx.lineWidth = 2;
-                
-                const marginX = w * 0.05, marginY = h * 0.05;
-                const fieldW = w - 2 * marginX, fieldH = h - 2 * marginY;
-                
-                ctx.strokeRect(marginX, marginY, fieldW, fieldH); // Bordes
-                ctx.beginPath(); ctx.moveTo(w / 2, marginY); ctx.lineTo(w / 2, h - marginY); ctx.stroke(); // Línea media
-                ctx.beginPath(); ctx.arc(w / 2, h / 2, fieldW * 0.1, 0, Math.PI * 2); ctx.stroke(); // Círculo central
-                
-                // Áreas
-                ctx.strokeRect(marginX, h / 2 - fieldH * 0.3, fieldW * 0.15, fieldH * 0.6);
-                ctx.strokeRect(w - marginX - fieldW * 0.15, h / 2 - fieldH * 0.3, fieldW * 0.15, fieldH * 0.6);
-            }
+                function plotearDisparos(ctx, disparos) {
+                    disparos.sort((a, b) => (a.resultado === 'goal') - (b.resultado === 'goal'));
+                    disparosGuardados.length = 0;
+                    const w = ctx.canvas.width, h = ctx.canvas.height;
+                    const marginX = w * 0.05, marginY = h * 0.05;
+                    const fieldW = w - 2 * marginX, fieldH = h - 2 * marginY;
 
-            function dibujarPorteria(ctx) {
-                const w = ctx.canvas.width;
-                const h = ctx.canvas.height;
-                ctx.clearRect(0, 0, w, h);
+                    disparos.forEach(d => {
+                        const x = marginX + (d.pitch_x / 100) * fieldW;
+                        const y = marginY + (1 - d.pitch_y / 100) * fieldH;
+                        const radio = Math.max(4, Math.min(15, d.xg * 20));
 
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
-                ctx.lineWidth = 4;
-                
-                const goalW = w * 0.8, goalH = h * 0.8;
-                const startX = (w - goalW) / 2, startY = (h - goalH) / 2;
+                        ctx.beginPath();
+                        ctx.arc(x, y, radio, 0, Math.PI * 2);
+                        ctx.fillStyle = d.resultado === "goal" ? "#ff4d4d" : "#ffd700"; // Rojo para gol, amarillo para otros
+                        ctx.fill();
+                        ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
+                        ctx.stroke();
 
-                ctx.strokeRect(startX, startY, goalW, goalH);
-            }
-            let disparosGuardados = [];
-            let disparosPorteriaGuardados = [];
+                        disparosGuardados.push({ x, y, radio, jugador: d.nombre, xg: d.xg, resultado: d.resultado });
+                    });
+                }
 
-            function plotearDisparos(ctx, disparos) {
-                disparos.sort((a, b) => (a.resultado === 'goal') - (b.resultado === 'goal'));
-                disparosGuardados.length = 0;
-                const w = ctx.canvas.width, h = ctx.canvas.height;
-                const marginX = w * 0.05, marginY = h * 0.05;
-                const fieldW = w - 2 * marginX, fieldH = h - 2 * marginY;
+                function plotearDisparosPorteria(ctx, disparos) {
+                    // Ordena para que los goles se dibujen encima
+                    disparos.sort((a, b) => (a.resultado === 'goal') - (b.resultado === 'goal'));
+                    
+                    disparosPorteriaGuardados.length = 0;
+                    const w = ctx.canvas.width, h = ctx.canvas.height;
+                    
+                    // El marco visual que dibujamos
+                    const frameW = w * 0.8, frameH = h * 0.65;
+                    const frameStartX = (w - frameW) / 2, frameStartY = (h - frameH) / 2;
 
-                disparos.forEach(d => {
-                    const x = marginX + (d.pitch_x / 100) * fieldW;
-                    const y = marginY + (1 - d.pitch_y / 100) * fieldH;
-                    const radio = Math.max(4, Math.min(15, d.xg * 20));
+                    // --- FÓRMULAS CORREGIDAS ---
+                    // Expandimos el área de ploteo para que sea más grande que el marco.
+                    // Esto hará que los disparos errados (miss) caigan fuera del marco.
+                    const plotWidth = frameW * 10;   // Área de ploteo horizontal (más del doble del marco)
+                    const plotHeight = frameH * 3;  // Área de ploteo vertical (el triple del marco)
 
-                    ctx.beginPath();
-                    ctx.arc(x, y, radio, 0, Math.PI * 2);
-                    ctx.fillStyle = d.resultado === "goal" ? "#ff4d4d" : "#ffd700"; // Rojo para gol, amarillo para otros
-                    ctx.fill();
-                    ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
-                    ctx.stroke();
+                    disparos.forEach(d => {
+                        // Centramos el ploteo y usamos el nuevo rango expandido.
+                        // Se asume que la data `goal_mouth_y` = 50 es el centro horizontal.
+                        const x = (w / 2) - ((d.goal_mouth_y - 50) / 105 * plotWidth);
 
-                    disparosGuardados.push({ x, y, radio, jugador: d.nombre, xg: d.xg, resultado: d.resultado });
-                });
-            }
+                        // Se asume que la data `goal_mouth_z` = 0 es el suelo.
+                        const y = (frameStartY + frameH) - (d.goal_mouth_z / 100 * plotHeight);
 
-            function plotearDisparosPorteria(ctx, disparos) {
-                // Ordena para que los goles se dibujen encima
-                disparos.sort((a, b) => (a.resultado === 'goal') - (b.resultado === 'goal'));
-                
-                disparosPorteriaGuardados.length = 0;
-                const w = ctx.canvas.width, h = ctx.canvas.height;
-                
-                // El marco visual que dibujamos
-                const frameW = w * 0.8, frameH = h * 0.65;
-                const frameStartX = (w - frameW) / 2, frameStartY = (h - frameH) / 2;
+                        const radio = 8;
 
-                // --- FÓRMULAS CORREGIDAS ---
-                // Expandimos el área de ploteo para que sea más grande que el marco.
-                // Esto hará que los disparos errados (miss) caigan fuera del marco.
-                const plotWidth = frameW * 10;   // Área de ploteo horizontal (más del doble del marco)
-                const plotHeight = frameH * 3;  // Área de ploteo vertical (el triple del marco)
+                        ctx.beginPath();
+                        ctx.arc(x, y, radio, 0, Math.PI * 2);
+                        ctx.fillStyle = d.resultado === "goal" ? "#ff4d4d" : "#007bff";
+                        ctx.fill();
+                        ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+                        ctx.stroke();
 
-                disparos.forEach(d => {
-                    // Centramos el ploteo y usamos el nuevo rango expandido.
-                    // Se asume que la data `goal_mouth_y` = 50 es el centro horizontal.
-                    const x = (w / 2) - ((d.goal_mouth_y - 50) / 105 * plotWidth);
+                        disparosPorteriaGuardados.push({ x, y, radio, jugador: d.nombre, resultado: d.resultado });
+                    });
+                }
+                function addEventListenersToButtons() {
+                    document.querySelectorAll(".btn-estadisticas").forEach(button => {
+                        button.addEventListener("click", function() {
+                            // Marcar este botón como activo para redibujar si cambia el tema
+                            document.querySelectorAll(".btn-estadisticas").forEach(btn => btn.dataset.active = "false");
+                            this.dataset.active = "true";
 
-                    // Se asume que la data `goal_mouth_z` = 0 es el suelo.
-                    const y = (frameStartY + frameH) - (d.goal_mouth_z / 100 * plotHeight);
-
-                    const radio = 8;
-
-                    ctx.beginPath();
-                    ctx.arc(x, y, radio, 0, Math.PI * 2);
-                    ctx.fillStyle = d.resultado === "goal" ? "#ff4d4d" : "#007bff";
-                    ctx.fill();
-                    ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
-                    ctx.stroke();
-
-                    disparosPorteriaGuardados.push({ x, y, radio, jugador: d.nombre, resultado: d.resultado });
-                });
-            }
-            function addEventListenersToButtons() {
-                document.querySelectorAll(".btn-estadisticas").forEach(button => {
-                    button.addEventListener("click", function() {
-                        const equipoId = this.getAttribute("data-equipo");
-                        
-                        // Cargar y renderizar gráfico de líneas de xG
-                        fetch(`/goles-esperados-equipo/${equipoId}`)
-                            .then(response => response.json())
-                            .then(info => {
+                            const equipoId = this.getAttribute("data-equipo-id");
+                            const equipoNombre = this.getAttribute("data-equipo-nombre");
+                            
+                            fetch(`/goles-esperados-equipo/${equipoId}`).then(r => r.json()).then(info => {
                                 const ctx = document.getElementById('lineChart').getContext('2d');
-                                if (window.lineChartInstance) window.lineChartInstance.destroy();
-                                window.lineChartInstance = new Chart(ctx, {
-                                    type: 'line',
-                                    data: {
-                                        labels: info.map(item => `J${item.jornada}`),
-                                        datasets: [{
-                                            label: 'xG a Favor', data: info.map(item => item.xg_equipo),
-                                            borderColor: 'rgba(54, 162, 235, 1)', backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                                            fill: true, tension: 0.4
-                                        }, {
-                                            label: 'xG en Contra', data: info.map(item => item.xg_rival),
-                                            borderColor: 'rgba(255, 99, 132, 1)', backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                                            fill: true, tension: 0.4
-                                        }]
-                                    },
-                                    options: {
-                                        responsive: true, maintainAspectRatio: false,
-                                        scales: {
-                                            y: { ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(224, 224, 224, 0.1)' } },
-                                            x: { ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(224, 224, 224, 0.1)' } }
-                                        },
-                                        plugins: { legend: { labels: { color: '#e0e0e0' } } }
-                                    }
-                                });
+                                if (lineChartInstance) lineChartInstance.destroy();
+                                const currentOptions = body.classList.contains('light-mode') ? lightLineOptions : darkLineOptions;
+                                lineChartInstance = new Chart(ctx, { type: 'line', data: { labels: info.map(item => `J${item.jornada}`), datasets: [{ label: 'xG a Favor', data: info.map(item => item.xg_equipo), borderColor: 'rgba(54, 162, 235, 1)', backgroundColor: 'rgba(54, 162, 235, 0.2)', fill: true, tension: 0.4 }, { label: 'xG en Contra', data: info.map(item => item.xg_rival), borderColor: 'rgba(255, 99, 132, 1)', backgroundColor: 'rgba(255, 99, 132, 0.2)', fill: true, tension: 0.4 }] }, options: currentOptions });
                             });
-                        
-                        // Cargar y renderizar mapas de disparos
-                        fetch(`/mapa-disparos/${equipoId}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                document.getElementById("label-equipo").textContent = `Mapa de disparos de: ${data[0].nombre_equipo}`;
-                                
+                            
+                            fetch(`/mapa-disparos/${equipoId}`).then(r => r.json()).then(data => {
+                                document.getElementById("label-equipo").textContent = `Mapa de disparos de: ${equipoNombre}`;
                                 const campoCanvas = document.getElementById("campoCanvas");
                                 const ctxCampo = campoCanvas.getContext("2d");
-                                campoCanvas.width = campoCanvas.offsetWidth;
-                                campoCanvas.height = campoCanvas.offsetHeight;
+                                campoCanvas.width = campoCanvas.offsetWidth; campoCanvas.height = campoCanvas.offsetHeight;
                                 dibujarCampo(ctxCampo);
                                 plotearDisparos(ctxCampo, data);
 
                                 const porteriaCanvas = document.getElementById("porteriaCanvas");
                                 const ctxPorteria = porteriaCanvas.getContext("2d");
-                                porteriaCanvas.width = porteriaCanvas.offsetWidth;
-                                porteriaCanvas.height = porteriaCanvas.offsetHeight;
+                                porteriaCanvas.width = porteriaCanvas.offsetWidth; porteriaCanvas.height = porteriaCanvas.offsetHeight;
                                 dibujarPorteria(ctxPorteria);
                                 plotearDisparosPorteria(ctxPorteria, data);
                             });
-                    });
-                });
-            }
+                        });
+                    });   
+                }
 
-            function setupTooltip(canvas, shotsArray) {
-                canvas.addEventListener("mousemove", (e) => {
-                    const rect = canvas.getBoundingClientRect();
-                    const mouseX = e.clientX - rect.left;
-                    const mouseY = e.clientY - rect.top;
-                    let encontrado = null;
-                    for (let d of shotsArray) {
-                        if (Math.sqrt((mouseX - d.x) ** 2 + (mouseY - d.y) ** 2) <= d.radio) {
-                            encontrado = d; break;
+                function setupTooltip(canvas, shotsArray) {
+                    canvas.addEventListener("mousemove", (e) => {
+                        const rect = canvas.getBoundingClientRect();
+                        const mouseX = e.clientX - rect.left;
+                        const mouseY = e.clientY - rect.top;
+                        let encontrado = null;
+                        for (let d of shotsArray) {
+                            if (Math.sqrt((mouseX - d.x) ** 2 + (mouseY - d.y) ** 2) <= d.radio) {
+                                encontrado = d; break;
+                            }
                         }
-                    }
-                    if (encontrado) {
-                        tooltip.style.display = "block";
-                        tooltip.style.left = e.pageX + 10 + "px";
-                        tooltip.style.top = e.pageY + 10 + "px";
-                        tooltip.innerHTML = `<b>${encontrado.jugador}</b><br>Resultado: ${encontrado.resultado}${encontrado.xg ? `<br>xG: ${encontrado.xg}` : ''}`;
-                    } else {
-                        tooltip.style.display = "none";
-                    }
+                        if (encontrado) {
+                            tooltip.style.display = "block";
+                            tooltip.style.left = e.pageX + 10 + "px";
+                            tooltip.style.top = e.pageY + 10 + "px";
+                            tooltip.innerHTML = `<b>${encontrado.jugador}</b><br>Resultado: ${encontrado.resultado}${encontrado.xg ? `<br>xG: ${encontrado.xg}` : ''}`;
+                        } else {
+                            tooltip.style.display = "none";
+                        }
+                    });
+                    canvas.addEventListener("mouseleave", () => tooltip.style.display = "none");
+                }
+
+                setupTooltip(document.getElementById("campoCanvas"), disparosGuardados);
+                setupTooltip(document.getElementById("porteriaCanvas"), disparosPorteriaGuardados);
+
+                // --- Carga Inicial ---
+                const params = new URLSearchParams(window.location.search);
+                const ligaParam = params.get("liga");
+                if (ligaParam) ligaSelect.value = ligaParam;
+                
+                cargarTablaStats(ligaSelect.value);
+                ligaSelect.addEventListener("change", function() {
+                    cargarTablaStats(this.value);
                 });
-                canvas.addEventListener("mouseleave", () => tooltip.style.display = "none");
-            }
-
-            setupTooltip(document.getElementById("campoCanvas"), disparosGuardados);
-            setupTooltip(document.getElementById("porteriaCanvas"), disparosPorteriaGuardados);
-
-            // --- Carga Inicial ---
-            const params = new URLSearchParams(window.location.search);
-            const ligaParam = params.get("liga");
-            if (ligaParam) ligaSelect.value = ligaParam;
-            
-            cargarTablaStats(ligaSelect.value);
-            ligaSelect.addEventListener("change", function() {
-                cargarTablaStats(this.value);
             });
+            
 
         </script> 
 

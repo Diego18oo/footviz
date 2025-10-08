@@ -7,29 +7,53 @@
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     
         <style>
-            * { 
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
-
+            * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
                 font-family: 'Poppins', sans-serif;
                 background-color: #1a1a2e;
                 color: #e0e0e0;
                 padding: 20px;
+                transition: background-color 0.3s, color 0.3s;
             }
-
+            /* --- Cabecera Añadida --- */
+            .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                max-width: 1240px;
+                margin: 0 auto 30px auto;
+                padding-bottom: 20px;
+                border-bottom: 1px solid #2a2a4a;
+                transition: border-bottom-color 0.3s;
+            }
+            .header h1 { font-size: 2rem; color: #ffffff; font-weight: 700; }
+            /* --- BOTÓN PARA CAMBIAR TEMA --- */
+            .theme-toggle-button {
+                background: #2a2a4a;
+                border: 1px solid #4a4a6a;
+                color: #fff;
+                width: 42px;
+                height: 42px;
+                padding: 10px;
+                border-radius: 50%;
+                cursor: pointer;
+                font-size: 1.2rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s ease;
+            }
+            .theme-toggle-button:hover { background: #3a3a5a; transform: scale(1.1); }
             h2 {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #ffffff;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #4a4a6a;
-            text-align: center;
+                font-size: 1.2rem;
+                font-weight: 600;
+                color: #ffffff;
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+                border-bottom: 1px solid #4a4a6a;
+                text-align: center;
+                transition: color 0.3s, border-bottom-color 0.3s;
             }
-
             /* --- Estilo de Tarjeta Principal --- */
             .card {
                 background-color: #1e1e3f;
@@ -39,162 +63,59 @@
                 width: 100%;
                 max-width: 1240px;
                 margin: 20px auto;
+                transition: background-color 0.3s, box-shadow 0.3s;
             }
-
             /* --- Info General del Partido --- */
-            #info-general {
-                display: flex; 
-                justify-content: space-between; 
-                align-items: center; 
-            }
-
-            .info-partido {
-                text-align: center; 
-            }
-
-            .info-partido .marcador {
-                font-size: 3rem;
-                font-weight: 700;
-                color: #ffffff;
-                margin: 10px 0;
-                border: none;
-                padding: 0;
-            }
-
-            .info-partido p {
-                margin: 5px 0;
-                font-size: 0.9em;
-                color: #a0a0c0;
-                font-weight: 400;
-            }
-
-            .equipo img {
-                width: 100px; 
-                height: auto;
-            }
-            
+            #info-general { display: flex; justify-content: space-between; align-items: center; }
+            .info-partido { text-align: center; }
+            .info-partido .marcador { font-size: 3rem; font-weight: 700; color: #ffffff; margin: 10px 0; border: none; padding: 0; }
+            .info-partido p { margin: 5px 0; font-size: 0.9em; color: #a0a0c0; font-weight: 400; }
+            .equipo img { width: 100px; height: auto; cursor: pointer; }
             /* --- Alineaciones --- */
-            .alineaciones-wrapper {
-                display: flex;
-                justify-content: space-between;
-                max-width: 1240px;
-                margin: 20px auto;
-                gap: 20px;
-                flex-wrap: wrap;
-            }
-
-            .alineacion-container {
-                flex: 1;
-                min-width: 400px;
-                text-align: center;
-            }
-
-            #formacion-local-titulo,
-            #formacion-visitante-titulo {
-                font-size: 1em;
-                color: #a0a0c0;
-                margin-top: 0;
-                margin-bottom: 15px;
-                font-weight: 400;
-            }
-
-            #campo-local,
-            #campo-visitante {
-                border-radius: 8px;
-                max-width: 100%;
-                height: auto;
-            }
-            
+            .alineaciones-wrapper { display: flex; justify-content: space-between; max-width: 1240px; margin: 20px auto; gap: 20px; flex-wrap: wrap; }
+            .alineacion-container { flex: 1; min-width: 400px; text-align: center; }
+            #formacion-local-titulo, #formacion-visitante-titulo { font-size: 1em; color: #a0a0c0; margin-top: 0; margin-bottom: 15px; font-weight: 400; }
+            #campo-local, #campo-visitante { border-radius: 8px; max-width: 100%; height: auto; }
             /* --- Dashboard de Estadísticas --- */
-            .dashboard-wrapper {
-                display: flex;
-                align-items: flex-start;
-                gap: 20px;
-                max-width: 1240px;
-                margin: 20px auto;
-            }
-
-            .dashboard-column-left,
-            .dashboard-column-right {
-                display: flex;
-                flex-direction: column;
-                gap: 20px;
-            }
-            
+            .dashboard-wrapper { display: flex; align-items: flex-start; gap: 20px; max-width: 1240px; margin: 20px auto; }
+            .dashboard-column-left, .dashboard-column-right { display: flex; flex-direction: column; gap: 20px; }
             .dashboard-column-left { flex: 2; }
             .dashboard-column-right { flex: 2; }
-
             /* --- Comparación de Estadísticas --- */
             .stat-comparison { margin-bottom: 20px; }
             .stat-comparison:last-child { margin-bottom: 0; }
-
-            .stat-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 8px;
-                font-size: 14px;
-            }
-
-            .stat-label {
-                font-weight: bold;
-                color: #e0e0e0;
-            }
-
-            .stat-value-local,
-            .stat-value-visitor {
-                padding: 4px 10px;
-                border-radius: 12px;
-                color: white;
-                font-weight: bold;
-                min-width: 40px;
-                text-align: center;
-            }
-            
+            .stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 14px; }
+            .stat-label { font-weight: bold; color: #e0e0e0; }
+            .stat-value-local, .stat-value-visitor { padding: 4px 10px; border-radius: 12px; color: white; font-weight: bold; min-width: 40px; text-align: center; }
             .stat-value-local { background-color: #007bff; }
             .stat-value-visitor { background-color: #ff4d4d; }
-
-            .stat-bar-container {
-                width: 100%;
-                height: 10px;
-                background-color: #ff4d4d;
-                border-radius: 5px;
-                overflow: hidden;
-            }
-
-            .stat-bar-local {
-                height: 100%;
-                background-color: #007bff;
-                border-radius: 5px;
-                transition: width 0.5s ease-in-out;
-            }
-
+            .stat-bar-container { width: 100%; height: 10px; background-color: #ff4d4d; border-radius: 5px; overflow: hidden; }
+            .stat-bar-local { height: 100%; background-color: #007bff; border-radius: 5px; transition: width 0.5s ease-in-out; }
             /* --- Mapa de Disparos --- */
-            #shot-map-canvas {
-                max-width: 100%;
-                height: auto;
-                border-radius: 8px;
-                display: block;
-                margin: 0 auto;
-            }
-
-            #shot-tooltip {
-                position: absolute;
-                display: none;
-                background: rgba(40, 40, 74, 0.9);
-                color: #fff;
-                padding: 8px 12px;
-                border-radius: 6px;
-                font-family: 'Poppins', sans-serif;
-                font-size: 0.8rem;
-                pointer-events: none;
-                white-space: nowrap;
-                z-index: 100;
-                border: 1px solid #4a4a6a;
-            }
+            #shot-map-canvas { max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto; }
+            #shot-tooltip { position: absolute; display: none; background: rgba(40, 40, 74, 0.9); color: #fff; padding: 8px 12px; border-radius: 6px; font-family: 'Poppins', sans-serif; font-size: 0.8rem; pointer-events: none; white-space: nowrap; z-index: 100; border: 1px solid #4a4a6a; }
+            
+            /* ------------------------- */
+            /* --- ESTILOS MODO LUZ --- */
+            /* ------------------------- */
+            body.light-mode { background-color: #f4f4f9; color: #333333; }
+            body.light-mode .header { border-bottom-color: #e0e0e0; }
+            body.light-mode .header h1, body.light-mode h2, body.light-mode .info-partido .marcador { color: #1a1a2e; }
+            body.light-mode .theme-toggle-button { background: #ffffff; border-color: #d1d1d1; color: #333; }
+            body.light-mode .theme-toggle-button:hover { background: #f0f0f0; }
+            body.light-mode .card { background-color: #ffffff; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); }
+            body.light-mode h2 { border-bottom-color: #e0e0e0; }
+            body.light-mode .info-partido p, body.light-mode #formacion-local-titulo, body.light-mode #formacion-visitante-titulo { color: #666; }
+            body.light-mode .stat-label { color: #333; }
+            body.light-mode #shot-tooltip { background: rgba(255, 255, 255, 0.95); color: #333; border-color: #d1d1d1; }
         </style>
     </head>
     <body>
+        <header class="header">
+            <h1>Informe del Partido</h1>
+            <button id="theme-toggle" class="theme-toggle-button">☀️</button>
+        </header>
+
         <div id="info-general" class="card">
             
         </div>
@@ -234,507 +155,531 @@
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
-            const params = new URLSearchParams(window.location.search);
-            const partidoParam = params.get("partido");
-            const FORMACIONES = {
-                "4-4-2": [
-                    [0.5, 0.9],   // Portero
-                    // Defensas: LD, DFC, DFC, LI
-                    [0.9, 0.7], [0.63, 0.7], [0.37, 0.7], [0.1, 0.7], 
-                    // Medios: MD, MC, MC, MI
-                    [0.9, 0.45], [0.63, 0.45], [0.37, 0.45], [0.1, 0.45], 
-                    // Delanteros
-                    [0.63, 0.2], [0.37, 0.2]  
-                ],
-                "4-2-3-1": [
-                    [0.5, 0.9],   // Portero
-                    // Defensas: LD, DFC, DFC, LI
-                    [0.9, 0.7], [0.63, 0.7], [0.37, 0.7], [0.1, 0.7],
-                    // Medios defensivos (2)
-                    [0.63, 0.55], [0.37, 0.55], 
-                    // Medios ofensivos: MD, MCO, MI
-                    [0.85, 0.35], [0.5, 0.35], [0.15, 0.35], 
-                    // Delantero
-                    [0.5, 0.15]   
-                ],
-                "4-3-3": [
-                    [0.5, 0.9],   // Portero
-                    // Defensas: LD, DFC, DFC, LI
-                    [0.9, 0.7], [0.63, 0.7], [0.37, 0.7], [0.1, 0.7], 
-                    // Medios: Interior Derecho, Pivote, Interior Izquierdo
-                    [0.75, 0.5], [0.5, 0.45], [0.25, 0.5], 
-                    // Delanteros: Extremo Derecho, DC, Extremo Izquierdo
-                    [0.8, 0.2], [0.5, 0.15], [0.2, 0.2]  
-                ],
-                "3-5-2": [
-                    [0.5, 0.9], // Portero
-                    // Defensas (3): Central Derecho, Líbero, Central Izquierdo
-                    [0.75, 0.7], [0.5, 0.7], [0.25, 0.7], 
-                    // Medios (5): Carrilero Derecho, Interior, Pivote, Interior, Carrilero Izquierdo
-                    [0.9, 0.45], [0.7, 0.5], [0.5, 0.4], [0.3, 0.5], [0.1, 0.45], 
-                    // Delanteros (2)
-                    [0.63, 0.2], [0.37, 0.2] 
-                ],
-                "3-4-2-1": [
-                    [0.5, 0.9], // Portero
-                    // Defensas (3): Central Derecho, Líbero, Central Izquierdo
-                    [0.75, 0.7], [0.5, 0.7], [0.25, 0.7], 
-                    // Medios (4): Carrilero Derecho, Pivote Derecho, Pivote Izquierdo,  Carrilero Izquierdo
-                    [0.9, 0.45], [0.63, 0.50], [0.37, 0.50], [0.1, 0.45],  
-                    //Medios Ofensivos(2)
-                    [0.63, 0.3], [0.37, 0.3],
-                    // Delanteros (1)
-                    [0.50, 0.2] 
-                ]
+            document.addEventListener('DOMContentLoaded', function() {
+                // --- DECLARACIÓN DE VARIABLES ---
+                const params = new URLSearchParams(window.location.search);
+                const partidoParam = params.get("partido");
+                
+                // --- LÓGICA DE TEMA ---
+                const themeToggleButton = document.getElementById('theme-toggle');
+                const body = document.body;
 
-            };
-            
-            let nombreLocal = 'Equipo Local';
-            let nombreVisitante = 'Equipo Visitante';
-            function cargarInfoPartido(partido){
-                fetch(`/info-postpartido/${partido}`) 
-                .then(response => response.json())
-                .then(data => {
-                    if (!data) {
-                        console.error("No se encontraron datos para el partido:", partido);
-                        return;
+                const applyTheme = (theme) => {
+                    if (theme === 'light') {
+                        body.classList.add('light-mode');
+                        themeToggleButton.textContent = '🌙';
+                    } else {
+                        body.classList.remove('light-mode');
+                        themeToggleButton.textContent = '☀️';
                     }
-
-                    nombreLocal = data.local_nombre;
-                    nombreVisitante = data.visitante_nombre;
-                    let infoPrincipal = document.getElementById("info-general")
-                    const fechaPartidoNormalizada = new Date(data.fecha);
-                    fechaPartidoNormalizada.setHours(0, 0, 0, 0);
-                    const anio = fechaPartidoNormalizada.getFullYear();
-                    const mesFormateado = String(fechaPartidoNormalizada.getMonth() + 1).padStart(2, '0');
-                    const diaFormateado = String(fechaPartidoNormalizada.getDate()).padStart(2, '0');
-                    const fechaParaMostrar = `${anio}-${mesFormateado}-${diaFormateado}`;
-                    
-                    const arbitro = data.arbitro_nombre || 'Arbitro no asignado';
-                    let momiosHTML = 'Momios no disponibles';
-                    if (data.momio_local && data.momio_empate && data.momio_visitante) {
-                        momiosHTML = `${data.momio_local} | ${data.momio_empate} | ${data.momio_visitante}`;
+                    // Volver a cargar/dibujar los elementos dinámicos con los nuevos colores
+                    if (partidoParam) {
+                        cargarAlineacionLocal(partidoParam);
+                        cargarAlineacionVisitante(partidoParam);
+                        cargarMapaDeDisparos(partidoParam);
                     }
+                };
+                
+                const savedTheme = localStorage.getItem('theme') || 'dark';
+                // Aplicamos el tema ANTES de cargar los datos para evitar un parpadeo
+                if (savedTheme === 'light') {
+                    body.classList.add('light-mode');
+                    themeToggleButton.textContent = '🌙';
+                } else {
+                    body.classList.remove('light-mode');
+                    themeToggleButton.textContent = '☀️';
+                }
 
-                    infoPrincipal.innerHTML = `
-                    <div class="equipo">
-                        <img src="${data.escudo_local}" alt="Escudo del equipo local" id="clubImgLocal">
-                    </div>
-                    <div class="info-partido">
-                        <h2 class="marcador">${data.goles_local ?? '-'} - ${data.goles_visitante ?? '-'}</h2>
-                        <p>${fechaParaMostrar}</p>
-                        <p>${data.estadio_nombre}</p> 
-                        <p>${arbitro}</p>  
-                        <p>${momiosHTML}</p> 
-                    </div> 
-                    <div class="equipo">
-                        <img src="${data.escudo_visitante}" alt="Escudo del equipo visitante" id="clubImgVisitante">
-                    </div>
-                    `;
-
-                    const imgClub = document.getElementById("clubImgLocal");
-                    imgClub.addEventListener("click", () => {
-                        window.location.href = `club.html?id=${data.id_local}`;
-                    })
-                    const imgClub2 = document.getElementById("clubImgVisitante");
-                    imgClub2.addEventListener("click", () => {
-                        window.location.href = `club.html?id=${data.id_visitante}`;
-                    })
-
-
-                })
-            }
-            function precargarImagenesYDibujar(ctx, jugadores, formacion) {
-                // Creamos un array de promesas, una para cada imagen
-                const promesasDeImagenes = jugadores.map(jugador => {
-                    return new Promise((resolve, reject) => {
-                        const img = new Image();
-                        img.crossOrigin = "Anonymous"; // Necesario para cargar imágenes de otros dominios
-                        img.onload = () => resolve(img);
-                        img.onerror = () => reject(new Error(`No se pudo cargar: ${jugador.imgUrl}`));
-                        img.src = jugador.imgUrl;
-                    });
+                themeToggleButton.addEventListener('click', () => {
+                    const newTheme = body.classList.contains('light-mode') ? 'dark' : 'light';
+                    localStorage.setItem('theme', newTheme);
+                    applyTheme(newTheme);
                 });
 
-                // Promise.all espera a que todas las promesas se resuelvan
-                Promise.all(promesasDeImagenes)
-                    .then(imagenesCargadas => {
-                        // Una vez cargadas, añadimos el objeto de imagen a cada jugador
-                        jugadores.forEach((jugador, index) => {
-                            jugador.imagenCargada = imagenesCargadas[index];
-                        });
+                
+                const FORMACIONES = {
+                    "4-4-2": [
+                        [0.5, 0.9],   // Portero
+                        // Defensas: LD, DFC, DFC, LI
+                        [0.9, 0.7], [0.63, 0.7], [0.37, 0.7], [0.1, 0.7], 
+                        // Medios: MD, MC, MC, MI
+                        [0.9, 0.45], [0.63, 0.45], [0.37, 0.45], [0.1, 0.45], 
+                        // Delanteros
+                        [0.63, 0.2], [0.37, 0.2]  
+                    ],
+                    "4-2-3-1": [
+                        [0.5, 0.9],   // Portero
+                        // Defensas: LD, DFC, DFC, LI
+                        [0.9, 0.7], [0.63, 0.7], [0.37, 0.7], [0.1, 0.7],
+                        // Medios defensivos (2)
+                        [0.63, 0.55], [0.37, 0.55], 
+                        // Medios ofensivos: MD, MCO, MI
+                        [0.85, 0.35], [0.5, 0.35], [0.15, 0.35], 
+                        // Delantero
+                        [0.5, 0.15]   
+                    ],
+                    "4-3-3": [
+                        [0.5, 0.9],   // Portero
+                        // Defensas: LD, DFC, DFC, LI
+                        [0.9, 0.7], [0.63, 0.7], [0.37, 0.7], [0.1, 0.7], 
+                        // Medios: Interior Derecho, Pivote, Interior Izquierdo
+                        [0.75, 0.5], [0.5, 0.45], [0.25, 0.5], 
+                        // Delanteros: Extremo Derecho, DC, Extremo Izquierdo
+                        [0.8, 0.2], [0.5, 0.15], [0.2, 0.2]  
+                    ],
+                    "3-5-2": [
+                        [0.5, 0.9], // Portero
+                        // Defensas (3): Central Derecho, Líbero, Central Izquierdo
+                        [0.75, 0.7], [0.5, 0.7], [0.25, 0.7], 
+                        // Medios (5): Carrilero Derecho, Interior, Pivote, Interior, Carrilero Izquierdo
+                        [0.9, 0.45], [0.7, 0.5], [0.5, 0.4], [0.3, 0.5], [0.1, 0.45], 
+                        // Delanteros (2)
+                        [0.63, 0.2], [0.37, 0.2] 
+                    ],
+                    "3-4-2-1": [
+                        [0.5, 0.9], // Portero
+                        // Defensas (3): Central Derecho, Líbero, Central Izquierdo
+                        [0.75, 0.7], [0.5, 0.7], [0.25, 0.7], 
+                        // Medios (4): Carrilero Derecho, Pivote Derecho, Pivote Izquierdo,  Carrilero Izquierdo
+                        [0.9, 0.45], [0.63, 0.50], [0.37, 0.50], [0.1, 0.45],  
+                        //Medios Ofensivos(2)
+                        [0.63, 0.3], [0.37, 0.3],
+                        // Delanteros (1)
+                        [0.50, 0.2] 
+                    ]
+
+                };
+                
+                let nombreLocal = 'Equipo Local';
+                let nombreVisitante = 'Equipo Visitante';
+                function cargarInfoPartido(partido){
+                    fetch(`/info-postpartido/${partido}`) 
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data) {
+                            console.error("No se encontraron datos para el partido:", partido);
+                            return;
+                        }
+
+                        nombreLocal = data.local_nombre;
+                        nombreVisitante = data.visitante_nombre;
+                        let infoPrincipal = document.getElementById("info-general")
+                        const fechaPartidoNormalizada = new Date(data.fecha);
+                        fechaPartidoNormalizada.setHours(0, 0, 0, 0);
+                        const anio = fechaPartidoNormalizada.getFullYear();
+                        const mesFormateado = String(fechaPartidoNormalizada.getMonth() + 1).padStart(2, '0');
+                        const diaFormateado = String(fechaPartidoNormalizada.getDate()).padStart(2, '0');
+                        const fechaParaMostrar = `${anio}-${mesFormateado}-${diaFormateado}`;
                         
-                        // ¡Ahora sí! Dibujamos todo en el canvas
-                        dibujarAlineacion(ctx, jugadores, formacion);
+                        const arbitro = data.arbitro_nombre || 'Arbitro no asignado';
+                        let momiosHTML = 'Momios no disponibles';
+                        if (data.momio_local && data.momio_empate && data.momio_visitante) {
+                            momiosHTML = `${data.momio_local} | ${data.momio_empate} | ${data.momio_visitante}`;
+                        }
+
+                        infoPrincipal.innerHTML = `
+                        <div class="equipo">
+                            <img src="${data.escudo_local}" alt="Escudo del equipo local" id="clubImgLocal">
+                        </div>
+                        <div class="info-partido">
+                            <h2 class="marcador">${data.goles_local ?? '-'} - ${data.goles_visitante ?? '-'}</h2>
+                            <p>${fechaParaMostrar}</p>
+                            <p>${data.estadio_nombre}</p> 
+                            <p>${arbitro}</p>  
+                            <p>${momiosHTML}</p> 
+                        </div> 
+                        <div class="equipo">
+                            <img src="${data.escudo_visitante}" alt="Escudo del equipo visitante" id="clubImgVisitante">
+                        </div>
+                        `;
+
+                        const imgClub = document.getElementById("clubImgLocal");
+                        imgClub.addEventListener("click", () => {
+                            window.location.href = `club.html?id=${data.id_local}`;
+                        })
+                        const imgClub2 = document.getElementById("clubImgVisitante");
+                        imgClub2.addEventListener("click", () => {
+                            window.location.href = `club.html?id=${data.id_visitante}`;
+                        })
+
+
+                    })
+                }
+                function precargarImagenesYDibujar(ctx, jugadores, formacion) {
+                    // Creamos un array de promesas, una para cada imagen
+                    const promesasDeImagenes = jugadores.map(jugador => {
+                        return new Promise((resolve, reject) => {
+                            const img = new Image();
+                            img.crossOrigin = "Anonymous"; // Necesario para cargar imágenes de otros dominios
+                            img.onload = () => resolve(img);
+                            img.onerror = () => reject(new Error(`No se pudo cargar: ${jugador.imgUrl}`));
+                            img.src = jugador.imgUrl;
+                        });
+                    });
+
+                    // Promise.all espera a que todas las promesas se resuelvan
+                    Promise.all(promesasDeImagenes)
+                        .then(imagenesCargadas => {
+                            // Una vez cargadas, añadimos el objeto de imagen a cada jugador
+                            jugadores.forEach((jugador, index) => {
+                                jugador.imagenCargada = imagenesCargadas[index];
+                            });
+                            
+                            // ¡Ahora sí! Dibujamos todo en el canvas
+                            dibujarAlineacion(ctx, jugadores, formacion);
+                        })
+                        .catch(error => {
+                            console.error("Error al cargar las imágenes de los jugadores:", error);
+                            // Opcional: Aquí podrías dibujar los círculos azules como fallback
+                        });
+                }
+
+                function dibujarAlineacion(ctx, jugadores, formacion) {
+                    const canvas = ctx.canvas;
+                    const width = canvas.width, height = canvas.height;
+                    const isLight = body.classList.contains('light-mode');
+
+                    ctx.fillStyle = isLight ? '#d4e9d4' : '#2a5f2a';
+                    ctx.fillRect(0, 0, width, height);
+                    ctx.strokeStyle = isLight ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(0, height / 2); ctx.lineTo(width, height / 2); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(width / 2, height / 2, 60, 0, 2 * Math.PI, false); ctx.stroke();
+                    ctx.strokeRect(width * 0.15, height, width * 0.7, -height * 0.25);
+                    
+                    jugadores.forEach((jugador, index) => {
+                        if (formacion[index]) {
+                            const x = formacion[index][0] * width;
+                            const y = formacion[index][1] * height;
+                            dibujarJugador(ctx, x, y, jugador);
+                        }
+                    });
+                }
+
+                function dibujarJugador(ctx, x, y, jugador) {
+                    const radio = 22;
+                    const isLight = body.classList.contains('light-mode');
+                    
+                    ctx.save();
+                    ctx.beginPath(); ctx.arc(x, y, radio, 0, 2 * Math.PI); ctx.clip();
+                    if (jugador.imagenCargada) {
+                        ctx.drawImage(jugador.imagenCargada, x - radio, y - radio, radio * 2, radio * 2);
+                    }
+                    ctx.restore();
+                    ctx.beginPath(); ctx.arc(x, y, radio, 0, 2 * Math.PI);
+                    ctx.strokeStyle = isLight ? '#333333' : '#FFFFFF';
+                    ctx.lineWidth = 2; ctx.stroke();
+                    ctx.fillStyle = isLight ? '#333333' : '#FFFFFF';
+                    ctx.font = 'bold 14px Poppins'; ctx.textAlign = 'center';
+                    ctx.shadowColor = isLight ? 'rgba(255,255,255,0.5)' : 'black';
+                    ctx.shadowBlur = 4;
+                    ctx.fillText(jugador.nombre, x, y + radio + 14);
+                    ctx.shadowBlur = 0;
+                }
+
+                function cargarAlineacionLocal(partido){
+                    fetch(`/alineaciones/${partido}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const container = document.getElementById('id-alineacion-local-container');
+                        if (!data || !data.nombre1) {
+                            console.warn("Los datos de la alineación no están disponibles.");
+                            // Reemplazamos el contenido del div con un mensaje
+                            container.innerHTML = `
+                                <h2>Posible Alineación Local</h2>
+                                <p style="padding: 40px 0; color: #a0a0c0;">
+                                    Las alineaciones aún no están disponibles.
+                                </p>
+                            `;
+                            return; // Detenemos la ejecución aquí
+                        }
+                        const canvas = document.getElementById('campo-local');
+                        if (!canvas.getContext) return;
+                        const ctx = canvas.getContext('2d');
+
+                        const jugadores = [];
+                        for (let i = 1; i <= 11; i++) {
+                            const dorsal = data[`dorsal${i}`] || data[`drosal${i}`];
+                            jugadores.push({
+                                nombre: data[`nombre${i}`],
+                                imgUrl: data[`img${i}`]
+                            });
+                        }
+
+                        // --- LÓGICA DINÁMICA DE FORMACIÓN ---
+                        // 1. Obtener la formación del JSON. Usar "4-4-2" como fallback.
+                        const formacionKey = data.formacion_local || "4-4-2";
+
+                        // 2. Actualizar el título en la página
+                        document.getElementById('formacion-local-titulo').innerText = `Formación: ${formacionKey}`;
+
+                        // 3. Seleccionar las coordenadas del diccionario. Si no existe, usar "4-4-2".
+                        const formacionCoordenadas = FORMACIONES[formacionKey] || FORMACIONES["4-4-2"];
+
+                        precargarImagenesYDibujar(ctx, jugadores, formacionCoordenadas);
+                    })
+                    .catch(error => console.error('Error al cargar las alineaciones:', error));
+                }
+
+                function cargarAlineacionVisitante(partido){
+                    fetch(`/alineaciones/${partido}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const container = document.getElementById('id-alineacion-visitante-container');
+                        if (!data || !data.nombre1) {
+                            console.warn("Los datos de la alineación no están disponibles.");
+                            // Reemplazamos el contenido del div con un mensaje
+                            container.innerHTML = `
+                                <h2>Posible Alineación Local</h2>
+                                <p style="padding: 40px 0; color: #a0a0c0;">
+                                    Las alineaciones aún no están disponibles.
+                                </p>
+                            `;
+                            return; // Detenemos la ejecución aquí
+                        }
+                        const canvas = document.getElementById('campo-visitante');
+                        if (!canvas.getContext) return;
+                        const ctx = canvas.getContext('2d');
+
+                        const jugadores = [];
+                        for (let i = 12; i <= 22; i++) {
+                            const dorsal = data[`dorsal${i}`] || data[`drosal${i}`];
+                            jugadores.push({
+                                nombre: data[`nombre${i}`],
+                                imgUrl: data[`img${i}`]
+                            });
+                        }
+
+                        // --- LÓGICA DINÁMICA DE FORMACIÓN ---
+                        // 1. Obtener la formación del JSON. Usar "4-4-2" como fallback.
+                        const formacionKey = data.formacion_visitante || "4-4-2";
+
+                        // 2. Actualizar el título en la página
+                        document.getElementById('formacion-visitante-titulo').innerText = `Formación: ${formacionKey}`;
+
+                        // 3. Seleccionar las coordenadas del diccionario. Si no existe, usar "4-4-2".
+                        const formacionCoordenadas = FORMACIONES[formacionKey] || FORMACIONES["4-4-2"];
+                        precargarImagenesYDibujar(ctx, jugadores, formacionCoordenadas);
+                    })
+                    .catch(error => console.error('Error al cargar las alineaciones:', error));
+                }
+                
+                function cargarComparacionStats(partido){
+                    fetch(`/estadisticas-partido/${partido}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const container = document.getElementById('stats-comparison-container');
+                        if (!data || !data.id_partido) {
+                            container.innerHTML = "<h2>Comparativa de Estadísticas</h2><p>Estadísticas no disponibles.</p>";
+                            return;
+                        }
+
+                        const statsToShow = [
+                            { label: 'Goles',                 localKey: 'goles_local',                  visitorKey: 'goles_visitante' },
+                            { label: 'Posesión (%)',          localKey: 'posesion_local',               visitorKey: 'posesion_visitante' },
+                            { label: 'Goles Esperados (xG)',  localKey: 'xg_local',                     visitorKey: 'xg_visitante' },
+                            { label: 'Disparos',              localKey: 'disparos_local',               visitorKey: 'disparos_visitante' },
+                            { label: 'Disparos a Puerta',     localKey: 'disparos_a_puerta_local',      visitorKey: 'disparos_a_puerta_visitante' },
+                            { label: 'Pases',                 localKey: 'pases_local',                  visitorKey: 'pases_visitante' },
+                            { label: 'Tiros de Esquina',      localKey: 'tiros_de_esquina_local',       visitorKey: 'tiros_de_esquina_visitante' },
+                            { label: 'Faltas',                localKey: 'faltas_local',                 visitorKey: 'faltas_visitante' },
+                            { label: 'Tarjetas Amarillas',    localKey: 'tarjetas_amarillas_local',     visitorKey: 'tarjetas_amarillas_visitante' },
+                            { label: 'Tarjetas Rojas',        localKey: 'tarjetas_rojas_local',         visitorKey: 'tarjetas_rojas_visitante' }
+                        ];
+
+                        let finalHTML = '<h2>Comparativa de Estadísticas</h2>';
+                        statsToShow.forEach(stat => {
+                            const localValue = parseFloat(data[stat.localKey]) || 0;
+                            const visitorValue = parseFloat(data[stat.visitorKey]) || 0;
+                            const total = localValue + visitorValue;
+
+                            let localPercentage = 50;
+                            if (total > 0) {
+                                localPercentage = (localValue / total) * 100;
+                            }
+                            
+                            // Creamos el bloque HTML para esta estadística
+                            finalHTML += `
+                                <div class="stat-comparison">
+                                    <div class="stat-header">
+                                        <span class="stat-value-local">${localValue}</span>
+                                        <span class="stat-label">${stat.label}</span>
+                                        <span class="stat-value-visitor">${visitorValue}</span>
+                                    </div>
+                                    <div class="stat-bar-container">
+                                        <div class="stat-bar-local" style="width: ${localPercentage}%;"></div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        container.innerHTML = finalHTML;
+
+
                     })
                     .catch(error => {
-                        console.error("Error al cargar las imágenes de los jugadores:", error);
-                        // Opcional: Aquí podrías dibujar los círculos azules como fallback
+                        console.error("Error al cargar las estadísticas comparativas:", error);
+                        document.getElementById('stats-comparison-container').innerHTML = "<h2>Comparativa de Estadísticas</h2><p>No se pudieron cargar las estadísticas.</p>";
                     });
-            }
-
-            function dibujarAlineacion(ctx, jugadores, formacion) {
-                // ... (Esta función no necesita cambios, ya era genérica)
-                const canvas = ctx.canvas;
-                const width = canvas.width;
-                const height = canvas.height;
-                ctx.fillStyle = '#2a5f2a';
-                ctx.fillRect(0, 0, width, height);
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.moveTo(0, height / 2);
-                ctx.lineTo(width, height / 2);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.arc(width / 2, height / 2, 60, 0, 2 * Math.PI, false);
-                ctx.stroke();
-                ctx.strokeRect(width * 0.15, height, width * 0.7, -height * 0.25);
-                
-                jugadores.forEach((jugador, index) => {
-                    if (formacion[index]) {
-                        const x = formacion[index][0] * width;
-                        const y = formacion[index][1] * height;
-                        dibujarJugador(ctx, x, y, jugador);
-                    }
-                });
-            }
-
-            function dibujarJugador(ctx, x, y, jugador) {
-                const radio = 22;
-                ctx.save();
-                ctx.beginPath(); ctx.arc(x, y, radio, 0, 2 * Math.PI); ctx.clip();
-                if (jugador.imagenCargada) {
-                    ctx.drawImage(jugador.imagenCargada, x - radio, y - radio, radio * 2, radio * 2);
                 }
-                ctx.restore();
-                ctx.beginPath(); ctx.arc(x, y, radio, 0, 2 * Math.PI); ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 2; ctx.stroke();
-                ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 14px Poppins'; ctx.textAlign = 'center';
-                ctx.shadowColor = 'black'; ctx.shadowBlur = 4;
-                ctx.fillText(jugador.nombre, x, y + radio + 14);
-                ctx.shadowBlur = 0;
-            }
+                
+                function dibujarCampoVertical(ctx){
+                    const w = ctx.canvas.width, h = ctx.canvas.height;
+                    const isLight = body.classList.contains('light-mode');
+                    
+                    ctx.fillStyle = isLight ? '#d4e9d4' : '#2a5f2a';
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.strokeStyle = isLight ? 'rgba(0, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.4)';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(w / 2, h / 2, 50, 0, 2 * Math.PI); ctx.stroke();
+                    ctx.strokeRect(w * 0.15, 0, w * 0.7, h * 0.18);
+                    ctx.strokeRect(w * 0.3, 0, w * 0.4, h * 0.07);
+                    ctx.strokeRect(w * 0.15, h - h * 0.18, w * 0.7, h * 0.18);
+                    ctx.strokeRect(w * 0.3, h - h * 0.07, w * 0.4, h * 0.07);
+                }
 
-            function cargarAlineacionLocal(partido){
-                fetch(`/alineaciones/${partido}`)
-                .then(response => response.json())
-                .then(data => {
-                    const container = document.getElementById('id-alineacion-local-container');
-                    if (!data || !data.nombre1) {
-                        console.warn("Los datos de la alineación no están disponibles.");
-                        // Reemplazamos el contenido del div con un mensaje
-                        container.innerHTML = `
-                            <h2>Posible Alineación Local</h2>
-                            <p style="padding: 40px 0; color: #a0a0c0;">
-                                Las alineaciones aún no están disponibles.
-                            </p>
-                        `;
-                        return; // Detenemos la ejecución aquí
-                    }
-                    const canvas = document.getElementById('campo-local');
-                    if (!canvas.getContext) return;
-                    const ctx = canvas.getContext('2d');
+                function dibujarDisparo(ctx, shot){
+                    const canvas = ctx.canvas;
+                    const w = canvas.width;
+                    const h = canvas.height;
 
-                    const jugadores = [];
-                    for (let i = 1; i <= 11; i++) {
-                        const dorsal = data[`dorsal${i}`] || data[`drosal${i}`];
-                        jugadores.push({
-                            nombre: data[`nombre${i}`],
-                            imgUrl: data[`img${i}`]
-                        });
-                    }
-
-                    // --- LÓGICA DINÁMICA DE FORMACIÓN ---
-                    // 1. Obtener la formación del JSON. Usar "4-4-2" como fallback.
-                    const formacionKey = data.formacion_local || "4-4-2";
-
-                    // 2. Actualizar el título en la página
-                    document.getElementById('formacion-local-titulo').innerText = `Formación: ${formacionKey}`;
-
-                    // 3. Seleccionar las coordenadas del diccionario. Si no existe, usar "4-4-2".
-                    const formacionCoordenadas = FORMACIONES[formacionKey] || FORMACIONES["4-4-2"];
-
-                    precargarImagenesYDibujar(ctx, jugadores, formacionCoordenadas);
-                })
-                .catch(error => console.error('Error al cargar las alineaciones:', error));
-            }
-
-            function cargarAlineacionVisitante(partido){
-                fetch(`/alineaciones/${partido}`)
-                .then(response => response.json())
-                .then(data => {
-                    const container = document.getElementById('id-alineacion-visitante-container');
-                    if (!data || !data.nombre1) {
-                        console.warn("Los datos de la alineación no están disponibles.");
-                        // Reemplazamos el contenido del div con un mensaje
-                        container.innerHTML = `
-                            <h2>Posible Alineación Local</h2>
-                            <p style="padding: 40px 0; color: #a0a0c0;">
-                                Las alineaciones aún no están disponibles.
-                            </p>
-                        `;
-                        return; // Detenemos la ejecución aquí
-                    }
-                    const canvas = document.getElementById('campo-visitante');
-                    if (!canvas.getContext) return;
-                    const ctx = canvas.getContext('2d');
-
-                    const jugadores = [];
-                    for (let i = 12; i <= 22; i++) {
-                        const dorsal = data[`dorsal${i}`] || data[`drosal${i}`];
-                        jugadores.push({
-                            nombre: data[`nombre${i}`],
-                            imgUrl: data[`img${i}`]
-                        });
+                    // --- Conversión de Coordenadas ---
+                    // Asumimos que pitch_x (0-100) es la distancia desde la línea de gol que se ataca,
+                    // y pitch_y (0-100) es la posición horizontal.
+                    
+                    // La posición horizontal es directa
+                    const canvasX = (parseFloat(shot.pitch_y) / 100) * canvas.width;
+                    
+                    let canvasY;
+                    // El visitante (es_local=0) ataca la portería de arriba
+                    if (shot.es_local === 0) {
+                        canvasY = (parseFloat(shot.pitch_x) / 100) * (canvas.height / .9);
+                    } else { // El local (es_local=1) ataca la portería de abajo
+                        canvasY = canvas.height - ((parseFloat(shot.pitch_x) / 100) * (canvas.height / .9));
                     }
 
-                    // --- LÓGICA DINÁMICA DE FORMACIÓN ---
-                    // 1. Obtener la formación del JSON. Usar "4-4-2" como fallback.
-                    const formacionKey = data.formacion_visitante || "4-4-2";
+                    // --- Estilo del Disparo ---
+                    const radius = 4 + (parseFloat(shot.xg) * 20); // El tamaño del círculo depende del xG
+                    const colorLocal = 'rgba(25, 118, 210, 0.9)'; // Azul
+                    const colorVisitante = 'rgba(198, 40, 40, 0.9)'; // Rojo oscuro
 
-                    // 2. Actualizar el título en la página
-                    document.getElementById('formacion-visitante-titulo').innerText = `Formación: ${formacionKey}`;
+                    // Asignamos el color de relleno según el equipo
+                    ctx.fillStyle = shot.es_local === 1 ? colorLocal : colorVisitante;
+                    
+                    // Asignamos un color de borde para dar contraste (opcional pero recomendado)
+                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+                    ctx.lineWidth = 1.5;
+                    
+                    // --- Lógica de Dibujo Modificada ---
+                    ctx.beginPath();
+                    ctx.arc(canvasX, canvasY, radius, 0, 2 * Math.PI);
 
-                    // 3. Seleccionar las coordenadas del diccionario. Si no existe, usar "4-4-2".
-                    const formacionCoordenadas = FORMACIONES[formacionKey] || FORMACIONES["4-4-2"];
-                    precargarImagenesYDibujar(ctx, jugadores, formacionCoordenadas);
-                })
-                .catch(error => console.error('Error al cargar las alineaciones:', error));
-            }
-            
-            function cargarComparacionStats(partido){
-                fetch(`/estadisticas-partido/${partido}`)
-                .then(response => response.json())
-                .then(data => {
-                    const container = document.getElementById('stats-comparison-container');
-                    if (!data || !data.id_partido) {
-                        container.innerHTML = "<h2>Comparativa de Estadísticas</h2><p>Estadísticas no disponibles.</p>";
-                        return;
+                    // 1. Rellena SIEMPRE el círculo con el color del equipo
+                    ctx.fill();
+                    
+                    // 2. Dibuja SIEMPRE un borde para que resalte más
+                    ctx.stroke();
+
+                    // 3. Si ADEMÁS fue gol, dibuja el icono del balón encima
+                    if (shot.resultado === 'goal') {
+                        dibujarIconoBalon(ctx, canvasX, canvasY, radius * 0.7);
                     }
 
-                    const statsToShow = [
-                        { label: 'Goles',                 localKey: 'goles_local',                  visitorKey: 'goles_visitante' },
-                        { label: 'Posesión (%)',          localKey: 'posesion_local',               visitorKey: 'posesion_visitante' },
-                        { label: 'Goles Esperados (xG)',  localKey: 'xg_local',                     visitorKey: 'xg_visitante' },
-                        { label: 'Disparos',              localKey: 'disparos_local',               visitorKey: 'disparos_visitante' },
-                        { label: 'Disparos a Puerta',     localKey: 'disparos_a_puerta_local',      visitorKey: 'disparos_a_puerta_visitante' },
-                        { label: 'Pases',                 localKey: 'pases_local',                  visitorKey: 'pases_visitante' },
-                        { label: 'Tiros de Esquina',      localKey: 'tiros_de_esquina_local',       visitorKey: 'tiros_de_esquina_visitante' },
-                        { label: 'Faltas',                localKey: 'faltas_local',                 visitorKey: 'faltas_visitante' },
-                        { label: 'Tarjetas Amarillas',    localKey: 'tarjetas_amarillas_local',     visitorKey: 'tarjetas_amarillas_visitante' },
-                        { label: 'Tarjetas Rojas',        localKey: 'tarjetas_rojas_local',         visitorKey: 'tarjetas_rojas_visitante' }
-                    ];
+                    return { canvasX, canvasY, radius };
+                }
 
-                    let finalHTML = '<h2>Comparativa de Estadísticas</h2>';
-                    statsToShow.forEach(stat => {
-                        const localValue = parseFloat(data[stat.localKey]) || 0;
-                        const visitorValue = parseFloat(data[stat.visitorKey]) || 0;
-                        const total = localValue + visitorValue;
+                function dibujarIconoBalon(ctx, x, y, size) {
+                    ctx.fillStyle = 'white';
+                    ctx.strokeStyle = 'black';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.stroke();
+                }
 
-                        let localPercentage = 50;
-                        if (total > 0) {
-                            localPercentage = (localValue / total) * 100;
+                function cargarMapaDeDisparos(partido){
+                    fetch(`/mapa-disparos-partido/${partido}`)
+                    .then(response => response.json())
+                    .then(shots => {
+                        const container = document.querySelector('.shot-map-container');
+                        if (!shots || shots.length === 0) {
+                            container.innerHTML = "<h2>Mapa de Disparos</h2><p>No hay datos de disparos disponibles.</p>";
+                            return;
                         }
-                        
-                        // Creamos el bloque HTML para esta estadística
-                        finalHTML += `
-                            <div class="stat-comparison">
-                                <div class="stat-header">
-                                    <span class="stat-value-local">${localValue}</span>
-                                    <span class="stat-label">${stat.label}</span>
-                                    <span class="stat-value-visitor">${visitorValue}</span>
-                                </div>
-                                <div class="stat-bar-container">
-                                    <div class="stat-bar-local" style="width: ${localPercentage}%;"></div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    container.innerHTML = finalHTML;
+
+                        const canvas = document.getElementById('shot-map-canvas');
+                        if (!canvas.getContext) return;
+                        const ctx = canvas.getContext('2d');
+
+                        const shotsOnCanvas = [];
 
 
-                })
-                .catch(error => {
-                    console.error("Error al cargar las estadísticas comparativas:", error);
-                    document.getElementById('stats-comparison-container').innerHTML = "<h2>Comparativa de Estadísticas</h2><p>No se pudieron cargar las estadísticas.</p>";
-                });
-            }
-            
-            function dibujarCampoVertical(ctx){
-                const canvas = ctx.canvas;
-                const w = canvas.width;
-                const h = canvas.height;
-
-                // Fondo verde
-                ctx.fillStyle = '#2a5f2a';
-                ctx.fillRect(0, 0, w, h);
-
-                // Líneas del campo
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-                ctx.lineWidth = 3;
-
-                // Línea de medio campo
-                ctx.beginPath();
-                ctx.moveTo(0, h / 2);
-                ctx.lineTo(w, h / 2);
-                ctx.stroke();
-
-                // Círculo central
-                ctx.beginPath();
-                ctx.arc(w / 2, h / 2, 50, 0, 2 * Math.PI);
-                ctx.stroke();
-
-                // Área visitante (arriba)
-                ctx.strokeRect(w * 0.15, 0, w * 0.7, h * 0.18);
-                // Área de meta visitante
-                ctx.strokeRect(w * 0.3, 0, w * 0.4, h * 0.07);
-
-                // Área local (abajo)
-                ctx.strokeRect(w * 0.15, h - h * 0.18, w * 0.7, h * 0.18);
-                // Área de meta local
-                ctx.strokeRect(w * 0.3, h - h * 0.07, w * 0.4, h * 0.07);
-            }
-
-            function dibujarDisparo(ctx, shot){
-                const canvas = ctx.canvas;
-                const w = canvas.width;
-                const h = canvas.height;
-
-                // --- Conversión de Coordenadas ---
-                // Asumimos que pitch_x (0-100) es la distancia desde la línea de gol que se ataca,
-                // y pitch_y (0-100) es la posición horizontal.
-                
-                // La posición horizontal es directa
-                const canvasX = (parseFloat(shot.pitch_y) / 100) * canvas.width;
-                
-                let canvasY;
-                // El visitante (es_local=0) ataca la portería de arriba
-                if (shot.es_local === 0) {
-                    canvasY = (parseFloat(shot.pitch_x) / 100) * (canvas.height / .9);
-                } else { // El local (es_local=1) ataca la portería de abajo
-                    canvasY = canvas.height - ((parseFloat(shot.pitch_x) / 100) * (canvas.height / .9));
-                }
-
-                // --- Estilo del Disparo ---
-                const radius = 4 + (parseFloat(shot.xg) * 20); // El tamaño del círculo depende del xG
-                const colorLocal = 'rgba(25, 118, 210, 0.9)'; // Azul
-                const colorVisitante = 'rgba(198, 40, 40, 0.9)'; // Rojo oscuro
-
-                // Asignamos el color de relleno según el equipo
-                ctx.fillStyle = shot.es_local === 1 ? colorLocal : colorVisitante;
-                
-                // Asignamos un color de borde para dar contraste (opcional pero recomendado)
-                ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
-                ctx.lineWidth = 1.5;
-                
-                // --- Lógica de Dibujo Modificada ---
-                ctx.beginPath();
-                ctx.arc(canvasX, canvasY, radius, 0, 2 * Math.PI);
-
-                // 1. Rellena SIEMPRE el círculo con el color del equipo
-                ctx.fill();
-                
-                // 2. Dibuja SIEMPRE un borde para que resalte más
-                ctx.stroke();
-
-                // 3. Si ADEMÁS fue gol, dibuja el icono del balón encima
-                if (shot.resultado === 'goal') {
-                    dibujarIconoBalon(ctx, canvasX, canvasY, radius * 0.7);
-                }
-
-                return { canvasX, canvasY, radius };
-            }
-
-            function dibujarIconoBalon(ctx, x, y, size) {
-                ctx.fillStyle = 'white';
-                ctx.strokeStyle = 'black';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.arc(x, y, size, 0, 2 * Math.PI);
-                ctx.fill();
-                ctx.stroke();
-            }
-
-            function cargarMapaDeDisparos(partido){
-                fetch(`/mapa-disparos-partido/${partido}`)
-                .then(response => response.json())
-                .then(shots => {
-                    const container = document.querySelector('.shot-map-container');
-                    if (!shots || shots.length === 0) {
-                        container.innerHTML = "<h2>Mapa de Disparos</h2><p>No hay datos de disparos disponibles.</p>";
-                        return;
-                    }
-
-                    const canvas = document.getElementById('shot-map-canvas');
-                    if (!canvas.getContext) return;
-                    const ctx = canvas.getContext('2d');
-
-                    const shotsOnCanvas = [];
-
-
-                    dibujarCampoVertical(ctx);
-                    shots.forEach(shot => {
-                        const { canvasX, canvasY, radius } = dibujarDisparo(ctx, shot);
-                        shotsOnCanvas.push({
-                            x: canvasX,
-                            y: canvasY,
-                            radius: radius,
-                            info: shot // Guardamos el objeto original con toda la info
+                        dibujarCampoVertical(ctx);
+                        shots.forEach(shot => {
+                            const { canvasX, canvasY, radius } = dibujarDisparo(ctx, shot);
+                            shotsOnCanvas.push({
+                                x: canvasX,
+                                y: canvasY,
+                                radius: radius,
+                                info: shot // Guardamos el objeto original con toda la info
+                            });
                         });
-                    });
 
-                    const tooltip = document.getElementById('shot-tooltip');
-                    canvas.addEventListener('mousemove', (event) => {
-                        const rect = canvas.getBoundingClientRect();
-                        const mouseX = event.clientX - rect.left;
-                        const mouseY = event.clientY - rect.top;
+                        const tooltip = document.getElementById('shot-tooltip');
+                        canvas.addEventListener('mousemove', (event) => {
+                            const rect = canvas.getBoundingClientRect();
+                            const mouseX = event.clientX - rect.left;
+                            const mouseY = event.clientY - rect.top;
 
-                        let hoveredShot = null;
+                            let hoveredShot = null;
 
-                        // Comprobamos si el ratón está sobre algún disparo
-                        for (const shot of shotsOnCanvas) {
-                            const dx = mouseX - shot.x;
-                            const dy = mouseY - shot.y;
-                            if (dx * dx + dy * dy < shot.radius * shot.radius) {
-                                hoveredShot = shot;
-                                break; // Encontramos uno, no necesitamos seguir buscando
+                            // Comprobamos si el ratón está sobre algún disparo
+                            for (const shot of shotsOnCanvas) {
+                                const dx = mouseX - shot.x;
+                                const dy = mouseY - shot.y;
+                                if (dx * dx + dy * dy < shot.radius * shot.radius) {
+                                    hoveredShot = shot;
+                                    break; // Encontramos uno, no necesitamos seguir buscando
+                                }
                             }
-                        }
-                        if (hoveredShot) {
-                            // Si estamos sobre un disparo, mostramos y rellenamos el tooltip
-                            const xgFormatted = parseFloat(hoveredShot.info.xg).toFixed(2);
-                            tooltip.innerHTML = `
-                                <strong>${hoveredShot.info.nombre}</strong><br>
-                                Minuto: ${hoveredShot.info.minuto}'<br>
-                                Resultado: ${hoveredShot.info.resultado}<br>
-                                xG: ${xgFormatted}
-                            `;
-                            // Posicionamos el tooltip cerca del cursor
-                            tooltip.style.display = 'block';
-                            tooltip.style.left = `${event.pageX + 10}px`;
-                            tooltip.style.top = `${event.pageY + 10}px`;
-                        } else {
-                            // Si no estamos sobre ningún disparo, ocultamos el tooltip
+                            if (hoveredShot) {
+                                // Si estamos sobre un disparo, mostramos y rellenamos el tooltip
+                                const xgFormatted = parseFloat(hoveredShot.info.xg).toFixed(2);
+                                tooltip.innerHTML = `
+                                    <strong>${hoveredShot.info.nombre}</strong><br>
+                                    Minuto: ${hoveredShot.info.minuto}'<br>
+                                    Resultado: ${hoveredShot.info.resultado}<br>
+                                    xG: ${xgFormatted}
+                                `;
+                                // Posicionamos el tooltip cerca del cursor
+                                tooltip.style.display = 'block';
+                                tooltip.style.left = `${event.pageX + 10}px`;
+                                tooltip.style.top = `${event.pageY + 10}px`;
+                            } else {
+                                // Si no estamos sobre ningún disparo, ocultamos el tooltip
+                                tooltip.style.display = 'none';
+                            }
+                        });
+
+                        canvas.addEventListener('mouseleave', () => {
                             tooltip.style.display = 'none';
-                        }
+                        }); 
+
+                    })
+                    .catch(error => {
+                        console.error("Error al cargar el mapa de disparos:", error);
+                        document.querySelector('.shot-map-container').innerHTML = "<h2>Mapa de Disparos</h2><p>No se pudo cargar el mapa.</p>";
                     });
+                }
 
-                    canvas.addEventListener('mouseleave', () => {
-                        tooltip.style.display = 'none';
-                    }); 
-
-                })
-                .catch(error => {
-                    console.error("Error al cargar el mapa de disparos:", error);
-                    document.querySelector('.shot-map-container').innerHTML = "<h2>Mapa de Disparos</h2><p>No se pudo cargar el mapa.</p>";
-                });
-            }
-
-            cargarInfoPartido(partidoParam);
-            cargarAlineacionLocal(partidoParam);
-            cargarAlineacionVisitante(partidoParam);
-            cargarComparacionStats(partidoParam);
-            cargarMapaDeDisparos(partidoParam);
+                cargarInfoPartido(partidoParam);
+                cargarAlineacionLocal(partidoParam);
+                cargarAlineacionVisitante(partidoParam);
+                cargarComparacionStats(partidoParam);
+                cargarMapaDeDisparos(partidoParam);
+            })
+            
 
         </script>
         

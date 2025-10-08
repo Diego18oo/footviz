@@ -19,6 +19,7 @@
                 background-color: #1a1a2e;
                 color: #e0e0e0;
                 padding: 20px;
+                transition: background-color 0.3s, color 0.3s; /* Transición suave */
             }
 
             .header {
@@ -29,13 +30,14 @@
                 margin: 0 auto 30px auto;
                 padding-bottom: 20px;
                 border-bottom: 1px solid #2a2a4a;
+                transition: border-bottom-color 0.3s;
             }
             .header h1 {
                 font-size: 2rem;
                 color: #ffffff;
                 font-weight: 700;
             }
-            /* Contenedor para agrupar controles a la derecha */
+            
             .header-controls {
                 display: flex;
                 align-items: center;
@@ -54,8 +56,9 @@
                 color: #e0e0e0;
                 font-family: 'Poppins', sans-serif;
                 font-size: 0.9rem;
+                transition: background-color 0.3s, border-color 0.3s, color 0.3s;
             }
-            /* Estilo para el nuevo botón */
+            
             .header-button {
                 background-color: #007bff;
                 color: #ffffff;
@@ -71,6 +74,27 @@
             .header-button:hover {
                 background-color: #0056b3;
             }
+            
+            /* --- BOTÓN PARA CAMBIAR TEMA --- */
+            .theme-toggle-button {
+                background: #2a2a4a;
+                border: 1px solid #4a4a6a;
+                color: #fff;
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                cursor: pointer;
+                font-size: 1.2rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s ease;
+            }
+            .theme-toggle-button:hover {
+                background: #3a3a5a;
+                transform: scale(1.1);
+            }
+            
             .search-results {
                 position: absolute;
                 width: 100%;
@@ -104,6 +128,7 @@
                 width: 100%;
                 max-width: 1240px;
                 margin: 20px auto;
+                transition: background-color 0.3s, box-shadow 0.3s;
             }
             
             /* --- Info General del Jugador --- */
@@ -112,42 +137,35 @@
                 align-items: center;
                 gap: 30px;
             }
-
             #info-general .player-image img {
                 width: 150px;
                 height: 150px;
                 border-radius: 50%;
                 border: 4px solid #4a4a6a;
+                transition: border-color 0.3s;
             }
-
             #info-general .player-details {
                 display: flex;
                 flex-direction: column;
                 gap: 8px;
             }
-            
             #info-general .player-details h1 {
                 font-size: 2.5rem;
                 color: #ffffff;
                 font-weight: 700;
                 margin: 0;
             }
-
             #info-general .player-bio p {
                 font-size: 0.9rem;
                 color: #a0a0c0;
             }
-            
             #info-general .player-bio span {
                 font-weight: 600;
                 color: #e0e0e0;
             }
-
             #info-general .team-info {
-               
                 text-align: center;
             }
-            
             #info-general .team-info img {
                 width: 80px;
                 height: 80px;
@@ -165,7 +183,6 @@
                 margin: 20px auto;
                 align-items: flex-start;
             }
-
             .dashboard-column {
                 flex: 1;
                 display: flex;
@@ -187,7 +204,6 @@
                 padding-top: 65%;
                 height: 0;
             }
-            
             .pitch-container canvas {
                 position: absolute;
                 top: 0;
@@ -196,7 +212,6 @@
                 height: 100%;
                 border-radius: 8px;
             }
-
             #shot-tooltip {
                 position: absolute;
                 display: none;
@@ -221,6 +236,7 @@
                 padding: 12px 8px;
                 text-align: center;
                 border-bottom: 1px solid #2a2a4a;
+                transition: border-bottom-color 0.3s;
             }
             #ultimos-partidos-tabla tr:last-child td {
                 border-bottom: none;
@@ -242,10 +258,66 @@
                 text-align: left;
             }
 
-            
-
-            
-
+            /* ------------------------- */
+            /* --- ESTILOS MODO LUZ --- */
+            /* ------------------------- */
+            body.light-mode {
+                background-color: #f4f4f9;
+                color: #333333;
+            }
+            body.light-mode .header {
+                border-bottom-color: #e0e0e0;
+            }
+            body.light-mode .header h1,
+            body.light-mode #info-general .player-details h1,
+            body.light-mode #ultimos-partidos-tabla th {
+                color: #1a1a2e;
+            }
+            body.light-mode .search-container input {
+                background-color: #ffffff;
+                border-color: #d1d1d1;
+                color: #333333;
+            }
+            body.light-mode .theme-toggle-button {
+                background: #ffffff;
+                border-color: #d1d1d1;
+                color: #333;
+            }
+            body.light-mode .theme-toggle-button:hover {
+                background: #f0f0f0;
+            }
+            body.light-mode .search-results {
+                background-color: #ffffff;
+                border-color: #d1d1d1;
+            }
+            body.light-mode .search-results div {
+                border-bottom-color: #f0f0f0;
+            }
+            body.light-mode .search-results div:hover {
+                background-color: #f5f5f5;
+            }
+            body.light-mode .card {
+                background-color: #ffffff;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            }
+            body.light-mode #info-general .player-image img {
+                border-color: #e0e0e0;
+            }
+            body.light-mode #info-general .player-bio p {
+                color: #666666;
+            }
+            body.light-mode #info-general .player-bio span {
+                color: #333333;
+            }
+            body.light-mode #ultimos-partidos-tabla th,
+            body.light-mode #ultimos-partidos-tabla td {
+                border-bottom-color: #e0e0e0;
+            }
+            body.light-mode #shot-tooltip {
+                background: rgba(255, 255, 255, 0.9);
+                color: #333;
+                border-color: #d1d1d1;
+            }
         </style>
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
@@ -262,6 +334,7 @@
                     <div class="search-results" id="searchResults"></div>
                 </div>
                 <button id="botonComparar" class="header-button">Comparar</button>
+                <button id="theme-toggle" class="theme-toggle-button">☀️</button>
             </div>
         </header>
         <div id="info-general" class="card">            
@@ -312,6 +385,39 @@
     
         
         <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const themeToggleButton = document.getElementById('theme-toggle');
+                const body = document.body;
+
+                // Función para aplicar el tema y actualizar el botón
+                const applyTheme = (theme) => {
+                    if (theme === 'light') {
+                        body.classList.add('light-mode');
+                        themeToggleButton.textContent = '🌙'; // Luna para modo claro
+                    } else {
+                        body.classList.remove('light-mode');
+                        themeToggleButton.textContent = '☀️'; // Sol para modo oscuro
+                    }
+                };
+
+                // Cargar el tema guardado al iniciar la página
+                const savedTheme = localStorage.getItem('theme') || 'dark'; // 'dark' es el default
+                applyTheme(savedTheme);
+
+                // Event listener para el botón
+                themeToggleButton.addEventListener('click', () => {
+                    // Comprobar si el modo claro está activo para decidir a qué cambiar
+                    const isLightMode = body.classList.contains('light-mode');
+                    if (isLightMode) {
+                        localStorage.setItem('theme', 'dark');
+                        applyTheme('dark');
+                    } else {
+                        localStorage.setItem('theme', 'light');
+                        applyTheme('light');
+                    }
+                });
+            });
+            
             
             const params = new URLSearchParams(window.location.search);
             const jugadorParam = params.get("id");

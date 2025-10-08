@@ -12,12 +12,12 @@
                 padding: 0;
                 box-sizing: border-box;
             }
-
             body {
                 font-family: 'Poppins', sans-serif;
                 background-color: #1a1a2e; /* Fondo oscuro principal */
                 color: #e0e0e0; /* Texto claro */
                 padding: 20px;
+                transition: background-color 0.3s, color 0.3s;
             }
             .header {
                 display: flex;
@@ -27,20 +27,18 @@
                 margin: 0 auto 30px auto;
                 padding-bottom: 20px;
                 border-bottom: 1px solid #2a2a4a;
+                transition: border-bottom-color 0.3s;
             }
-
             .header h1 {
                 font-size: 2rem;
                 color: #ffffff;
                 font-weight: 700;
             }
-
             .header .controls-container {
                 display: flex;
                 align-items: center;
                 gap: 20px;
             }
-
             .header select, .header button {
                 background-color: #2a2a4a;
                 color: #e0e0e0;
@@ -50,13 +48,29 @@
                 font-family: 'Poppins', sans-serif;
                 font-size: 0.9rem;
                 cursor: pointer;
-                transition: background-color 0.2s;
+                transition: background-color 0.2s, color 0.3s, border-color 0.3s;
             }
-            
             .header select:hover, .header button:hover {
                 background-color: #3a3a5a;
             }
-
+            /* --- BOTÓN PARA CAMBIAR TEMA --- */
+            .theme-toggle-button {
+                background: #2a2a4a;
+                border: 1px solid #4a4a6a;
+                color: #fff;
+                width: 42px; /* Ligeramente más grande para consistencia */
+                height: 42px;
+                padding: 10px;
+                border-radius: 50%;
+                font-size: 1.2rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .theme-toggle-button:hover {
+                background: #3a3a5a;
+                transform: scale(1.1);
+            }
             .dashboard-wrapper {
                 display: flex;
                 gap: 30px;
@@ -64,27 +78,16 @@
                 margin: 0 auto;
                 align-items: flex-start;
             }
-
-            .dashboard-column-left {
-                flex: 3;
-            }
-
-            .dashboard-column-right {
-                flex: 2;
-                display: flex;
-                flex-direction: column;
-                gap: 30px;
-            }
-            
-            /* --- Estilo de Tarjeta para cada Contenedor --- */
+            .dashboard-column-left { flex: 3; }
+            .dashboard-column-right { flex: 2; display: flex; flex-direction: column; gap: 30px; }
             .card {
                 background-color: #1e1e3f;
                 border-radius: 12px;
                 padding: 20px;
                 box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
                 width: 100%;
+                transition: background-color 0.3s, box-shadow 0.3s;
             }
-            
             .card-title {
                 font-size: 1.2rem;
                 font-weight: 600;
@@ -92,146 +95,58 @@
                 margin-bottom: 15px;
                 padding-bottom: 10px;
                 border-bottom: 1px solid #4a4a6a;
+                transition: color 0.3s, border-bottom-color 0.3s;
             }
-
             /* --- Estilos de Tablas --- */
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                table-layout: fixed; /* Ayuda a controlar el ancho de las columnas */
-            }
-
-            th, td {
-                padding: 10px;
-                text-align: center;
-                white-space: nowrap; /* Evita que el texto se rompa en varias líneas */
-                overflow: hidden;
-                text-overflow: ellipsis; /* Añade '...' si el texto no cabe */
-            }
-            
+            table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+            th, td { padding: 10px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             #estadisticas-ofensivas th:nth-child(2),
-            #estadisticas-ofensivas td:nth-child(2) {
-                text-align: left; /* Alinear el nombre del jugador a la izquierda */
-                width: 200px; /* Ancho fijo para la columna del jugador */
-            }
-
-            thead tr {
-                border-bottom: 2px solid #4a4a6a;
-            }
-
-            th {
-                font-weight: 600;
-                color: #ffffff;
-                font-size: 0.75rem;
-                text-transform: uppercase;
-            }
-
-            tbody tr {
-                border-bottom: 1px solid #2a2a4a;
-            }
-            
+            #estadisticas-ofensivas td:nth-child(2) { text-align: left; width: 200px; }
+            thead tr { border-bottom: 2px solid #4a4a6a; transition: border-bottom-color 0.3s; }
+            th { font-weight: 600; color: #ffffff; font-size: 0.75rem; text-transform: uppercase; }
+            tbody tr { border-bottom: 1px solid #2a2a4a; transition: background-color 0.2s, border-bottom-color 0.3s; }
             tbody tr:last-child { border-bottom: none; }
-
-            img {
-                width: 28px;
-                height: 28px;
-                vertical-align: middle;
-                margin: 0 8px;
-                border-radius: 50%;
-            }
-            
-            .table-container {
-                overflow-x: auto; /* Permite scroll horizontal si la tabla es muy ancha */
-            }
-
-            /* --- Controles de Paginación --- */
-            .pagination-controls {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-top: 20px;
-                padding-top: 15px;
-                border-top: 1px solid #2a2a4a;
-            }
-            .pagination-controls button {
-                background-color: #2a2a4a;
-                border: 1px solid #4a4a6a;
-                color: #e0e0e0;
-                padding: 8px 16px;
-                border-radius: 6px;
-                cursor: pointer;
-                transition: background-color 0.2s;
-            }
-            .pagination-controls button:hover {
-                background-color: #3a3a5a;
-            }
-            .pagination-controls span {
-                font-size: 0.9rem;
-                font-weight: 300;
-            }
-
+            img { width: 28px; height: 28px; vertical-align: middle; margin: 0 8px; border-radius: 50%; }
+            .table-container { overflow-x: auto; }
+            .pagination-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #2a2a4a; transition: border-top-color 0.3s;}
+            .pagination-controls button { background-color: #2a2a4a; border: 1px solid #4a4a6a; color: #e0e0e0; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: background-color 0.2s, color 0.3s, border-color 0.3s; }
+            .pagination-controls button:hover { background-color: #3a3a5a; }
+            .pagination-controls span { font-size: 0.9rem; font-weight: 300; }
             /* --- Comparación de Jugadores --- */
-            .search-container {
-                display: flex;
-                gap: 20px;
-                margin-bottom: 20px;
-            }
-            .search-player {
-                flex: 1;
-                position: relative;
-            }
-            .search-player input {
-                width: 100%;
-                padding: 10px;
-                background-color: #2a2a4a;
-                border: 1px solid #4a4a6a;
-                border-radius: 8px;
-                color: #e0e0e0;
-                font-family: 'Poppins', sans-serif;
-            }
-            .search-results {
-                position: absolute;
-                width: 100%;
-                background-color: #2a2a4a;
-                border: 1px solid #4a4a6a;
-                border-radius: 8px;
-                margin-top: 5px;
-                z-index: 100;
-                max-height: 200px;
-                overflow-y: auto;
-            }
-            .search-results div {
-                padding: 10px;
-                cursor: pointer;
-                border-bottom: 1px solid #1e1e3f;
-            }
-            .search-results div:hover {
-                background-color: #3a3a5a;
-            }
-            .chart-container {
-                position: relative;
-                height: 400px; /* Altura flexible */
-                width: 100%;
-            }
+            .search-container { display: flex; gap: 20px; margin-bottom: 20px; }
+            .search-player { flex: 1; position: relative; }
+            .search-player input { width: 100%; padding: 10px; background-color: #2a2a4a; border: 1px solid #4a4a6a; border-radius: 8px; color: #e0e0e0; font-family: 'Poppins', sans-serif; transition: background-color 0.3s, border-color 0.3s, color 0.3s; }
+            .search-results { position: absolute; width: 100%; background-color: #2a2a4a; border: 1px solid #4a4a6a; border-radius: 8px; margin-top: 5px; z-index: 100; max-height: 200px; overflow-y: auto; }
+            .search-results div { padding: 10px; cursor: pointer; border-bottom: 1px solid #1e1e3f; }
+            .search-results div:hover { background-color: #3a3a5a; }
+            .chart-container { position: relative; height: 400px; width: 100%; }
+            #estadisticas-ofensivas th { font-size: 0.65rem; padding: 8px 5px; }
+            #estadisticas-ofensivas td { font-size: 0.8rem; padding: 8px 5px; }
+            #estadisticas-ofensivas tbody tr:hover,
+            #mejores-goles tbody tr:hover { background-color: #2a2a4a; cursor: pointer; }
 
-            #estadisticas-ofensivas th {
-                font-size: 0.65rem; /* Reducimos el tamaño de los títulos de columna */
-                padding: 8px 5px;   /* Reducimos el espacio interno */
-            }
-            #estadisticas-ofensivas td {
-                font-size: 0.8rem;  /* Reducimos el tamaño de los números y datos */
-                padding: 8px 5px;   /* Reducimos el espacio interno */
-            }
-
-            #estadisticas-ofensivas tbody tr:hover {
-                background-color: #2a2a4a;
-                cursor: pointer;
-            }
-
-            #mejores-goles tbody tr:hover {
-                background-color: #2a2a4a;
-                cursor: pointer;
-            }
+            /* ------------------------- */
+            /* --- ESTILOS MODO LUZ --- */
+            /* ------------------------- */
+            body.light-mode { background-color: #f4f4f9; color: #333333; }
+            body.light-mode .header { border-bottom-color: #e0e0e0; }
+            body.light-mode .header h1, body.light-mode .card-title, body.light-mode th { color: #1a1a2e; }
+            body.light-mode .header select, body.light-mode .header button { background-color: #ffffff; border-color: #d1d1d1; color: #333333; }
+            body.light-mode .header select:hover, body.light-mode .header button:hover { background-color: #f0f0f0; }
+            body.light-mode .theme-toggle-button { background: #ffffff; border-color: #d1d1d1; color: #333; }
+            body.light-mode .theme-toggle-button:hover { background: #f0f0f0; }
+            body.light-mode .card { background-color: #ffffff; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); }
+            body.light-mode .card-title { border-bottom-color: #e0e0e0; }
+            body.light-mode thead tr { border-bottom-color: #d1d1d1; }
+            body.light-mode tbody tr { border-bottom-color: #e0e0e0; }
+            body.light-mode #estadisticas-ofensivas tbody tr:hover, body.light-mode #mejores-goles tbody tr:hover { background-color: #e9e9f3; }
+            body.light-mode .pagination-controls { border-top-color: #e0e0e0; }
+            body.light-mode .pagination-controls button { background-color: #ffffff; border-color: #d1d1d1; color: #333333; }
+            body.light-mode .pagination-controls button:hover { background-color: #f0f0f0; }
+            body.light-mode .search-player input { background-color: #ffffff; border-color: #d1d1d1; color: #333333; }
+            body.light-mode .search-results { background-color: #ffffff; border-color: #d1d1d1; }
+            body.light-mode .search-results div { border-bottom-color: #f0f0f0; }
+            body.light-mode .search-results div:hover { background-color: #f5f5f5; }
         </style>
     </head>
     <body>
@@ -245,7 +160,8 @@
                     <option value="bundesliga">Bundesliga</option>
                     <option value="ligueone">Ligue 1</option>
                 </select>
-                <button id="tipo-de-estadistica">Estadísticas por Equipo</button>
+                <button id="tipo-de-estadistica">Estadsticas por Equipo</button>
+                <button id="theme-toggle" class="theme-toggle-button">☀️</button>
             </div>
         </header>
         
@@ -326,197 +242,369 @@
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
-            let jugador1Id = null;
-            let jugador2Id = null;
-            let jugador1Stats = null;
-            let jugador2Stats = null;
+            document.addEventListener('DOMContentLoaded', function() {
+                // --- DECLARACIÓN DE VARIABLES ---
+                let jugador1Id = null, jugador2Id = null;
+                let jugador1Stats = null, jugador2Stats = null;
+                let radarChart = null; // Variable para la instancia del gráfico
+                let allData = [];
+                let currentPage = 1;
+                const pageSize = 10;
 
-            function cargarMejoresGoles (ligaSeleccionada){  
-                let endpoints = {
-                    "premierleague": "1", "laliga": "2", "seriea": "3", "bundesliga": "4", "ligueone": "5"
+                const ligaSelect = document.getElementById('liga');
+                const tbody = document.querySelector("#estadisticas-ofensivas tbody");
+                const tipoDeStatBtn = document.getElementById('tipo-de-estadistica');
+                
+                // --- LÓGICA DE TEMA ---
+                const themeToggleButton = document.getElementById('theme-toggle');
+                const body = document.body;
+
+                const darkChartOptions = { responsive: true, maintainAspectRatio: false, scales: { r: { angleLines: { color: 'rgba(224, 224, 224, 0.2)' }, grid: { color: 'rgba(224, 224, 224, 0.2)' }, pointLabels: { color: '#e0e0e0', font: { size: 10 } }, ticks: { display: false }}}, plugins: { legend: { labels: { color: '#e0e0e0' }}}};
+                const lightChartOptions = { responsive: true, maintainAspectRatio: false, scales: { r: { angleLines: { color: 'rgba(0, 0, 0, 0.1)' }, grid: { color: 'rgba(0, 0, 0, 0.1)' }, pointLabels: { color: '#666', font: { size: 10 } }, ticks: { display: false }}}, plugins: { legend: { labels: { color: '#333' }}}};
+
+                const applyTheme = (theme) => {
+                    if (theme === 'light') {
+                        body.classList.add('light-mode');
+                        themeToggleButton.textContent = '🌙';
+                        if (radarChart) {
+                            radarChart.options = lightChartOptions;
+                            radarChart.update();
+                        }
+                    } else {
+                        body.classList.remove('light-mode');
+                        themeToggleButton.textContent = '☀️';
+                        if (radarChart) {
+                            radarChart.options = darkChartOptions;
+                            radarChart.update();
+                        }
+                    }
                 };
-                fetch(`/mejores-goles/${endpoints[ligaSeleccionada]}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        const tbodyMejoresGoles = document.querySelector("#mejores-goles-jugadores");
-                        tbodyMejoresGoles.innerHTML="";
-                        const goles = data;
-                        goles.forEach(gol => {
-                            const fila = document.createElement("tr");
-                            fila.dataset.idJugador = gol.id_jugador; 
-                            fila.innerHTML = `
-                                <td><img src="${gol.url_imagen}">${gol.nombre_jugador}</td>
-                                <td>${gol.xg}</td>
-                                <td>
-                                    <img src="${gol.escudo_local}">
-                                    ${gol.goles_local} - ${gol.goles_visitante}
-                                    <img src="${gol.escudo_visitante}">
-                                </td>
+                
+                const savedTheme = localStorage.getItem('theme') || 'dark';
+                applyTheme(savedTheme);
+
+                themeToggleButton.addEventListener('click', () => {
+                    const newTheme = body.classList.contains('light-mode') ? 'dark' : 'light';
+                    localStorage.setItem('theme', newTheme);
+                    applyTheme(newTheme);
+                });
+
+                const endpoints = {
+                    "premierleague": "/estadisticas-ofensivas-premier-league", "laliga": "/estadisticas-ofensivas-la-liga",
+                    "seriea": "/estadisticas-ofensivas-serie-a", "bundesliga": "/estadisticas-ofensivas-bundesliga",
+                    "ligueone": "/estadisticas-ofensivas-ligue-one"
+                };
+
+                function cargarMejoresGoles (ligaSeleccionada){  
+                    let endpoints = {
+                        "premierleague": "1", "laliga": "2", "seriea": "3", "bundesliga": "4", "ligueone": "5"
+                    };
+                    fetch(`/mejores-goles/${endpoints[ligaSeleccionada]}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const tbodyMejoresGoles = document.querySelector("#mejores-goles-jugadores");
+                            tbodyMejoresGoles.innerHTML="";
+                            const goles = data;
+                            goles.forEach(gol => {
+                                const fila = document.createElement("tr");
+                                fila.dataset.idJugador = gol.id_jugador; 
+                                fila.innerHTML = `
+                                    <td><img src="${gol.url_imagen}">${gol.nombre_jugador}</td>
+                                    <td>${gol.xg}</td>
+                                    <td>
+                                        <img src="${gol.escudo_local}">
+                                        ${gol.goles_local} - ${gol.goles_visitante}
+                                        <img src="${gol.escudo_visitante}">
+                                    </td>
+                                `;
+                                tbodyMejoresGoles.appendChild(fila);
+                            });
+                        });
+                }
+                
+                function setupSearch(inputID, jugadorNum){
+                    const input = document.getElementById(inputID);
+                    input.addEventListener("input", async (e) => {
+                        const query = e.target.value;
+                        const resultsDiv = document.getElementById(`searchResults${jugadorNum}`);
+                        resultsDiv.innerHTML ="";
+                        if (query.length < 2) return;
+                        const res = await fetch(`/buscar-jugadores?nombre=${query}`);
+                        const jugadores = await res.json();
+                        jugadores.forEach(jugador => {
+                            const div = document.createElement("div");
+                            div.innerHTML = `
+                                <img src="${jugador.imagen_equipo}" width="30" />
+                                <img src="${jugador.imagen_jugador}" width="30" />
+                                ${jugador.nombre_jugador}
                             `;
-                            tbodyMejoresGoles.appendChild(fila);
+                            div.style.cursor = "pointer";
+                            div.addEventListener("click", async () => {
+                                input.value = jugador.nombre_jugador;
+                                resultsDiv.innerHTML="";
+                                if (jugadorNum === 1) {
+                                    jugador1Id = jugador.id_jugador;
+                                    const res = await fetch(`/estadisticas-jugador/${jugador.id_jugador}`);
+                                    jugador1Stats = await res.json();
+                                } else {
+                                    jugador2Id = jugador.id_jugador;
+                                    const res = await fetch(`/estadisticas-jugador/${jugador.id_jugador}`);
+                                    jugador2Stats = await res.json();
+                                }
+                                if (jugador1Id && jugador2Id) {
+                                    const maximos = await getMaxStats(jugador1Id, jugador2Id);
+                                    actualizarRadar(maximos);
+                                }
+                            });
+                            resultsDiv.appendChild(div);
                         });
                     });
-            }
-            
-            function setupSearch(inputID, jugadorNum){
-                const input = document.getElementById(inputID);
-                input.addEventListener("input", async (e) => {
-                    const query = e.target.value;
-                    const resultsDiv = document.getElementById(`searchResults${jugadorNum}`);
-                    resultsDiv.innerHTML ="";
-                    if (query.length < 2) return;
-                    const res = await fetch(`/buscar-jugadores?nombre=${query}`);
-                    const jugadores = await res.json();
-                    jugadores.forEach(jugador => {
-                        const div = document.createElement("div");
-                        div.innerHTML = `
-                            <img src="${jugador.imagen_equipo}" width="30" />
-                            <img src="${jugador.imagen_jugador}" width="30" />
-                            ${jugador.nombre_jugador}
+                }
+
+                function actualizarRadar(maximos) {
+                    function normalizar(valor, maximo) {
+                        return maximo > 0 ? (valor / maximo) * 100 : 0;
+                    }
+
+                    let jugadores = [
+                        { stats: jugador1Stats, idx: 0 },
+                        { stats: jugador2Stats, idx: 1 }
+                    ];
+
+                    jugadores.forEach(j => {
+                        if (!j.stats) return; // si aún no hay stats del jugador, lo saltamos
+
+                        const normalizados = {
+                            nombre_jugador: j.stats.nombre_jugador,
+                            goles: normalizar(j.stats.total_goles, maximos.max_goles),
+                            disparos: normalizar(j.stats.disparos, maximos.max_disparos),
+                            asistencias: normalizar(j.stats.asistencias, maximos.max_asistencias),
+                            acciones_creadas: normalizar(j.stats.acciones_creadas, maximos.max_acciones_creadas),
+                            pases: normalizar(j.stats.pases, maximos.max_pases),
+                            porcentaje_de_efectividad_de_pases: normalizar(j.stats.porcentaje_de_efectividad_de_pases, maximos.max_porcentaje_de_efectividad_de_pases),
+                            pases_progresivos: normalizar(j.stats.pases_progresivos, maximos.max_pases_progresivos),
+                            acarreos_progresivos: normalizar(j.stats.acarreos_progresivos, maximos.max_acarreos_progresivos),
+                            regates_efectivos: normalizar(j.stats.regates_efectivos, maximos.max_regates_efectivos),
+                            toques_de_balon: normalizar(j.stats.toques_de_balon, maximos.max_toques_de_balon),
+                            entradas: normalizar(j.stats.entradas, maximos.max_entradas),
+                            intercepciones: normalizar(j.stats.intercepciones, maximos.max_intercepciones),
+                            bloqueos: normalizar(j.stats.bloqueos, maximos.max_bloqueos),
+                            despejes: normalizar(j.stats.despejes, maximos.max_despejes),
+                            duelos_aereos_ganados: normalizar(j.stats.duelos_aereos_ganados, maximos.max_duelos_aereos_ganados)
+                        };
+
+                        renderRadarChart(normalizados, j.stats, j.idx + 1);
+                    });
+                }
+                
+                function renderRadarChart(stats, rawStats, jugadorNum) {
+                    if (!window.radarChartInstance) {
+                        const ctx = document.getElementById('radarChart').getContext('2d');
+                        window.radarChartInstance = new Chart(ctx, {
+                            type: 'radar',
+                            data: {
+                                labels: ["goles", "disparos", "asistencias", 
+                                "acciones_creadas", "pases", "porcentaje_de_efectividad_de_pases",
+                                "pases_progresivos", "acarreos_progresivos", "regates_efectivos", 
+                                "toques_de_balon", "entradas", "intercepciones",
+                                "bloqueos", "despejes", "duelos_aereos_ganados"],
+                                datasets: [
+                                    { label: "Jugador 1", data: [], customStats: {} },
+                                    { label: "Jugador 2", data: [], customStats: {} }
+                                ]
+                            },
+                            options: {
+                                responsive: true,
+                                scales: {
+                                    r: {
+                                        ticks: {
+                                            display: false
+                                        }
+                                    }
+                                },
+                                plugins: {
+                                    legend: {
+                                        labels: { 
+                                            color: '#e0e0e0' 
+                                        }
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                const dataset = context.dataset;
+                                                const statName = context.chart.data.labels[context.dataIndex];
+                                                const realValue = dataset.customStats[statName];
+                                                return `${dataset.label} - ${statName}: ${realValue}`; 
+                                            }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    r: {
+                                        angleLines: { color: 'rgba(224, 224, 224, 0.2)' }, // Color de las líneas radiales
+                                        grid: { color: 'rgba(224, 224, 224, 0.2)' }, // Color de la cuadrícula
+                                        pointLabels: { color: '#e0e0e0', font: { size: 10 } }, // Color de las etiquetas de las estadísticas
+                                        ticks: { display: false }
+                                    }
+                                }
+                                
+                            }
+                        });
+                    }
+
+                    const colores = [
+                        { bg: "rgba(0,123,255,0.2)", border: "rgba(0,123,255,1)" },
+                        { bg: "rgba(255,99,132,0.2)", border: "rgba(255,99,132,1)" }
+                    ];
+
+                    window.radarChartInstance.data.datasets[jugadorNum - 1] = {
+                        label: stats.nombre_jugador,
+                        data: [
+                            stats.goles,   
+                            stats.disparos,   
+                            stats.asistencias,   
+                            stats.acciones_creadas,   
+                            stats.pases,
+                            stats.porcentaje_de_efectividad_de_pases,
+                            stats.pases_progresivos,
+                            stats.acarreos_progresivos,
+                            stats.regates_efectivos,
+                            stats.toques_de_balon,
+                            stats.entradas,
+                            stats.intercepciones,
+                            stats.bloqueos,
+                            stats.despejes,
+                            stats.duelos_aereos_ganados    
+                        ],
+                        customStats: {
+                            goles: rawStats.total_goles,
+                            disparos: rawStats.disparos,
+                            asistencias: rawStats.asistencias,
+                            acciones_creadas: rawStats.acciones_creadas,
+                            pases: rawStats.pases,
+                            porcentaje_de_efectividad_de_pases: rawStats.porcentaje_de_efectividad_de_pases,
+                            pases_progresivos: rawStats.pases_progresivos,
+                            acarreos_progresivos: rawStats.acarreos_progresivos,
+                            regates_efectivos: rawStats.regates_efectivos,
+                            toques_de_balon: rawStats.toques_de_balon,
+                            entradas: rawStats.entradas,
+                            intercepciones: rawStats.intercepciones,
+                            bloqueos: rawStats.bloqueos,
+                            despejes: rawStats.despejes,
+                            duelos_aereos_ganados: rawStats.duelos_aereos_ganados
+                        },
+                        fill: true,
+                        backgroundColor: colores[jugadorNum - 1].bg,
+                        borderColor: colores[jugadorNum - 1].border,
+                        pointBackgroundColor: colores[jugadorNum - 1].border
+                    };
+                    console.log(window.radarChartInstance)
+                    window.radarChartInstance.update(); 
+                }
+                
+                let tipoDeStat = document.getElementById('tipo-de-estadistica');
+                
+
+                function renderPage() {
+                    tbody.innerHTML = "";
+                    const start = (currentPage - 1) * pageSize;
+                    const end = start + pageSize;
+                    const pageData = allData.slice(start, end);
+
+                    pageData.forEach((estadistica_ofensiva, index) => {
+                        const fila = document.createElement("tr");
+                        
+                        // --- 1. AÑADIMOS EL ID DEL JUGADOR A LA FILA ---
+                        // Asegúrate que tu JSON de estadísticas ofensivas incluye 'id_jugador'
+                        fila.dataset.idJugador = estadistica_ofensiva.id_jugador; 
+
+                        fila.innerHTML = `
+                            <td>${start + index + 1}</td>
+                            <td><img src="${estadistica_ofensiva.imagen_jugador}" width="30"> ${estadistica_ofensiva.nombre_jugador} <img src="${estadistica_ofensiva.imagen_equipo}" width="30"></td>
+                            <td>${estadistica_ofensiva.minutos}</td>
+                            <td>${estadistica_ofensiva.total_goles}</td>
+                            <td>${estadistica_ofensiva.disparos}</td>
+                            <td>${estadistica_ofensiva.disparos_a_puerta}</td>
+                            <td>${estadistica_ofensiva.porcentaje_disparos_a_puerta}</td>
+                            <td>${estadistica_ofensiva.disparos_por_90}</td>
+                            <td>${estadistica_ofensiva.goles_por_disparo}</td>
+                            <td>${estadistica_ofensiva.distancia_promedio_de_disparos}</td>
+                            <td>${estadistica_ofensiva.tiros_libres}</td>
+                            <td>${estadistica_ofensiva.penales}</td>
+                            <td>${estadistica_ofensiva["SUM(ejp.goles_esperados)"]}</td>
                         `;
-                        div.style.cursor = "pointer";
-                        div.addEventListener("click", async () => {
-                            input.value = jugador.nombre_jugador;
-                            resultsDiv.innerHTML="";
-                            if (jugadorNum === 1) {
-                                jugador1Id = jugador.id_jugador;
-                                const res = await fetch(`/estadisticas-jugador/${jugador.id_jugador}`);
-                                jugador1Stats = await res.json();
-                            } else {
-                                jugador2Id = jugador.id_jugador;
-                                const res = await fetch(`/estadisticas-jugador/${jugador.id_jugador}`);
-                                jugador2Stats = await res.json();
-                            }
-                            if (jugador1Id && jugador2Id) {
-                                const maximos = await getMaxStats(jugador1Id, jugador2Id);
-                                actualizarRadar(maximos);
-                            }
-                        });
-                        resultsDiv.appendChild(div);
+                        tbody.appendChild(fila);
                     });
-                });
-            }
 
-            function actualizarRadar(maximos) {
-                // ... (Tu código de actualizarRadar sin cambios)
-            }
-            
-            function renderRadarChart(stats, rawStats, jugadorNum) {
-                // ... (Tu código de renderRadarChart sin cambios)
-            }
-            
-            let tipoDeStat = document.getElementById('tipo-de-estadistica');
-            var liga = document.getElementById('liga');
-            var tbody = document.querySelector("#estadisticas-ofensivas tbody");
-            var endpoints = {
-                "premierleague": "/estadisticas-ofensivas-premier-league",
-                "laliga": "/estadisticas-ofensivas-la-liga",
-                "seriea": "/estadisticas-ofensivas-serie-a", 
-                "bundesliga": "/estadisticas-ofensivas-bundesliga",
-                "ligueone": "/estadisticas-ofensivas-ligue-one"
-            };
-            let allData = [];
-            let currentPage = 1;
-            const pageSize = 10;
+                    document.getElementById("page-info").textContent = 
+                        `Página ${currentPage} de ${Math.ceil(allData.length / pageSize)}`;
+                }
 
-            function renderPage() {
-                tbody.innerHTML = "";
-                const start = (currentPage - 1) * pageSize;
-                const end = start + pageSize;
-                const pageData = allData.slice(start, end);
+                function cargarTabla(ligaSeleccionada){
+                    if (endpoints[ligaSeleccionada]){
+                        fetch(endpoints[ligaSeleccionada])
+                        .then(response => response.json())
+                        .then(data => {
+                            allData = data;
+                            currentPage = 1;
+                            renderPage();
+                        })
+                        .catch(error => console.error("Error al cargar la pagina: ", error));
+                    }
+                }
 
-                pageData.forEach((estadistica_ofensiva, index) => {
-                    const fila = document.createElement("tr");
-                    
-                    // --- 1. AÑADIMOS EL ID DEL JUGADOR A LA FILA ---
-                    // Asegúrate que tu JSON de estadísticas ofensivas incluye 'id_jugador'
-                    fila.dataset.idJugador = estadistica_ofensiva.id_jugador; 
-
-                    fila.innerHTML = `
-                        <td>${start + index + 1}</td>
-                        <td><img src="${estadistica_ofensiva.imagen_jugador}" width="30"> ${estadistica_ofensiva.nombre_jugador} <img src="${estadistica_ofensiva.imagen_equipo}" width="30"></td>
-                        <td>${estadistica_ofensiva.minutos}</td>
-                        <td>${estadistica_ofensiva.total_goles}</td>
-                        <td>${estadistica_ofensiva.disparos}</td>
-                        <td>${estadistica_ofensiva.disparos_a_puerta}</td>
-                        <td>${estadistica_ofensiva.porcentaje_disparos_a_puerta}</td>
-                        <td>${estadistica_ofensiva.disparos_por_90}</td>
-                        <td>${estadistica_ofensiva.goles_por_disparo}</td>
-                        <td>${estadistica_ofensiva.distancia_promedio_de_disparos}</td>
-                        <td>${estadistica_ofensiva.tiros_libres}</td>
-                        <td>${estadistica_ofensiva.penales}</td>
-                        <td>${estadistica_ofensiva["SUM(ejp.goles_esperados)"]}</td>
-                    `;
-                    tbody.appendChild(fila);
+                // --- 2. AÑADIMOS EL NUEVO LISTENER ---
+                document.getElementById('maximos-goleadores-jugadores').addEventListener('click', function(event) {
+                    const filaClickeada = event.target.closest('tr');
+                    if (filaClickeada && filaClickeada.dataset.idJugador) {
+                        const jugadorId = filaClickeada.dataset.idJugador;
+                        window.location.href = `jugador.html?id=${jugadorId}`;
+                    }
                 });
 
-                document.getElementById("page-info").textContent = 
-                    `Página ${currentPage} de ${Math.ceil(allData.length / pageSize)}`;
-            }
+                document.getElementById('mejores-goles-jugadores').addEventListener('click', function(event) {
+                    const filaClickeada = event.target.closest('tr');
+                    if (filaClickeada && filaClickeada.dataset.idJugador) {
+                        const jugadorId = filaClickeada.dataset.idJugador;
+                        window.location.href = `jugador.html?id=${jugadorId}`;
+                    }
+                });
 
-            function cargarTabla(ligaSeleccionada){
-                if (endpoints[ligaSeleccionada]){
-                    fetch(endpoints[ligaSeleccionada])
-                    .then(response => response.json())
-                    .then(data => {
-                        allData = data;
-                        currentPage = 1;
-                        renderPage();
-                    })
-                    .catch(error => console.error("Error al cargar la pagina: ", error));
+                document.getElementById("prev").addEventListener("click", () => {
+                    if(currentPage > 1) { currentPage--; renderPage(); }
+                });
+
+                document.getElementById("next").addEventListener("click", () => {
+                    if(currentPage < Math.ceil(allData.length / pageSize)) { currentPage++; renderPage(); }
+                });
+                
+                liga.addEventListener("change", function(){
+                    cargarTabla(this.value);
+                    cargarMejoresGoles(this.value);
+                });
+
+                tipoDeStat.addEventListener("click", function(){
+                    window.location = "estadisticas-ofensivas-equipo.html?liga=" + liga.value;
+                });
+                
+                // --- Carga Inicial ---
+                const params = new URLSearchParams(window.location.search);
+                const ligaParam = params.get("liga");
+                if (ligaParam) {
+                    liga.value = ligaParam;
                 }
-            }
-
-            // --- 2. AÑADIMOS EL NUEVO LISTENER ---
-            document.getElementById('maximos-goleadores-jugadores').addEventListener('click', function(event) {
-                const filaClickeada = event.target.closest('tr');
-                if (filaClickeada && filaClickeada.dataset.idJugador) {
-                    const jugadorId = filaClickeada.dataset.idJugador;
-                    window.location.href = `jugador.html?id=${jugadorId}`;
+                
+                cargarTabla(liga.value);
+                cargarMejoresGoles(liga.value);
+                
+                async function getMaxStats(id1, id2) {
+                    const res = await fetch(`/max-stats/${id1}/${id2}`);
+                    return await res.json();
                 }
-            });
-
-            document.getElementById('mejores-goles-jugadores').addEventListener('click', function(event) {
-                const filaClickeada = event.target.closest('tr');
-                if (filaClickeada && filaClickeada.dataset.idJugador) {
-                    const jugadorId = filaClickeada.dataset.idJugador;
-                    window.location.href = `jugador.html?id=${jugadorId}`;
-                }
-            });
-
-            document.getElementById("prev").addEventListener("click", () => {
-                if(currentPage > 1) { currentPage--; renderPage(); }
-            });
-
-            document.getElementById("next").addEventListener("click", () => {
-                if(currentPage < Math.ceil(allData.length / pageSize)) { currentPage++; renderPage(); }
+                setupSearch("searchInput1", 1);
+                setupSearch("searchInput2", 2);
             });
             
-            liga.addEventListener("change", function(){
-                cargarTabla(this.value);
-                cargarMejoresGoles(this.value);
-            });
-
-            tipoDeStat.addEventListener("click", function(){
-                window.location = "estadisticas-ofensivas-equipo.html?liga=" + liga.value;
-            });
-            
-            // --- Carga Inicial ---
-            const params = new URLSearchParams(window.location.search);
-            const ligaParam = params.get("liga");
-            if (ligaParam) {
-                liga.value = ligaParam;
-            }
-            
-            cargarTabla(liga.value);
-            cargarMejoresGoles(liga.value);
-            
-            async function getMaxStats(id1, id2) {
-                const res = await fetch(`/max-stats/${id1}/${id2}`);
-                return await res.json();
-            }
-            setupSearch("searchInput1", 1);
-            setupSearch("searchInput2", 2);
         </script>
     </body>
 </html>

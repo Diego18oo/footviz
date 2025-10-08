@@ -12,14 +12,13 @@
                 padding: 0;
                 box-sizing: border-box;
             }
-
             body {
                 font-family: 'Poppins', sans-serif;
                 background-color: #1a1a2e;
                 color: #e0e0e0;
                 padding: 20px;
+                transition: background-color 0.3s, color 0.3s;
             }
-
             /* --- Cabecera --- */
             .header {
                 display: flex;
@@ -29,32 +28,29 @@
                 margin: 0 auto 30px auto;
                 padding-bottom: 20px;
                 border-bottom: 1px solid #2a2a4a;
+                transition: border-bottom-color 0.3s;
             }
-
             .header h1 {
                 font-size: 2rem;
                 color: #ffffff;
                 font-weight: 700;
             }
-
             .header .controls-container {
                 display: flex;
                 align-items: center;
                 gap: 20px;
             }
-            
-            
             .control-group {
                 display: flex;
                 align-items: center;
                 gap: 10px;
             }
-
             .header label {
                 font-size: 0.9rem;
                 font-weight: 300;
+                color: #a0a0c0;
+                transition: color 0.3s;
             }
-
             .header select {
                 background-color: #2a2a4a;
                 color: #e0e0e0;
@@ -64,19 +60,36 @@
                 font-family: 'Poppins', sans-serif;
                 font-size: 0.9rem;
                 cursor: pointer;
-                transition: background-color 0.2s;
+                transition: background-color 0.2s, color 0.3s, border-color 0.3s;
             }
-            
             .header select:hover {
                 background-color: #3a3a5a;
             }
-            
+             /* --- BOTÓN PARA CAMBIAR TEMA --- */
+            .theme-toggle-button {
+                background: #2a2a4a;
+                border: 1px solid #4a4a6a;
+                color: #fff;
+                width: 42px;
+                height: 42px;
+                padding: 10px;
+                border-radius: 50%;
+                cursor: pointer;
+                font-size: 1.2rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s ease;
+            }
+            .theme-toggle-button:hover {
+                background: #3a3a5a;
+                transform: scale(1.1);
+            }
             /* --- Contenedor Principal --- */
             .main-container {
                 max-width: 1400px;
                 margin: 0 auto;
             }
-
             /* --- Estilo de Tarjeta --- */
             .card {
                 background-color: #1e1e3f;
@@ -84,8 +97,8 @@
                 padding: 20px;
                 box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
                 width: 100%;
+                transition: background-color 0.3s, box-shadow 0.3s;
             }
-
             /* --- Estilos de Tabla --- */
             table {
                 width: 100%;
@@ -97,6 +110,7 @@
             }
             thead tr {
                 border-bottom: 2px solid #4a4a6a;
+                transition: border-bottom-color 0.3s;
             }
             th {
                 font-weight: 600;
@@ -106,7 +120,7 @@
             }
             tbody tr {
                 border-bottom: 1px solid #2a2a4a;
-                transition: background-color 0.2s ease;
+                transition: background-color 0.2s ease, border-bottom-color 0.3s;
             }
             tbody tr:last-child { 
                 border-bottom: none; 
@@ -115,14 +129,12 @@
                 background-color: #2a2a4a;
                 cursor: pointer;
             }
-            
             img {
                 width: 32px;
                 height: 32px;
                 vertical-align: middle;
                 border-radius: 50%;
             }
-
             /* --- Estilos específicos para la celda del partido --- */
             .match-cell {
                 display: flex;
@@ -132,21 +144,34 @@
                 font-size: 1.2rem;
                 font-weight: 600;
             }
-
             .match-cell .team {
                 display: flex;
                 align-items: center;
                 gap: 15px;
             }
-
             .match-cell .team.local {
                 flex-direction: row-reverse;
             }
-
             .match-cell .score {
                 min-width: 80px; /* Ancho fijo para el marcador */
                 text-align: center;
             }
+
+            /* ------------------------- */
+            /* --- ESTILOS MODO LUZ --- */
+            /* ------------------------- */
+            body.light-mode { background-color: #f4f4f9; color: #333333; }
+            body.light-mode .header { border-bottom-color: #e0e0e0; }
+            body.light-mode .header h1, body.light-mode th { color: #1a1a2e; }
+            body.light-mode .header label { color: #555; }
+            body.light-mode .header select { background-color: #ffffff; border-color: #d1d1d1; color: #333333; }
+            body.light-mode .header select:hover { background-color: #f9f9f9; }
+            body.light-mode .theme-toggle-button { background: #ffffff; border-color: #d1d1d1; color: #333; }
+            body.light-mode .theme-toggle-button:hover { background: #f0f0f0; }
+            body.light-mode .card { background-color: #ffffff; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); }
+            body.light-mode thead tr { border-bottom-color: #d1d1d1; }
+            body.light-mode tbody tr { border-bottom-color: #e0e0e0; }
+            body.light-mode tbody tr:hover { background-color: #e9e9f3; }
         </style>
     </head>
     <body>
@@ -167,6 +192,7 @@
                     <label for="jornada">Jornada</label>
                     <select id="jornada"></select>
                 </div>
+                <button id="theme-toggle" class="theme-toggle-button">☀️</button>
             </div>
         </header>
         
@@ -187,116 +213,112 @@
         
 
         <script>
-            var tbody = document.querySelector("#tabla-partidos tbody");
-            var liga = document.getElementById('liga');
-            var jornada = document.getElementById('jornada');
-            function actualizarJornadas(ligaSeleccionada) {
-                const jornadasPorLiga = {
-                    "premierleague": 38,
-                    "laliga": 38,
-                    "seriea": 38,
-                    "bundesliga": 34,
-                    "ligueone": 34
+            document.addEventListener('DOMContentLoaded', function() {
+                // --- DECLARACIÓN DE VARIABLES ---
+                const tbody = document.querySelector("#tabla-partidos tbody");
+                const ligaSelect = document.getElementById('liga');
+                const jornadaSelect = document.getElementById('jornada');
+                
+                // --- LÓGICA DE TEMA ---
+                const themeToggleButton = document.getElementById('theme-toggle');
+                const body = document.body;
+
+                const applyTheme = (theme) => {
+                    if (theme === 'light') {
+                        body.classList.add('light-mode');
+                        themeToggleButton.textContent = '🌙';
+                    } else {
+                        body.classList.remove('light-mode');
+                        themeToggleButton.textContent = '☀️';
+                    }
                 };
+                
+                const savedTheme = localStorage.getItem('theme') || 'dark';
+                applyTheme(savedTheme);
 
-                const maxJornadas = jornadasPorLiga[ligaSeleccionada];
-
-                const jornadaSeleccionadaAnteriormente = jornada.value;
-
-                jornada.innerHTML = "";
-
-                for (let i = 1; i <= maxJornadas; i++) {
-                    const option = document.createElement("option");
-                    option.value = i;
-                    option.textContent = i;
+                themeToggleButton.addEventListener('click', () => {
+                    const newTheme = body.classList.contains('light-mode') ? 'dark' : 'light';
+                    localStorage.setItem('theme', newTheme);
+                    applyTheme(newTheme);
+                });
+                
+                function actualizarJornadas(ligaSeleccionada) {
+                    const jornadasPorLiga = { "premierleague": 38, "laliga": 38, "seriea": 38, "bundesliga": 34, "ligueone": 34 };
+                    const maxJornadas = jornadasPorLiga[ligaSeleccionada];
+                    jornadaSelect.innerHTML = "";
+                    for (let i = 1; i <= maxJornadas; i++) {
+                        const option = document.createElement("option");
+                        option.value = i;
+                        option.textContent = i;
+                        jornadaSelect.appendChild(option);
+                    }
                     
-                    jornada.appendChild(option);
-                }
                 
+                    
+                }
             
-                
-            }
-        
-            async function cargarPartidos(ligaSeleccionada, jornadaSeleccionada){
-                tbody.innerHTML = "";
-                let endpoints = {
-                    "premierleague" : "1",
-                    "laliga" : "2",
-                    "seriea" : "3",
-                    "bundesliga" : "4",
-                    "ligueone" : "5",
-                }
-                try{
-                    const response = await fetch(`/ultimos-partidos/${endpoints[ligaSeleccionada]}/${jornadaSeleccionada}`);
-                    const partidos = await response.json();
+                async function cargarPartidos(ligaSeleccionada, jornadaSeleccionada){
+                    tbody.innerHTML = "";
+                    const endpoints = { "premierleague" : "1", "laliga" : "2", "seriea" : "3", "bundesliga" : "4", "ligueone" : "5" };
+                    try {
+                        const response = await fetch(`/ultimos-partidos/${endpoints[ligaSeleccionada]}/${jornadaSeleccionada}`);
+                        const partidos = await response.json();
+                        const hoyNormalizada = new Date();
+                        hoyNormalizada.setHours(0, 0, 0, 0);
 
-                    const hoyNormalizada = new Date();
-                    hoyNormalizada.setHours(0, 0, 0, 0);
-
-                    for (const partido of partidos) {
-
-                        const fechaPartidoNormalizada = new Date(partido.fecha);
-                        fechaPartidoNormalizada.setHours(0, 0, 0, 0);
-
-                        if (hoyNormalizada > fechaPartidoNormalizada) {
-                            const resResponse = await fetch(`/resultado-partido/${partido.id_partido}`); 
-                            const resultado = await resResponse.json();
+                        for (const partido of partidos) {
+                            const fechaPartidoNormalizada = new Date(partido.fecha);
+                            fechaPartidoNormalizada.setHours(0, 0, 0, 0);
                             const fila = document.createElement("tr");
-                            fila.innerHTML = `
-                                <td class="match-cell">
-                                    <img src="${partido.escudo_local}" alt="Escudo local"> 
-                                    ${resultado.goles_local} - ${resultado.goles_visitante} 
-                                    <img src="${partido.escudo_visitante}" alt="Escudo visitante">
-                                </td>
-                                <td>Finalizado</td>
-                            `;
-                            fila.addEventListener("click", function(){
-                                window.location = "informe-postpartido.html?partido=" + partido.id_partido;
-                            })
-                            tbody.appendChild(fila);
-                        } else {
-                            const anio = fechaPartidoNormalizada.getFullYear();
-                            const mesFormateado = String(fechaPartidoNormalizada.getMonth() + 1).padStart(2, '0');
-                            const diaFormateado = String(fechaPartidoNormalizada.getDate()).padStart(2, '0');
-                            const fechaParaMostrar = `${anio}-${mesFormateado}-${diaFormateado}`;
 
-                            const fila = document.createElement("tr");
-                            fila.innerHTML = `
-                                <td>
-                                    <img src="${partido.escudo_local}" alt="Escudo local">  -   <img src="${partido.escudo_visitante}" alt="Escudo visitante"></td>
-                                <td>${fechaParaMostrar}</td> 
-                            `;
-                            fila.addEventListener("click", function(){
-                                window.location = "informe-prepartido.html?partido=" + partido.id_partido;
-                            })
+                            if (hoyNormalizada > fechaPartidoNormalizada) {
+                                const resResponse = await fetch(`/resultado-partido/${partido.id_partido}`); 
+                                const resultado = await resResponse.json();
+                                fila.innerHTML = `
+                                    <td class="match-cell">
+                                        <img src="${partido.escudo_local}" alt="Escudo local"> 
+                                        ${resultado.goles_local} - ${resultado.goles_visitante} 
+                                        <img src="${partido.escudo_visitante}" alt="Escudo visitante">
+                                    </td>
+                                    <td>Finalizado</td>`;
+                                fila.addEventListener("click", () => window.location = "informe-postpartido.html?partido=" + partido.id_partido);
+                            } else {
+                                const fechaParaMostrar = new Date(partido.fecha).toISOString().split('T')[0];
+                                fila.innerHTML = `
+                                    <td class="match-cell">
+                                        <img src="${partido.escudo_local}" alt="Escudo local"> vs <img src="${partido.escudo_visitante}" alt="Escudo visitante">
+                                    </td>
+                                    <td>${fechaParaMostrar}</td>`;
+                                fila.addEventListener("click", () => window.location = "informe-prepartido.html?partido=" + partido.id_partido);
+                            }
                             tbody.appendChild(fila);
                         }
+                    } catch(error) {
+                        console.error("Hubo un error al cargar los partidos:", error);
+                        tbody.innerHTML = `<tr><td colspan="2">Error al cargar la información.</td></tr>`;
                     }
-                } catch(error){
-                    console.error("Hubo un error al cargar los partidos:", error);
-                    tbody.innerHTML = `<tr><td colspan="2">Error al cargar la información.</td></tr>`;
                 }
 
-            }
+                const params = new URLSearchParams(window.location.search);
+                const ligaParam = params.get("liga");
 
-            const params = new URLSearchParams(window.location.search);
-            const ligaParam = params.get("liga");
+                if(ligaParam){
+                    liga.value = ligaParam;
+                            
+                }
 
-            if(ligaParam){
-                liga.value = ligaParam;
-                        
-            }
+                actualizarJornadas(liga.value); 
+                cargarPartidos(liga.value, jornada.value);   
 
-            actualizarJornadas(liga.value); 
-            cargarPartidos(liga.value, jornada.value);   
-
-            liga.addEventListener("change", function(){
-                actualizarJornadas(this.value);
-                cargarPartidos(this.value, jornada.value);
+                liga.addEventListener("change", function(){
+                    actualizarJornadas(this.value);
+                    cargarPartidos(this.value, jornada.value);
+                });
+                jornada.addEventListener("change", function(){
+                    cargarPartidos(liga.value, this.value);     
+                });
             });
-            jornada.addEventListener("change", function(){
-                cargarPartidos(liga.value, this.value);     
-            });
+            
 
         </script>
     </body>

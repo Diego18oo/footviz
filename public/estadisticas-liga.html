@@ -12,14 +12,13 @@
                 padding: 0;
                 box-sizing: border-box;
             }
-
             body {
                 font-family: 'Poppins', sans-serif;
                 background-color: #1a1a2e;
                 color: #e0e0e0;
                 padding: 20px;
+                transition: background-color 0.3s, color 0.3s;
             }
-
             /* --- Cabecera --- */
             .header {
                 display: flex;
@@ -29,32 +28,49 @@
                 margin: 0 auto 30px auto;
                 padding-bottom: 20px;
                 border-bottom: 1px solid #2a2a4a;
+                transition: border-bottom-color 0.3s;
             }
-
             .header h1 {
                 font-size: 2rem;
                 color: #ffffff;
                 font-weight: 700;
             }
-
             .header .controls-container, .card .chart-controls {
                 display: flex;
                 align-items: center;
                 gap: 20px;
             }
-            
+            /* --- BOTÓN PARA CAMBIAR TEMA --- */
+            .theme-toggle-button {
+                background: #2a2a4a;
+                border: 1px solid #4a4a6a;
+                color: #fff;
+                width: 42px;
+                height: 42px;
+                padding: 10px;
+                border-radius: 50%;
+                cursor: pointer;
+                font-size: 1.2rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s ease;
+            }
+            .theme-toggle-button:hover {
+                background: #3a3a5a;
+                transform: scale(1.1);
+            }
             .control-group {
                 display: flex;
                 align-items: center;
                 gap: 10px;
             }
-
             label {
                 font-size: 0.9rem;
                 font-weight: 300;
                 color: #a0a0c0;
+                transition: color 0.3s;
             }
-
             select {
                 background-color: #2a2a4a;
                 color: #e0e0e0;
@@ -64,13 +80,11 @@
                 font-family: 'Poppins', sans-serif;
                 font-size: 0.9rem;
                 cursor: pointer;
-                transition: background-color 0.2s;
+                transition: background-color 0.2s, color 0.3s, border-color 0.3s;
             }
-            
             select:hover {
                 background-color: #3a3a5a;
             }
-
             /* --- Estructura Principal --- */
             .dashboard-wrapper {
                 display: flex;
@@ -79,18 +93,8 @@
                 margin: 0 auto;
                 align-items: flex-start;
             }
-
-            .dashboard-column-left {
-                flex: 3;
-            }
-
-            .dashboard-column-right {
-                flex: 2;
-                display: flex;
-                flex-direction: column;
-                gap: 30px;
-            }
-
+            .dashboard-column-left { flex: 3; }
+            .dashboard-column-right { flex: 2; display: flex; flex-direction: column; gap: 30px; }
             /* --- Estilo de Tarjeta --- */
             .card {
                 background-color: #1e1e3f;
@@ -98,8 +102,8 @@
                 padding: 20px;
                 box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
                 width: 100%;
+                transition: background-color 0.3s, box-shadow 0.3s;
             }
-            
             .card-title {
                 font-size: 1.2rem;
                 font-weight: 600;
@@ -107,56 +111,37 @@
                 margin-bottom: 20px;
                 padding-bottom: 10px;
                 border-bottom: 1px solid #4a4a6a;
+                transition: color 0.3s, border-bottom-color 0.3s;
             }
-
             /* --- Estilos de Tabla --- */
-            .table-container {
-                overflow-x: auto;
-            }
-            table {
-                width: 100%;
-                border-collapse: collapse;
-            }
-            th, td {
-                padding: 12px 10px;
-                text-align: center;
-                white-space: nowrap;
-            }
-            thead tr {
-                border-bottom: 2px solid #4a4a6a;
-            }
-            th {
-                font-weight: 600;
-                color: #ffffff;
-                font-size: 0.8rem;
-                text-transform: uppercase;
-            }
-            tbody tr {
-                border-bottom: 1px solid #2a2a4a;
-            }
+            .table-container { overflow-x: auto; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { padding: 12px 10px; text-align: center; white-space: nowrap; }
+            thead tr { border-bottom: 2px solid #4a4a6a; transition: border-bottom-color 0.3s; }
+            th { font-weight: 600; color: #ffffff; font-size: 0.8rem; text-transform: uppercase; }
+            tbody tr { border-bottom: 1px solid #2a2a4a; transition: border-bottom-color 0.3s; }
             tbody tr:last-child { border-bottom: none; }
-            
             #tabla-equipos th:nth-child(2),
-            #tabla-equipos td:nth-child(2) {
-                text-align: left;
-            }
-            
-            img {
-                width: 28px;
-                height: 28px;
-                vertical-align: middle;
-                margin-right: 12px;
-                border-radius: 50%;
-            }
-            
+            #tabla-equipos td:nth-child(2) { text-align: left; }
+            img { width: 28px; height: 28px; vertical-align: middle; margin-right: 12px; border-radius: 50%; }
             /* --- Contenedores de Gráficos --- */
-            .chart-container {
-                position: relative;
-                width: 100%;
-                height: 350px; /* Altura estándar para gráficos */
-                margin-top: 20px;
-            }
-
+            .chart-container { position: relative; width: 100%; height: 350px; margin-top: 20px; }
+            
+            /* ------------------------- */
+            /* --- ESTILOS MODO LUZ --- */
+            /* ------------------------- */
+            body.light-mode { background-color: #f4f4f9; color: #333333; }
+            body.light-mode .header { border-bottom-color: #e0e0e0; }
+            body.light-mode .header h1, body.light-mode .card-title, body.light-mode th { color: #1a1a2e; }
+            body.light-mode label { color: #555; }
+            body.light-mode select { background-color: #ffffff; border-color: #d1d1d1; color: #333333; }
+            body.light-mode select:hover { background-color: #f9f9f9; }
+            body.light-mode .theme-toggle-button { background: #ffffff; border-color: #d1d1d1; color: #333; }
+            body.light-mode .theme-toggle-button:hover { background: #f0f0f0; }
+            body.light-mode .card { background-color: #ffffff; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); }
+            body.light-mode .card-title { border-bottom-color: #e0e0e0; }
+            body.light-mode thead tr { border-bottom-color: #d1d1d1; }
+            body.light-mode tbody tr { border-bottom-color: #e0e0e0; }
         </style>
     </head>
     <body> 
@@ -173,6 +158,7 @@
                         <option value="ligueone">Ligue 1</option>
                     </select>
                 </div>
+                <button id="theme-toggle" class="theme-toggle-button">☀️</button>
             </div>
         </header>
 
@@ -247,6 +233,51 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
         <script>
+
+            document.addEventListener('DOMContentLoaded', function() {
+                // --- DECLARACIÓN DE VARIABLES ---
+                let totalEquiposLiga = 20;
+                let lineChartInstance = null;
+                let barChartInstance = null;
+                const ligaSelect = document.getElementById('liga');
+                const tbody = document.querySelector("#tabla-equipos tbody");
+                
+                // --- LÓGICA DE TEMA ---
+                const themeToggleButton = document.getElementById('theme-toggle');
+                const body = document.body;
+
+                // Opciones para Gráfico de Líneas
+                const darkLineOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { color: '#e0e0e0' } }, title: { display: true, text: 'Comparación de Posición por Jornada', color: '#ffffff' } }, scales: { y: { reverse: true, min: 0, ticks: { color: '#a0a0c0', stepSize: 1 }, grid: { color: 'rgba(224, 224, 224, 0.1)' }, title: { display: true, text: 'Posición', color: '#e0e0e0' } }, x: { ticks: { color: '#a0a0c0' }, grid: { color: 'rgba(224, 224, 224, 0.1)' }, title: { display: true, text: 'Jornada', color: '#e0e0e0' } } } };
+                const lightLineOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { color: '#333' } }, title: { display: true, text: 'Comparación de Posición por Jornada', color: '#1a1a2e' } }, scales: { y: { reverse: true, min: 0, ticks: { color: '#666', stepSize: 1 }, grid: { color: 'rgba(0, 0, 0, 0.1)' }, title: { display: true, text: 'Posición', color: '#333' } }, x: { ticks: { color: '#666' }, grid: { color: 'rgba(0, 0, 0, 0.1)' }, title: { display: true, text: 'Jornada', color: '#333' } } } };
+                
+                // Opciones para Gráfico de Barras
+                const darkBarOptions = { responsive: true, maintainAspectRatio: false, layout: { padding: { bottom: 40 } }, plugins: { legend: { display: false }, title: { display: true, color: '#ffffff' }, tooltip: { callbacks: { title: (tooltipItems) => tooltipItems[0].label }}}, scales: { y: { beginAtZero: true, ticks: { color: '#a0a0c0' }, grid: { color: 'rgba(224, 224, 224, 0.1)' }, title: { display: true, text: 'Promedio por Partido', color: '#e0e0e0' }}, x: { ticks: { display: false }}}};
+                const lightBarOptions = { responsive: true, maintainAspectRatio: false, layout: { padding: { bottom: 40 } }, plugins: { legend: { display: false }, title: { display: true, color: '#1a1a2e' }, tooltip: { callbacks: { title: (tooltipItems) => tooltipItems[0].label }}}, scales: { y: { beginAtZero: true, ticks: { color: '#666' }, grid: { color: 'rgba(0, 0, 0, 0.1)' }, title: { display: true, text: 'Promedio por Partido', color: '#333' }}, x: { ticks: { display: false }}}};
+
+                const applyTheme = (theme) => {
+                    if (theme === 'light') {
+                        body.classList.add('light-mode');
+                        themeToggleButton.textContent = '🌙';
+                        if (lineChartInstance) { lineChartInstance.options = lightLineOptions; lineChartInstance.update(); }
+                        if (barChartInstance) { barChartInstance.options = lightBarOptions; barChartInstance.options.plugins.title.text = barChartInstance.options.plugins.title.text; barChartInstance.update(); }
+                    } else {
+                        body.classList.remove('light-mode');
+                        themeToggleButton.textContent = '☀️';
+                        if (lineChartInstance) { lineChartInstance.options = darkLineOptions; lineChartInstance.update(); }
+                        if (barChartInstance) { barChartInstance.options = darkBarOptions; barChartInstance.options.plugins.title.text = barChartInstance.options.plugins.title.text; barChartInstance.update(); }
+                    }
+                };
+                
+                const savedTheme = localStorage.getItem('theme') || 'dark';
+                applyTheme(savedTheme);
+
+                themeToggleButton.addEventListener('click', () => {
+                    const newTheme = body.classList.contains('light-mode') ? 'dark' : 'light';
+                    localStorage.setItem('theme', newTheme);
+                    applyTheme(newTheme);
+                });
+            });
+
             let totalEquiposLiga = 20;
             var liga = document.getElementById('liga');
             var tbody = document.querySelector("#tabla-equipos tbody");
