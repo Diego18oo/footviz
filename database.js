@@ -18,7 +18,8 @@ const dbConfig = {
 // añadimos la configuración SSL al objeto.
 if (process.env.DB_SSL_CA) {
   dbConfig.ssl = {
-    ca: process.env.DB_SSL_CA
+    ca: process.env.DB_SSL_CA,
+    rejectUnauthorized: false // <-- AÑADE ESTA LÍNEA
   };
 }
 
