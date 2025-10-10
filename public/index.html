@@ -408,13 +408,15 @@
                         const equipos = data.tabla_liga;
                         equipos.sort((a,b) => a.posicion - b.posicion);
                         equipos.forEach((equipo, index) => {
+                            const encodedUrl = encodeURIComponent(equipo.url_imagen);
+                            const proxyUrl = `/api/image-proxy?url=${encodedUrl}`;
                             
                             const fila = document.createElement("tr");
                             // --- PASO 1: GUARDAR EL ID EN EL ATRIBUTO DATA-* ---
                             fila.dataset.clubId = equipo.id_equipo; 
                             fila.innerHTML = `
                                 <td>${index + 1}</td> 
-                                <td><img src="${equipo.url_imagen}" alt="Escudo">${equipo.nombre_equipo}</td>
+                                <td><img src="${proxyUrl}" alt="Escudo">${equipo.nombre_equipo}</td>
                                 <td>${equipo.partidos_jugados}</td><td>${equipo.victorias}</td><td>${equipo.empates}</td>
                                 <td>${equipo.derrotas}</td><td>${equipo.puntos}</td><td>${equipo.diferencia_de_goles}</td>
                                 <td>${equipo.goles_anotados}</td><td>${equipo.goles_recibidos}</td>
@@ -439,11 +441,13 @@
                         const tbodyGoleadores = document.getElementById("maximos-goleadores-jugadores");
                         tbodyGoleadores.innerHTML = "";
                         data.maximos_goleadores.forEach(goleador => {
+                            const encodedUrl = encodeURIComponent(goleador.imagen_jugador);
+                            const proxyUrl = `/api/image-proxy?url=${encodedUrl}`;
                             const fila = document.createElement("tr");
                             // 1. AÑADIMOS EL ID DEL JUGADOR A LA FILA
                             fila.dataset.idJugador = goleador.id_jugador;
                             fila.innerHTML = `
-                                <td><img src="${goleador.imagen_jugador}" alt="Jugador">${goleador.nombre_jugador}</td>
+                                <td><img src="${proxyUrl}" alt="Jugador">${goleador.nombre_jugador}</td>
                                 <td>${goleador.total_goles}</td>
                             `; 
                             tbodyGoleadores.appendChild(fila);
@@ -452,11 +456,13 @@
                         const tbodyMejoresValorados = document.querySelector("#mejores-valorados-jugadores");
                         tbodyMejoresValorados.innerHTML = "";
                         data.mejores_valorados.forEach(mejor_valorado => {
+                            const encodedUrl = encodeURIComponent(mejor_valorado.imagen_jugador);
+                            const proxyUrl = `/api/image-proxy?url=${encodedUrl}`;
                             
                             const fila = document.createElement("tr");
                             fila.dataset.idJugador = mejor_valorado.id_jugador;
                             fila.innerHTML = `
-                                <td><img src="${mejor_valorado.imagen_jugador}" alt="Jugador">${mejor_valorado.nombre_jugador}</td>
+                                <td><img src="${proxyUrl}" alt="Jugador">${mejor_valorado.nombre_jugador}</td>
                                 <td>${mejor_valorado.mejor_valoracion}</td>
                             `;
                             tbodyMejoresValorados.appendChild(fila);
