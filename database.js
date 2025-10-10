@@ -1,15 +1,29 @@
-import mysql from 'mysql2'
+import mysql from 'mysql2/promise'
 
 import dotenv from 'dotenv'
 dotenv.config() 
  
-const pool = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_DATABASE,
-    port: process.env.DB_PORT
-}).promise()
+const dbConfig = {
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME, // <--- El nombre correcto
+  port: process.env.DB_PORT,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+};
+
+// Si la variable de entorno del certificado SSL existe (en Vercel),
+// añadimos la configuración SSL al objeto.
+if (process.env.DB_SSL_CA) {
+  dbConfig.ssl = {
+    ca: process.env.DB_SSL_CA
+  };
+}
+
+// Creamos el pool de conexiones con la configuración final
+const pool = mysql.createPool(dbConfig);
 
 
 
