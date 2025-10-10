@@ -11,11 +11,7 @@ const pool = mysql.createPool({
     port: process.env.DB_PORT
 }).promise()
 
-if (process.env.DB_SSL_CA) {
-  dbConfig.ssl = {
-    ca: process.env.DB_SSL_CA
-  };
-}
+
 
 export async function getTablaLiga(temporada){
     const [rows] = await pool.query(`
