@@ -4,11 +4,18 @@ import dotenv from 'dotenv'
 dotenv.config() 
  
 const pool = mysql.createPool({
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    database: process.env.MYSQL_DATABASE
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
+    port: process.env.DB_PORT
 }).promise()
+
+if (process.env.DB_SSL_CA) {
+  dbConfig.ssl = {
+    ca: process.env.DB_SSL_CA
+  };
+}
 
 export async function getTablaLiga(temporada){
     const [rows] = await pool.query(`

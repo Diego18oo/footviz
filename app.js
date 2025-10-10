@@ -5,7 +5,7 @@ import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValora
 const app = express() 
 app.use(express.static("public"))
 
-app.get("/plantilla-club/:id", async (req, res) => {
+app.get("/api/plantilla-club/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const info = await getPlantillaClub(id);
@@ -21,7 +21,7 @@ app.get("/plantilla-club/:id", async (req, res) => {
     }
 });
 
-app.get("/alineacion-club/:id", async (req, res) => {
+app.get("/api/alineacion-club/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const info = await getAlineacionClub(id);
@@ -37,7 +37,7 @@ app.get("/alineacion-club/:id", async (req, res) => {
     }
 });
 
-app.get("/ultimos-partidos-club/:id", async (req, res) => {
+app.get("/api/ultimos-partidos-club/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const info = await getUltimosPartidosClub(id);
@@ -53,7 +53,7 @@ app.get("/ultimos-partidos-club/:id", async (req, res) => {
     }
 });
 
-app.get("/info-club/:id", async(req, res) => {
+app.get("/api/info-club/:id", async(req, res) => {
     try {
         const { id } = req.params; 
         const infoClub = await getInfoClub(id);
@@ -69,7 +69,7 @@ app.get("/info-club/:id", async(req, res) => {
     }
 })
 
-app.get("/estadisticas-portero/:id", async(req, res) => {
+app.get("/api/estadisticas-portero/:id", async(req, res) => {
     try {
         const { id } = req.params; // ejemplo: /estadisticas-jugador/45
         const estadisticas_jugador = await getEstadisticasPortero(id);
@@ -85,7 +85,7 @@ app.get("/estadisticas-portero/:id", async(req, res) => {
     }
 })
 
-app.get("/percentiles-portero/:id", async (req, res) => {
+app.get("/api/percentiles-portero/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const info = await getPercentilesPortero(id);
@@ -101,7 +101,7 @@ app.get("/percentiles-portero/:id", async (req, res) => {
     }
 });
 
-app.get("/ultimos-partidos-portero/:id", async (req, res) => {
+app.get("/api/ultimos-partidos-portero/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const info = await getUltimosPartidosPortero(id);
@@ -117,7 +117,7 @@ app.get("/ultimos-partidos-portero/:id", async (req, res) => {
     }
 });
 
-app.get("/jugador/:id", async (req, res) => {
+app.get("/api/jugador/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const info = await getInfoJugador(id);
@@ -133,7 +133,7 @@ app.get("/jugador/:id", async (req, res) => {
     }
 });
 
-app.get("/ultimos-partidos-jugador/:id", async (req, res) => {
+app.get("/api/ultimos-partidos-jugador/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const info = await getUltimosPartidosJugador(id);
@@ -149,7 +149,7 @@ app.get("/ultimos-partidos-jugador/:id", async (req, res) => {
     }
 });
 
-app.get("/percentiles-jugador/:id", async (req, res) => {
+app.get("/api/percentiles-jugador/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const info = await getPercentilesJugador(id);
@@ -165,7 +165,7 @@ app.get("/percentiles-jugador/:id", async (req, res) => {
     }
 });
 
-app.get("/mapa-calor-jugador/:id", async (req, res) => {
+app.get("/api/mapa-calor-jugador/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const info = await getMapaDeCalorJugador(id);
@@ -181,7 +181,7 @@ app.get("/mapa-calor-jugador/:id", async (req, res) => {
     }
 });
 
-app.get("/mapa-disparos-jugador/:id", async (req, res) => {
+app.get("/api/mapa-disparos-jugador/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const info = await getMapaDeDisparosJugador(id);
@@ -197,7 +197,7 @@ app.get("/mapa-disparos-jugador/:id", async (req, res) => {
     }
 });
 
-app.get("/mapa-disparos-partido/:id", async (req, res) => {
+app.get("/api/mapa-disparos-partido/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const info = await getMapaDeDisparosPartido(id);
@@ -213,7 +213,7 @@ app.get("/mapa-disparos-partido/:id", async (req, res) => {
     }
 });
 
-app.get("/estadisticas-partido/:id", async (req, res) => {
+app.get("/api/estadisticas-partido/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const info = await getEstadisticasPartido(id);
@@ -229,7 +229,7 @@ app.get("/estadisticas-partido/:id", async (req, res) => {
     }
 });
 
-app.get("/info-postpartido/:id", async (req, res) => {
+app.get("/api/info-postpartido/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const info = await getInfoPostPartido(id);
@@ -244,7 +244,7 @@ app.get("/info-postpartido/:id", async (req, res) => {
         res.status(500).json({ error: "Error al obtener estadísticas del partido" });
     }
 });
-app.get("/comparacion-estadisticas-equipos/:id1/:id2", async (req, res) => {
+app.get("/api/comparacion-estadisticas-equipos/:id1/:id2", async (req, res) => {
     try {
         const { id1 } = req.params; 
         const { id2 } = req.params; 
@@ -261,7 +261,7 @@ app.get("/comparacion-estadisticas-equipos/:id1/:id2", async (req, res) => {
     }
 });
 
-app.get("/comparacion-evoluciones/:id1/:id2", async (req, res) => {
+app.get("/api/comparacion-evoluciones/:id1/:id2", async (req, res) => {
     try {
         const { id1 } = req.params; 
         const { id2 } = req.params; 
@@ -279,7 +279,7 @@ app.get("/comparacion-evoluciones/:id1/:id2", async (req, res) => {
 });
 
 
-app.get("/estadisticas-equipo/:id", async (req, res) => {
+app.get("/api/estadisticas-equipo/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const info = await getEstadisticasEquipo(id);
@@ -295,7 +295,7 @@ app.get("/estadisticas-equipo/:id", async (req, res) => {
     }
 });
 
-app.get("/ultimos-enfrentamientos/:id", async (req, res) => {
+app.get("/api/ultimos-enfrentamientos/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const info = await getUltimosEnfrentamientos(id);
@@ -311,7 +311,7 @@ app.get("/ultimos-enfrentamientos/:id", async (req, res) => {
     }
 });
 
-app.get("/alineaciones/:id", async (req, res) => {
+app.get("/api/alineaciones/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const info = await getPosiblesAlineaciones(id);
@@ -327,7 +327,7 @@ app.get("/alineaciones/:id", async (req, res) => {
     }
 });
 
-app.get("/info-prepartido/:id", async (req, res) => {
+app.get("/api/info-prepartido/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const info = await getInfoPrePartido(id);
@@ -344,7 +344,7 @@ app.get("/info-prepartido/:id", async (req, res) => {
 });
 
 
-app.get("/resultado-partido/:id", async (req, res) => {
+app.get("/api/resultado-partido/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const resultado = await getResultadoPartido(id);
@@ -360,7 +360,7 @@ app.get("/resultado-partido/:id", async (req, res) => {
     }
 });
 
-app.get("/ultimos-partidos/:id1/:id2", async (req, res) => {
+app.get("/api/ultimos-partidos/:id1/:id2", async (req, res) => {
     try {
         const { id1 } = req.params; 
         const { id2 } = req.params; 
@@ -377,7 +377,7 @@ app.get("/ultimos-partidos/:id1/:id2", async (req, res) => {
     }
 });
 
-app.get("/promedios-liga/:id", async (req, res) => {
+app.get("/api/promedios-liga/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const promedios = await getPromediosStatsDeUnaLiga(id);
@@ -393,7 +393,7 @@ app.get("/promedios-liga/:id", async (req, res) => {
     }
 });
 
-app.get("/evolucion-equipos/:id", async (req, res) => {
+app.get("/api/evolucion-equipos/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const evolucion = await getEvolucionEquipos(id);
@@ -409,7 +409,7 @@ app.get("/evolucion-equipos/:id", async (req, res) => {
     }
 });
 
-app.get("/mapa-disparos/:id", async (req, res) => {
+app.get("/api/mapa-disparos/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const mapaDisparos = await getMapaDeDisparosEquipo(id);
@@ -425,7 +425,7 @@ app.get("/mapa-disparos/:id", async (req, res) => {
     }
 });
 
-app.get("/goles-esperados-equipo/:id", async (req, res) => {
+app.get("/api/goles-esperados-equipo/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const xgEquipo = await getXgPorEquipo(id);
@@ -442,7 +442,7 @@ app.get("/goles-esperados-equipo/:id", async (req, res) => {
 });
 
 
-app.get("/estadisticas-ofensivas-equipo/:id", async (req, res) => {
+app.get("/api/estadisticas-ofensivas-equipo/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const estadisticas_ofensivas_equipo = await getEstadisticasOfensivasEquipo(id);
@@ -458,7 +458,7 @@ app.get("/estadisticas-ofensivas-equipo/:id", async (req, res) => {
     }
 });
 
-app.get("/mejores-goles/:id", async (req, res) => {
+app.get("/api/mejores-goles/:id", async (req, res) => {
     try {
         const { id } = req.params; 
         const mejores_goles = await getMejoresGoles(id);
@@ -474,7 +474,7 @@ app.get("/mejores-goles/:id", async (req, res) => {
     }
 });
 
-app.get("/max-stats/:id1/:id2", async (req, res) => {
+app.get("/api/max-stats/:id1/:id2", async (req, res) => {
     try {
         const { id1 } = req.params; 
         const { id2 } = req.params; 
@@ -491,7 +491,7 @@ app.get("/max-stats/:id1/:id2", async (req, res) => {
     }
 });
 
-app.get("/buscar-jugadores", async (req, res) => {
+app.get("/api/buscar-jugadores", async (req, res) => {
     try {
         const { nombre } = req.query;
 
@@ -508,7 +508,7 @@ app.get("/buscar-jugadores", async (req, res) => {
     }
 });
 
-app.get("/estadisticas-jugador/:id", async(req, res) => {
+app.get("/api/estadisticas-jugador/:id", async(req, res) => {
     try {
         const { id } = req.params; // ejemplo: /estadisticas-jugador/45
         const estadisticas_jugador = await getStatsJugador(id);
@@ -524,30 +524,30 @@ app.get("/estadisticas-jugador/:id", async(req, res) => {
     }
 })
 
-app.get("/estadisticas-ofensivas-premier-league", async(req, res) => {
+app.get("/api/estadisticas-ofensivas-premier-league", async(req, res) => {
     const estadisticas_ofensivas = await getEstadisticasOfensivas(1)
     res.json(estadisticas_ofensivas);
 })
 
-app.get("/estadisticas-ofensivas-la-liga", async(req, res) => {
+app.get("/api/estadisticas-ofensivas-la-liga", async(req, res) => {
     const estadisticas_ofensivas = await getEstadisticasOfensivas(2)
     res.json(estadisticas_ofensivas);
 })
-app.get("/estadisticas-ofensivas-serie-a", async(req, res) => {
+app.get("/api/estadisticas-ofensivas-serie-a", async(req, res) => {
     const estadisticas_ofensivas = await getEstadisticasOfensivas(3)
     res.json(estadisticas_ofensivas);
 })
 
-app.get("/estadisticas-ofensivas-bundesliga", async(req, res) => {
+app.get("/api/estadisticas-ofensivas-bundesliga", async(req, res) => {
     const estadisticas_ofensivas = await getEstadisticasOfensivas(4)
     res.json(estadisticas_ofensivas);
 })
 
-app.get("/estadisticas-ofensivas-ligue-one", async(req, res) => {
+app.get("/api/estadisticas-ofensivas-ligue-one", async(req, res) => {
     const estadisticas_ofensivas = await getEstadisticasOfensivas(5)
     res.json(estadisticas_ofensivas);
 })
-app.get("/index", async(req,res) => {
+app.get("/api/index", async(req,res) => {
     console.log("Se hizo una solicitud a /index");
     const tabla_liga = await getTablaLiga(1)
     const ultimos_partidos = await getUltimosPartidos(1)
@@ -557,7 +557,7 @@ app.get("/index", async(req,res) => {
     
 })
 
-app.get("/premier-league", async(req,res) => {
+app.get("/api/premier-league", async(req,res) => {
     console.log("Se hizo una solicitud a /premier-league");
     const tabla_liga = await getTablaLiga(1)
     const ultimos_partidos = await getUltimosPartidos(1)
@@ -569,7 +569,7 @@ app.get("/premier-league", async(req,res) => {
 
 
 
-app.get("/la-liga", async(req,res) => {
+app.get("/api/la-liga", async(req,res) => {
     console.log("Se hizo una solicitud a /la-liga");
     const tabla_liga = await getTablaLiga(2) 
     const ultimos_partidos = await getUltimosPartidos(2)
@@ -578,7 +578,7 @@ app.get("/la-liga", async(req,res) => {
     res.json({ tabla_liga, ultimos_partidos, maximos_goleadores, mejores_valorados });
 })
 
-app.get("/serie-a", async(req,res) => {
+app.get("/api/serie-a", async(req,res) => {
     console.log("Se hizo una solicitud a /serie-a");
     const tabla_liga = await getTablaLiga(3)
     const ultimos_partidos = await getUltimosPartidos(3)
@@ -587,7 +587,7 @@ app.get("/serie-a", async(req,res) => {
     res.json({ tabla_liga, ultimos_partidos, maximos_goleadores, mejores_valorados });
 })
 
-app.get("/bundesliga", async(req,res) => {
+app.get("/api/bundesliga", async(req,res) => {
     console.log("Se hizo una solicitud a /bundesliga");
     const tabla_liga = await getTablaLiga(4)
     const ultimos_partidos = await getUltimosPartidos(4)
@@ -597,7 +597,7 @@ app.get("/bundesliga", async(req,res) => {
     
 })
 
-app.get("/ligue-one", async(req,res) => {
+app.get("/api/ligue-one", async(req,res) => {
     console.log("Se hizo una solicitud a /ligue-one");
     const tabla_liga = await getTablaLiga(5)
     const ultimos_partidos = await getUltimosPartidos(5)
