@@ -2,27 +2,242 @@
 <html>
     <head>
         <title>FootViz - Club</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/heatmap.js@2.0.0/heatmap.min.js" defer></script>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+                font-family: 'Poppins', sans-serif; 
+                background-color: #1a1a2e; 
+                color: #e0e0e0; 
+                padding: 20px; 
+                transition: background-color 0.3s, color 0.3s;
+            }
+            .header { 
+                display: flex; justify-content: space-between; align-items: center; 
+                max-width: 1400px; margin: 0 auto 30px auto; padding-bottom: 20px; 
+                border-bottom: 1px solid #2a2a4a; transition: border-bottom-color 0.3s;
+            }
+            .header h1 { font-size: 2rem; color: #ffffff; font-weight: 700; }
+            .theme-toggle-button {
+                background: #2a2a4a; border: 1px solid #4a4a6a; color: #fff; width: 42px; height: 42px;
+                padding: 10px; border-radius: 50%; cursor: pointer; font-size: 1.2rem;
+                display: flex; align-items: center; justify-content: center; transition: all 0.3s ease;
+            }
+            .theme-toggle-button:hover { background: #3a3a5a; transform: scale(1.1); }
+            .card { 
+                background-color: #1e1e3f; border-radius: 12px; padding: 20px; 
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); width: 100%;
+                transition: background-color 0.3s, box-shadow 0.3s;
+            }
+            h2 { 
+                font-size: 1.2rem; font-weight: 600; color: #ffffff; margin-bottom: 20px; 
+                padding-bottom: 10px; border-bottom: 1px solid #4a4a6a;
+                transition: color 0.3s, border-bottom-color 0.3s;
+            }
+
+            .main-wrapper { display: flex; gap: 20px; max-width: 1400px; margin: 20px auto; align-items: flex-start; }
+            .main-column { flex: 2; display: flex; flex-direction: column; gap: 20px; }
+            .sidebar-column { flex: 2; display: flex; flex-direction: column; gap: 20px; }
+            
+            #info-club { text-align: center; }
+            #info-club img.team-logo { width: 150px; height: 150px; margin-bottom: 10px; }
+            #info-club h1 { font-size: 2rem; color: #fff; }
+            #info-club p { color: #a0a0c0; font-size: 1rem; }
+            .coach-info { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 20px; }
+            .coach-info img { width: 40px; height: 40px; border-radius: 50%; }
+            
+            table { width: 100%; border-collapse: collapse; }
+            th, td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #2a2a4a; transition: border-bottom-color 0.3s; }
+            th { font-weight: 600; color: #ffffff; font-size: 0.8rem; text-transform: uppercase; border-bottom-width: 2px; }
+            tbody tr:last-child td { border-bottom: none; }
+            tbody tr:hover { background-color: #2a2a4a; cursor: pointer; }
+            table img { width: 30px; height: 30px; border-radius: 50%; vertical-align: middle; margin-right: 10px; }
+            
+            .chart-container, .pitch-container { position: relative; width: 100%; }
+            .chart-container { height: 300px; }
+            .pitch-container { padding-top: 65%; height: 0; }
+            .pitch-container canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px; }
+            #shot-tooltip { position: absolute; display: none; background: rgba(40,40,74,0.9); color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; pointer-events: none; z-index: 100; border: 1px solid #4a4a6a; }
+            
+            #ultimos-partidos-tabla td { display: flex; justify-content: space-between; align-items: center; }
+            #ultimos-partidos-tabla .score { font-weight: 600; }
+
+            /* ------------------------- */
+            /* --- ESTILOS MODO LUZ --- */
+            /* ------------------------- */
+            body.light-mode { background-color: #f4f4f9; color: #333333; }
+            body.light-mode .header { border-bottom-color: #e0e0e0; }
+            body.light-mode .header h1, body.light-mode h2, body.light-mode #info-club h1, body.light-mode th { color: #1a1a2e; }
+            body.light-mode .theme-toggle-button { background: #ffffff; border-color: #d1d1d1; color: #333; }
+            body.light-mode .theme-toggle-button:hover { background: #f0f0f0; }
+            body.light-mode .card { background-color: #ffffff; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); }
+            body.light-mode h2 { border-bottom-color: #e0e0e0; }
+            body.light-mode #info-club p { color: #666; }
+            body.light-mode th, body.light-mode td { border-bottom-color: #e0e0e0; }
+            body.light-mode tbody tr:hover { background-color: #e9e9f3; }
+            body.light-mode #shot-tooltip { background: rgba(255, 255, 255, 0.95); color: #333; border-color: #d1d1d1; }
+        </style>
     </head>
     <body>
+        <header class="header">
+            <h1>FootViz - Club</h1>
+            <button id="theme-toggle" class="theme-toggle-button">☀️</button>
+        </header>
+
+        <main class="main-wrapper">
+            <div class="main-column">
+                <div class="card" id="info-club"></div>
+                <div class="card">
+                    <h2>Plantilla</h2>
+                    <table id="plantilla-tabla">
+                        <thead>
+                            <tr>
+                                <th>Jugador</th>
+                                <th>Posición</th>
+                                <th>Edad</th>
+                                <th>Valor de Mercado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="sidebar-column">
+                <div class="card">
+                    <h2>Últimos 5 Partidos</h2>
+                    <table id="ultimos-partidos-tabla"><tbody></tbody></table>
+                </div>
+                <div class="card">
+                    <h2>Alineación Más Común</h2>
+                    <div class="pitch-container"><canvas id="campo-alineacion"></canvas></div>
+                </div>
+                <div class="card">
+                    <h2>Evolución en Liga</h2>
+                    <div class="chart-container"><canvas id="evolucionChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <h2>Mapa de Disparos</h2>
+                    <div class="pitch-container" style="padding-top: 80%;"><canvas id="shot-map-canvas"></canvas></div>
+                </div>
+            </div>
+        </main>
+        <div id="shot-tooltip"></div>
 
 
         <script>
             const params = new URLSearchParams(window.location.search);
-            const clubParam = params.get("id");
+            const clubId = params.get("id");
+            let evolucionChartInstance = null;
+
+            const themeToggleButton = document.getElementById('theme-toggle');
+            const body = document.body;
+
+            const darkLineOptions = { responsive: true, maintainAspectRatio: false, scales: { y: { reverse: true, min: 1, ticks: { color: '#a0a0c0', stepSize: 2 }, grid: { color: 'rgba(224,224,224,0.1)' } }, x: { ticks: { color: '#a0a0c0' }, grid: { color: 'rgba(224,224,224,0.1)' } } }, plugins: { legend: { display: false } } };
+            const lightLineOptions = { responsive: true, maintainAspectRatio: false, scales: { y: { reverse: true, min: 1, ticks: { color: '#666', stepSize: 2 }, grid: { color: 'rgba(0,0,0,0.1)' } }, x: { ticks: { color: '#666' }, grid: { color: 'rgba(0,0,0,0.1)' } } }, plugins: { legend: { display: false } } };
+
+            const applyTheme = (theme) => {
+                if (theme === 'light') {
+                    body.classList.add('light-mode');
+                    themeToggleButton.textContent = '🌙';
+                } else {
+                    body.classList.remove('light-mode');
+                    themeToggleButton.textContent = '☀️';
+                }
+                if (evolucionChartInstance) {
+                    evolucionChartInstance.options = body.classList.contains('light-mode') ? lightLineOptions : darkLineOptions;
+                    evolucionChartInstance.update();
+                }
+                // Volver a dibujar los canvas
+                if (clubId) {
+                    cargarAlineacion(clubId);
+                    cargarMapaDisparos(clubId);
+                }
+            };
+
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            applyTheme(savedTheme);
+
+            themeToggleButton.addEventListener('click', () => {
+                const newTheme = body.classList.contains('light-mode') ? 'dark' : 'light';
+                localStorage.setItem('theme', newTheme);
+                applyTheme(newTheme);
+            });
+            const FORMACIONES = { 
+                "4-4-2": [[0.5,0.9],[0.9,0.7],[0.63,0.7],[0.37,0.7],[0.1,0.7],[0.9,0.45],[0.63,0.45],[0.37,0.45],[0.1,0.45],[0.63,0.2],[0.37,0.2]], 
+                "4-2-3-1": [[0.5,0.9],[0.9,0.7],[0.63,0.7],[0.37,0.7],[0.1,0.7],[0.63,0.55],[0.37,0.55],[0.85,0.35],[0.5,0.35],[0.15,0.35],[0.5,0.15]], 
+                "4-3-3": [[0.5,0.9],[0.9,0.7],[0.63,0.7],[0.37,0.7],[0.1,0.7],[0.75,0.5],[0.5,0.45],[0.25,0.5],[0.8,0.2],[0.5,0.15],[0.2,0.2]], 
+                "3-5-2": [[0.5,0.9],[0.75,0.7],[0.5,0.7],[0.25,0.7],[0.9,0.45],[0.7,0.5],[0.5,0.4],[0.3,0.5],[0.1,0.45],[0.63,0.2],[0.37,0.2]], 
+                "3-4-2-1": [[0.5,0.9],[0.75,0.7],[0.5,0.7],[0.25,0.7],[0.9,0.45],[0.63,0.50],[0.37,0.50],[0.1,0.45],[0.63,0.3],[0.37,0.3],[0.50,0.2]] 
+            };
+
+            
 
             function cargarInfoClub(club){
                 fetch(`/info-club/${club}`)
                 .then(response => response.json())
-                .then(data => {
+                .then(data => { 
+                    if (!data) {
+                        console.error("No se encontraron datos para el jugador:", jugador);
+                        return;
+                    }
 
-                })
+                    const container = document.getElementById('info-club');
+                    container.innerHTML = `
+                        <img src="${data.img_equipo}" alt="Logo del Club" class="team-logo">
+                        <h1>${data.nombre_equipo}</h1>
+                        <p>${data.nombre_estadio}</p>
+                        <div class="coach-info">
+                            <img src="${data.img_entrenador}" alt="Foto del Entrenador">
+                            <span>${data.nombre_entrenador}</span>
+                        </div>
+                    `;
+                    
+
+                });
             }
 
             function cargarUltimosPartidos(club){
                 fetch(`/ultimos-partidos-club/${club}`)
                 .then(response => response.json())
                 .then(data => {
+                    if (!data) {
+                        console.error("No se encontraron datos para el jugador:", jugador);
+                        return;
+                    }
 
+                    const tbody = document.querySelector('#ultimos-partidos-tabla tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(partido => {
+                        const fila = document.createElement('tr');
+                        fila.dataset.partidoId = partido.id_partido; // Guardamos el ID del partido
+                        
+                        const local = partido.id_local == club;
+                        const resultado = local ? `${partido.goles_local} - ${partido.goles_visitante}` : `${partido.goles_visitante} - ${partido.goles_local}`;
+                        const oponenteImg = local ? partido.img_visitante : partido.img_local;
+                        const oponenteNombre = local ? partido.nombre_visitante : partido.nombre_local;
+                        
+                        let resultadoClase = 'draw';
+                        if ((local && partido.goles_local > partido.goles_visitante) || (!local && partido.goles_visitante > partido.goles_local)) {
+                            resultadoClase = 'win';
+                        } else if ((local && partido.goles_local < partido.goles_visitante) || (!local && partido.goles_visitante < partido.goles_local)) {
+                            resultadoClase = 'loss';
+                        }
+
+                        fila.innerHTML = `<td>vs <img src="${oponenteImg}" title="${oponenteNombre}"> <span class="score ${resultadoClase}">${resultado}</span></td>`;
+                        
+                        // Añadimos el listener para redirigir
+                        fila.addEventListener('click', () => {
+                            window.location.href = `informe-postpartido.html?partido=${partido.id_partido}`;
+                        });
+
+                        tbody.appendChild(fila);
+                    });
                 })
             }   
 
@@ -30,14 +245,133 @@
                 fetch(`/alineacion-club/${club}`)
                 .then(response => response.json())
                 .then(data => {
+                    const alineacion = data[0];
+                    const canvas = document.getElementById('campo-alineacion');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
+                    
+                    const jugadores = [];
+                    for (let i = 1; i <= 11; i++) {
+                        jugadores.push({ nombre: alineacion[`nombre_jugador${i}`], imgUrl: alineacion[`img_jugador${i}`] });
+                    }
+                    const formacionKey = alineacion.formacion_local || "4-4-2";
+                    const coords = FORMACIONES[formacionKey] || FORMACIONES["4-4-2"];
+
+                    precargarImagenesYDibujar(ctx, jugadores, coords);
 
                 })
             }
+
+            function precargarImagenesYDibujar(ctx, jugadores, formacion) {
+                const promesas = jugadores.map(j => new Promise(resolve => {
+                    const img = new Image();
+                    img.src = j.imgUrl;
+                    img.onload = () => resolve(img);
+                    img.onerror = () => resolve(null); // Resolve null if image fails
+                }));
+                Promise.all(promesas).then(imagenes => {
+                    jugadores.forEach((jugador, i) => jugador.imagenCargada = imagenes[i]);
+                    dibujarAlineacion(ctx, jugadores, formacion);
+                });
+            }
+
+            function dibujarAlineacion(ctx, jugadores, formacion) {
+                const w = ctx.canvas.width, h = ctx.canvas.height;
+                dibujarMedioCampo(ctx, '#2a5f2a', 'rgba(255, 255, 255, 0.3)');
+                jugadores.forEach((jugador, i) => {
+                    if (formacion[i] && jugador.imagenCargada) {
+                        const x = formacion[i][0] * w;
+                        const y = formacion[i][1] * h;
+                        dibujarJugador(ctx, x, y, jugador);
+                    }
+                });
+            }
+            
+            function dibujarJugador(ctx, x, y, jugador) {
+                const radio = 20;
+                ctx.save();
+                ctx.beginPath(); ctx.arc(x, y, radio, 0, 2 * Math.PI); ctx.clip();
+                ctx.drawImage(jugador.imagenCargada, x - radio, y - radio, radio * 2, radio * 2);
+                ctx.restore();
+                ctx.beginPath(); ctx.arc(x, y, radio, 0, 2*Math.PI); ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 12px Poppins'; ctx.textAlign = 'center';
+                ctx.shadowColor = 'black'; ctx.shadowBlur = 4;
+                ctx.fillText(jugador.nombre, x, y + radio + 12);
+                ctx.shadowBlur = 0;
+            }
+
 
             function cargarEvolucion(club){
                 fetch(`/evolucion-equipos/${club}`)
                 .then(response => response.json())
                 .then(data => {
+                    if (!data || data.length === 0) return;
+                    const evolucion = data[0];
+                    const labels = [], posiciones = [], idk = [];
+                    let totalEquipos = 20; 
+                    for (let i = 1; i <= 38; i++) {
+                        const pos = evolucion[`jornada${i}`];
+                        if (pos > 0) {
+                            labels.push(`J${i}`);
+                            posiciones.push(pos);
+                        }
+                        
+                    }
+                    
+                    const ctx = document.getElementById('evolucionChart').getContext('2d');
+                    new Chart(ctx, 
+                    {
+                        type: 'line', data: { 
+                            labels, datasets: [{ 
+                                label: 'Posición', 
+                                data: posiciones, 
+                                borderColor: '#36a2eb', 
+                                tension: 0.3, 
+                                fill: false 
+                            }] 
+                        },
+                        options: { 
+                            responsive: true, 
+                            maintainAspectRatio: false, 
+                            scales: { 
+                                y: { 
+                                    reverse: true, 
+                                    min: 1, 
+                                    max: totalEquipos,
+                                    ticks: { 
+                                        color: '#a0a0c0', 
+                                        stepSize: 2 
+                                    }, 
+                                    grid: {
+                                        color: 'rgba(224,224,224,0.1)' 
+                                    },
+                                    title: { 
+                                        display: true,
+                                        text: 'Posición', 
+                                        color: '#e0e0e0' 
+                                    }
+                                }, 
+                                x: {
+                                    ticks: {
+                                        color: '#a0a0c0' 
+                                    }, 
+                                    grid: {
+                                        color: 'rgba(224,224,224,0.1)' 
+                                    },
+                                    title: { 
+                                        display: true, 
+                                        text: 'Jornada', 
+                                        color: '#e0e0e0' 
+                                    }
+                                }
+                                }, 
+                                plugins: { 
+                                    legend: {
+                                            display: false 
+                                        }
+                                    }
+                                }
+                    });
 
                 })
             }
@@ -45,25 +379,112 @@
             function cargarMapaDisparos(club){
                 fetch(`/mapa-disparos/${club}`)
                 .then(response => response.json())
-                .then(data => {
+                .then(shots => {
+                    if (!shots || shots.length === 0) return;
+                    const canvas = document.getElementById('shot-map-canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
+                    const shotsOnCanvas = [];
+                    dibujarMedioCampo(ctx, '#2a5f2a', 'rgba(255, 255, 255, 0.3)');
+                    shots.sort((a, b) => (a.resultado === 'goal') - (b.resultado === 'goal'));
+                    shots.forEach(shot => {
+                        const { canvasX, canvasY, radius } = dibujarDisparo(ctx, shot);
+                        shotsOnCanvas.push({ x: canvasX, y: canvasY, radius, info: shot });
+                    });
+                    const tooltip = document.getElementById('shot-tooltip');
+                    canvas.addEventListener('mousemove', (e) => {
+                        const rect = canvas.getBoundingClientRect();
+                        const mouseX = e.clientX - rect.left, mouseY = e.clientY - rect.top;
+                        let hoveredShot = null;
+                        for (let i = shotsOnCanvas.length - 1; i >= 0; i--) {
+                            const s = shotsOnCanvas[i];
+                            if (Math.sqrt((mouseX-s.x)**2 + (mouseY-s.y)**2) <= s.radius) { hoveredShot = s; break; }
+                        }
+                        if (hoveredShot) {
+                            tooltip.style.display = 'block';
+                            tooltip.style.left = `${e.pageX + 10}px`; tooltip.style.top = `${e.pageY + 10}px`;
+                            tooltip.innerHTML = `<strong>${hoveredShot.info.nombre}</strong><br>xG: ${parseFloat(hoveredShot.info.xg).toFixed(2)}`;
+                        } else { tooltip.style.display = 'none'; }
+                    });
+                    canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
 
                 })
+            }
+
+            function dibujarDisparo(ctx, shot) {
+                const w = ctx.canvas.width, h = ctx.canvas.height;
+                const marginX = w * 0.05, marginY = h * 0.05;
+                const pitchWidth = w * 0.9, pitchHeight = h * 0.9;
+                const canvasX = marginX + (parseFloat(shot.pitch_y) / 100) * pitchWidth;
+                const canvasY = marginY + (parseFloat(shot.pitch_x) / 50) * pitchHeight;
+                const radius = 5 + (parseFloat(shot.xg) * 15);
+                ctx.fillStyle = shot.resultado === 'goal' ? '#ffd700' : 'rgba(54, 162, 235, 0.9)';
+                ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.arc(canvasX, canvasY, radius, 0, 2*Math.PI); ctx.fill(); ctx.stroke();
+                if (shot.resultado === 'goal') {
+                    ctx.fillStyle = 'white'; ctx.strokeStyle = 'black'; ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.arc(canvasX, canvasY, radius*0.6, 0, 2*Math.PI); ctx.fill(); ctx.stroke();
+                }
+                return { canvasX, canvasY, radius };
+            }
+
+            function dibujarMedioCampo(ctx, bgColor, lineColor) {
+                const w = ctx.canvas.width, h = ctx.canvas.height;
+                ctx.fillStyle = bgColor; ctx.fillRect(0, 0, w, h); ctx.strokeStyle = lineColor; ctx.lineWidth = 2;
+                const marginX = w*0.05, marginY = h*0.05;
+                const fieldWidth = w*0.9, fieldHalfHeight = h*0.9;
+                ctx.beginPath(); ctx.moveTo(marginX, marginY + fieldHalfHeight); ctx.lineTo(marginX, marginY); ctx.lineTo(marginX + fieldWidth, marginY); ctx.lineTo(marginX + fieldWidth, marginY + fieldHalfHeight); ctx.stroke();
+                ctx.strokeRect(w*0.2, marginY, w*0.6, h*0.25);
+                ctx.strokeRect(w*0.35, marginY, w*0.3, h*0.1);
+                ctx.beginPath(); ctx.arc(w/2, marginY + h*0.25, 30, 0, Math.PI, false); ctx.stroke();
             }
 
             function cargarPlantilla(club){
                 fetch(`/plantilla-club/${club}`)
                 .then(response => response.json())
                 .then(data => {
+                    const tbody = document.querySelector('#plantilla-tabla tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(jugador => {
+                        const edad = new Date().getFullYear() - new Date(jugador.fec_nac).getFullYear();
+                        const valor = jugador.valor_mercado ? `${(jugador.valor_mercado / 1000000).toFixed(1)}M €` : 'N/A';
+                        const fila = document.createElement('tr');
+                        fila.dataset.idJugador = jugador.id_jugador;
+                        fila.innerHTML = `
+                            <td><img src="${jugador.url_imagen}">${jugador.nombre}</td>
+                            <td>${jugador.posicion}</td>
+                            <td>${edad}</td>
+                            <td>${valor}</td>
+                        `;
+                        tbody.appendChild(fila);
+                    });
 
                 })
             }
 
-            cargarInfoClub(clubParam);
-            cargarUltimosPartidos(clubParam);
-            cargarAlineacion(clubParam);
-            cargarEvolucion(clubParam);
-            cargarMapaDisparos(clubParam);
-            cargarPlantilla(clubParam);
+            document.getElementById('plantilla-tabla').addEventListener('click', (e) => {
+                const fila = e.target.closest('tr');
+                if (fila && fila.dataset.idJugador) {
+                    window.location.href = `jugador.html?id=${fila.dataset.idJugador}`;
+                }
+            });
+
+            document.getElementById('ultimos-partidos-tabla').addEventListener('click', (e) => {
+                const fila = e.target.closest('tr');
+                if (fila && fila.dataset.idPartido) {
+                    window.location.href = `informe-postpartido.html?partido=${fila.dataset.idPartido}`;
+                }
+            });
+            
+
+            if (clubId) {
+                cargarInfoClub(clubId);
+                cargarUltimosPartidos(clubId);
+                cargarAlineacion(clubId);
+                cargarEvolucion(clubId);
+                cargarMapaDisparos(clubId);
+                cargarPlantilla(clubId);
+            }
 
 
         </script>

@@ -12,7 +12,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-
+ 
         body {
             font-family: 'Poppins', sans-serif;
             background-color: #1a1a2e;
@@ -264,7 +264,7 @@
         <div class="dashboard-column-left">
             <div class="tabla-equipos-container">
                 <table id="tabla-equipos">
-                    <thead>
+                    <thead id="encabezado-tabla-equipos">
                         <tr>
                             <th>#</th>
                             <th>Equipo</th>
@@ -279,7 +279,7 @@
 
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="tabla-equipoz">
                         
                     </tbody>
                 </table>
@@ -408,20 +408,18 @@
                         const equipos = data.tabla_liga;
                         equipos.sort((a,b) => a.posicion - b.posicion);
                         equipos.forEach((equipo, index) => {
-                            const fila = `
-                                <tr>
-                                    <td>${index +1}</td> 
-                                    <td><img src="${equipo.url_imagen}" alt="Escudo">${equipo.nombre_equipo}</td>
-                                    <td>${equipo.partidos_jugados}</td>
-                                    <td>${equipo.victorias}</td>
-                                    <td>${equipo.empates}</td>
-                                    <td>${equipo.derrotas}</td>
-                                    <td>${equipo.puntos}</td>
-                                    <td>${equipo.diferencia_de_goles}</td>
-                                    <td>${equipo.goles_anotados}</td>
-                                    <td>${equipo.goles_recibidos}</td>
-                                </tr>`;
-                            tbodyEquipos.innerHTML += fila;
+                            
+                            const fila = document.createElement("tr");
+                            // --- PASO 1: GUARDAR EL ID EN EL ATRIBUTO DATA-* ---
+                            fila.dataset.clubId = equipo.id_equipo; 
+                            fila.innerHTML = `
+                                <td>${index + 1}</td> 
+                                <td><img src="${equipo.url_imagen}" alt="Escudo">${equipo.nombre_equipo}</td>
+                                <td>${equipo.partidos_jugados}</td><td>${equipo.victorias}</td><td>${equipo.empates}</td>
+                                <td>${equipo.derrotas}</td><td>${equipo.puntos}</td><td>${equipo.diferencia_de_goles}</td>
+                                <td>${equipo.goles_anotados}</td><td>${equipo.goles_recibidos}</td>
+                            `;
+                            tbodyEquipos.appendChild(fila);
                         });
 
                         const tbodyPartidos = document.querySelector("#ultimos-partidos tbody");
@@ -469,6 +467,14 @@
                     });
             }
         }
+
+        tbodyEquipos.addEventListener("click", function(event) {
+            const filaClickeada = event.target.closest('tr');
+            if (filaClickeada && filaClickeada.dataset.clubId) {
+                const clubId = filaClickeada.dataset.clubId;
+                window.location.href = `club.html?id=${clubId}`;
+            }
+        });
         
         // --- LISTENERS PARA NAVEGACIÓN ---
 
@@ -498,10 +504,14 @@
             }
         });
 
+        
+
         // Listeners para las otras tablas
-        document.getElementById("tabla-equipos").addEventListener("click", function(){
+        document.getElementById("encabezado-tabla-equipos").addEventListener("click", function(){
             window.location.href = "estadisticas-liga.html?liga=" + ligaSelect.value;
         });
+
+
         
         document.getElementById("ultimos-partidos-container").addEventListener("click", function(){
             window.location.href = "partidos.html?liga=" + ligaSelect.value;
