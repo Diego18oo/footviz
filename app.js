@@ -506,7 +506,7 @@ app.get("/api/buscar-jugadores", async (req, res) => {
         console.error(error);
         res.status(500).json({ error: "Error en la búsqueda de jugadores" });
     }
-});
+}); 
 
 app.get("/api/estadisticas-jugador/:id", async(req, res) => {
     try {

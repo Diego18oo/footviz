@@ -429,11 +429,15 @@
                         data.ultimos_partidos.forEach(partido => {
                             const fila = document.createElement("tr");
                             const fechaFormateada = partido.fecha.split('T')[0];
+                            const encodedUrl1 = encodeURIComponent(partido.escudo_local);
+                            const proxyUrl1 = `/api/image-proxy?url=${encodedUrl1}`;
+                            const encodedUrl2 = encodeURIComponent(partido.escudo_visitante);
+                            const proxyUrl2 = `/api/image-proxy?url=${encodedUrl2}`;
                             fila.innerHTML = `
                                 <td>${fechaFormateada}</td>
-                                <td><img src="${partido.escudo_local}" alt="Local">${partido.nombre_local || ""}</td>
+                                <td><img src="${proxyUrl1}" alt="Local">${partido.nombre_local || ""}</td>
                                 <td>${partido.goles_local} - ${partido.goles_visitante}</td>
-                                <td><img src="${partido.escudo_visitante}" alt="Visitante">${partido.nombre_visitante || ""}</td>
+                                <td><img src="${proxyUrl2}" alt="Visitante">${partido.nombre_visitante || ""}</td>
                             `;
                             tbodyPartidos.appendChild(fila);
                         });

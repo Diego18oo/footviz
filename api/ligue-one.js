@@ -3,13 +3,13 @@ import { getTablaLiga,getUltimosPartidos,getMaximosGoleadores,getMejoresValorado
 
 export default async function handler(req, res) {
   try {
-    const tabla_liga = await getTablaLiga(1)
-    const ultimos_partidos = await getUltimosPartidos(1)
-    const maximos_goleadores = await getMaximosGoleadores(1)
-    const mejores_valorados = await getMejoresValorados(1)
+    const tabla_liga = await getTablaLiga(5)
+    const ultimos_partidos = await getUltimosPartidos(5)
+    const maximos_goleadores = await getMaximosGoleadores(5)
+    const mejores_valorados = await getMejoresValorados(5)
     res.status(200).json({ tabla_liga, ultimos_partidos, maximos_goleadores, mejores_valorados });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error al obtener los datos' });
   }
-} 
+}
