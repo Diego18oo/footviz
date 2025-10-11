@@ -2,7 +2,7 @@
   "name": "basededatos",
   "version": "1.0.0",
   "type": "module",
-  "main": "database.js",
+  "main": "app.js",
   "scripts": { 
     "dev": "npx nodemon app.js"
   },
