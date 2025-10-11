@@ -104,7 +104,7 @@ export default async function handler(req, res) {
     // Caso 1: Ruta para las ligas -> /api/liga/[nombre_liga]
     else if (slug && slug[0] === 'liga' && slug.length === 2) {
       const nombreLiga = slug[1];
-      const ligasMap = { 'premier-league': 1, 'la-liga': 2, 'serie-a': 3, 'bundesliga': 4, 'ligue-one': 5 };
+      const ligasMap = { 'premierleague': 1, 'laliga': 2, 'seriea': 3, 'bundesliga': 4, 'ligueone': 5 };
       const ligaId = ligasMap[nombreLiga];
 
       if (!ligaId) return res.status(404).json({ error: 'Liga no encontrada' });
