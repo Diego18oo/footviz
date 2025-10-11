@@ -6,6 +6,9 @@ export default async function handler(req, res) {
   // req.query.slug será un array con las partes de la URL.
   // Ej: /api/liga/premierleague -> slug = ['liga', 'premierleague']
   // Ej: /api/estadisticas-jugador/45 -> slug = ['estadisticas-jugador', '45']
+  console.log("Función [[...slug]] ejecutada.");
+  console.log("URL solicitada:", req.url);
+  console.log("Valor de req.query.slug:", req.query.slug);
   const { slug } = req.query;
 
   try {
