@@ -408,8 +408,7 @@
                         const equipos = data.tabla_liga;
                         equipos.sort((a,b) => a.posicion - b.posicion);
                         equipos.forEach((equipo, index) => {
-                            const encodedUrl = encodeURIComponent(equipo.url_imagen);
-                            const proxyUrl = `/api/image-proxy?url=${encodedUrl}`;
+                            
                             
                             const fila = document.createElement("tr");
                             // --- PASO 1: GUARDAR EL ID EN EL ATRIBUTO DATA-* ---
@@ -429,10 +428,7 @@
                         data.ultimos_partidos.forEach(partido => {
                             const fila = document.createElement("tr");
                             const fechaFormateada = partido.fecha.split('T')[0];
-                            const encodedUrl1 = encodeURIComponent(partido.escudo_local);
-                            const proxyUrl1 = `/api/image-proxy?url=${encodedUrl1}`;
-                            const encodedUrl2 = encodeURIComponent(partido.escudo_visitante);
-                            const proxyUrl2 = `/api/image-proxy?url=${encodedUrl2}`;
+                            
                             fila.innerHTML = `
                                 <td>${fechaFormateada}</td>
                                 <td><img src="${partido.escudo_local}" alt="Local">${partido.nombre_local || ""}</td>

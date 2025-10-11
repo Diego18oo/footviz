@@ -1,4 +1,12 @@
 import pandas as pd
+import cloudinary
+import cloudinary.uploader
+import requests
+import time
+from playwright.async_api import async_playwright 
+# ... otros imports que ya tengas
+
+
 import LanusStats as ls
 from sqlalchemy import create_engine, MetaData, Table
 from sqlalchemy.dialects.mysql import insert
@@ -10,6 +18,8 @@ from rapidfuzz import process, fuzz
 
 
 fbref = ls.Fbref()
+# --- 1. CONFIGURACIÓN DE CLOUDINARY ---
+# Pega aquí tus credenciales
 
 
 ligas_ids = [17, 8, 23, 35, 34] 
@@ -127,6 +137,60 @@ nombre_map = {
     "RC Strasbourg" : "Strasbourg",
     "Toulouse" : "Toulouse"
 }
+
+# --- 2. FUNCIÓN REUTILIZABLE PARA SUBIR IMÁGENES ---
+# --- LA NUEVA FUNCIÓN BASADA EN SELENIUM ---
+def upload_image_from_url(driver, image_url, public_id):
+    """
+    Usa un driver de Selenium para navegar a una URL de imagen,
+    la convierte a Base64 y la sube a Cloudinary.
+    """
+    if not image_url:
+        print("URL de imagen vacía, omitiendo subida.")
+        return None
+        
+    try:
+        # 1. Navegamos a la URL de la imagen con el driver que ya tenemos
+        driver.get(image_url)
+        # Una pequeña pausa para asegurar que cargue
+        time.sleep(1)
+
+        # 2. Truco mágico: Usamos JavaScript para leer la imagen como Base64
+        # Esto es necesario porque Selenium no puede "descargar" imágenes directamente
+        script = """
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = document.querySelector('img');
+        if (!img) return null;
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        ctx.drawImage(img, 0, 0);
+        return canvas.toDataURL('image/png');
+        """
+        # La página de la imagen de SofaScore es un <img> dentro de un <body>
+        base64_image_data = driver.execute_script(script)
+
+        if not base64_image_data:
+            raise Exception("No se pudo extraer la imagen de la página.")
+
+        # 3. Subimos la imagen en formato Base64 a Cloudinary
+        upload_result = cloudinary.uploader.upload(
+            base64_image_data, # Cloudinary entiende Base64 directamente
+            public_id=public_id,
+            folder="footviz",
+            overwrite=True
+        )
+        
+        secure_url = upload_result.get('secure_url')
+        if secure_url:
+            print(f"Imagen subida exitosamente: {secure_url}")
+            return secure_url
+        else:
+            raise Exception(f"La subida a Cloudinary falló. Respuesta: {upload_result}")
+
+    except Exception as e:
+        print(f"Error procesando la imagen {image_url}: {e}")
+        return None  
 
 def get_links_totales(engine, driver):
     
@@ -1824,6 +1888,7 @@ def prematch_ref(engine, partido):
                 arbitro = insert_arbitro_stmt.inserted.arbitro
                 
             )
+            
             conn.execute(update_arbitro_stmt)
             print(f"Arbitro insertados para partido {partido['id_partido']}")
         except KeyError: 
