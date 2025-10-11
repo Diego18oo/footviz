@@ -409,7 +409,7 @@ export default async function handler(req, res) {
     
 
     // Si ninguna ruta coincide, devolvemos un error 404
-    return res.status(404).json({ error: 'Endpoint no encontrado' });
+    return res.status(500).json({ error: 'Endpoint no encontrado' });
 
   } catch (error) {
     console.error('Error en el router de la API:', error);
