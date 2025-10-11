@@ -26,7 +26,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'estadisticas-ofensivas-premier-league' && slug.length === 1) {
+    else if (slug && slug[0] === 'estadisticas-ofensivas-premier-league' && slug.length === 1) {
       
       const ligaId = 1;
 
@@ -38,7 +38,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'estadisticas-ofensivas-la-liga' && slug.length === 1) {
+    else if (slug && slug[0] === 'estadisticas-ofensivas-la-liga' && slug.length === 1) {
       
       const ligaId = 2;
 
@@ -50,7 +50,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'estadisticas-ofensivas-serie-a' && slug.length === 1) {
+    else if (slug && slug[0] === 'estadisticas-ofensivas-serie-a' && slug.length === 1) {
       
       const ligaId = 3;
 
@@ -62,7 +62,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'estadisticas-ofensivas-bundesliga' && slug.length === 1) {
+    else if (slug && slug[0] === 'estadisticas-ofensivas-bundesliga' && slug.length === 1) {
       
       const ligaId = 4;
 
@@ -74,7 +74,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'estadisticas-ofensivas-ligue-one' && slug.length === 1) {
+    else if (slug && slug[0] === 'estadisticas-ofensivas-ligue-one' && slug.length === 1) {
       
       const ligaId = 5;
 
@@ -86,7 +86,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'index' && slug.length === 1) {
+    else if (slug && slug[0] === 'index' && slug.length === 1) {
       
       const ligaId = 1;
 
@@ -102,7 +102,7 @@ export default async function handler(req, res) {
 
 
     // Caso 1: Ruta para las ligas -> /api/liga/[nombre_liga]
-    if (slug && slug[0] === 'liga' && slug.length === 2) {
+    else if (slug && slug[0] === 'liga' && slug.length === 2) {
       const nombreLiga = slug[1];
       const ligasMap = { 'premier-league': 1, 'la-liga': 2, 'serie-a': 3, 'bundesliga': 4, 'ligue-one': 5 };
       const ligaId = ligasMap[nombreLiga];
@@ -118,7 +118,7 @@ export default async function handler(req, res) {
     }
 
     // Caso 2: Ruta para stats de jugador -> /api/estadisticas-jugador/[id]
-    if (slug && slug[0] === 'estadisticas-jugador' && slug.length === 2) {
+    else if (slug && slug[0] === 'estadisticas-jugador' && slug.length === 2) {
       const jugadorId = slug[1];
       const data = await db.getStatsJugador(jugadorId);
       
@@ -127,7 +127,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data[0]);
     }
 
-    if (slug && slug[0] === 'mejores-goles' && slug.length === 2) {
+    else if (slug && slug[0] === 'mejores-goles' && slug.length === 2) {
       const ligaID = slug[1];
       const data = await db.getMejoresGoles(ligaID);
       
@@ -136,7 +136,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
     
-    if (slug && slug[0] === 'estadisticas-ofensivas-equipo' && slug.length === 2) {
+    else if (slug && slug[0] === 'estadisticas-ofensivas-equipo' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getEstadisticasOfensivasEquipo(id);
       
@@ -145,7 +145,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'goles-esperados-equipo' && slug.length === 2) {
+    else if (slug && slug[0] === 'goles-esperados-equipo' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getXgPorEquipo(id);
       
@@ -154,7 +154,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'mapa-disparos' && slug.length === 2) {
+    else if (slug && slug[0] === 'mapa-disparos' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getMapaDeDisparosEquipo(id);
       
@@ -163,7 +163,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'evolucion-equipos' && slug.length === 2) {
+    else if (slug && slug[0] === 'evolucion-equipos' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getEvolucionEquipos(id);
       
@@ -172,7 +172,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'promedios-liga' && slug.length === 2) {
+    else if (slug && slug[0] === 'promedios-liga' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getPromediosStatsDeUnaLiga(id);
       
@@ -182,7 +182,7 @@ export default async function handler(req, res) {
     }
 
 
-    if (slug && slug[0] === 'resultado-partido' && slug.length === 2) {
+    else if (slug && slug[0] === 'resultado-partido' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getResultadoPartido(id);
       
@@ -191,7 +191,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'info-prepartido' && slug.length === 2) {
+    else if (slug && slug[0] === 'info-prepartido' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getInfoPrePartido(id);
       
@@ -201,7 +201,7 @@ export default async function handler(req, res) {
     }
     
 
-    if (slug && slug[0] === 'alineaciones' && slug.length === 2) {
+    else if (slug && slug[0] === 'alineaciones' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getPosiblesAlineaciones(id);
       
@@ -211,7 +211,7 @@ export default async function handler(req, res) {
     }
 
 
-    if (slug && slug[0] === 'ultimos-enfrentamientos' && slug.length === 2) {
+    else if (slug && slug[0] === 'ultimos-enfrentamientos' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getUltimosEnfrentamientos(id);
       
@@ -221,7 +221,7 @@ export default async function handler(req, res) {
     }
 
 
-    if (slug && slug[0] === 'estadisticas-equipo' && slug.length === 2) {
+    else if (slug && slug[0] === 'estadisticas-equipo' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getEstadisticasEquipo(id);
       
@@ -230,7 +230,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'info-postpartido' && slug.length === 2) {
+    else if (slug && slug[0] === 'info-postpartido' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getInfoPostPartido(id);
       
@@ -240,7 +240,7 @@ export default async function handler(req, res) {
     }
 
 
-    if (slug && slug[0] === 'estadisticas-partido' && slug.length === 2) {
+    else if (slug && slug[0] === 'estadisticas-partido' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getEstadisticasPartido(id);
       
@@ -249,7 +249,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'mapa-disparos-partido' && slug.length === 2) {
+    else if (slug && slug[0] === 'mapa-disparos-partido' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getMapaDeDisparosPartido(id);
       
@@ -258,7 +258,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'mapa-disparos-jugador' && slug.length === 2) {
+    else if (slug && slug[0] === 'mapa-disparos-jugador' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getMapaDeDisparosJugador(id);
       
@@ -267,7 +267,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'mapa-calor-jugador' && slug.length === 2) {
+    else if (slug && slug[0] === 'mapa-calor-jugador' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getMapaDeCalorJugador(id);
       
@@ -276,7 +276,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'percentiles-jugador' && slug.length === 2) {
+    else if (slug && slug[0] === 'percentiles-jugador' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getPercentilesJugador(id);
       
@@ -286,7 +286,7 @@ export default async function handler(req, res) {
     }
 
 
-    if (slug && slug[0] === 'ultimos-partidos-jugador' && slug.length === 2) {
+    else if (slug && slug[0] === 'ultimos-partidos-jugador' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getUltimosPartidosJugador(id);
       
@@ -295,7 +295,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'jugador' && slug.length === 2) {
+    else if (slug && slug[0] === 'jugador' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getInfoJugador(id);
       
@@ -304,7 +304,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'ultimos-partidos-portero' && slug.length === 2) {
+    else if (slug && slug[0] === 'ultimos-partidos-portero' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getUltimosPartidosPortero(id);
       
@@ -314,7 +314,7 @@ export default async function handler(req, res) {
     }
 
 
-    if (slug && slug[0] === 'percentiles-portero' && slug.length === 2) {
+    else if (slug && slug[0] === 'percentiles-portero' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getPercentilesPortero(id);
       
@@ -323,7 +323,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'estadisticas-portero' && slug.length === 2) {
+    else if (slug && slug[0] === 'estadisticas-portero' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getEstadisticasPortero(id);
       
@@ -332,7 +332,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data[0]);
     }
 
-    if (slug && slug[0] === 'info-club' && slug.length === 2) {
+    else if (slug && slug[0] === 'info-club' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getInfoClub(id);
       
@@ -341,7 +341,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data[0]);
     }
 
-    if (slug && slug[0] === 'ultimos-partidos-club' && slug.length === 2) {
+    else if (slug && slug[0] === 'ultimos-partidos-club' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getUltimosPartidosClub(id);
       
@@ -350,7 +350,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'alineacion-club' && slug.length === 2) {
+    else if (slug && slug[0] === 'alineacion-club' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getAlineacionClub(id);
       
@@ -359,7 +359,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'plantilla-club' && slug.length === 2) {
+    else if (slug && slug[0] === 'plantilla-club' && slug.length === 2) {
       const id = slug[1];
       const data = await db.getPlantillaClub(id);
       
@@ -370,7 +370,7 @@ export default async function handler(req, res) {
 
 
     // Caso 3: Ruta para max-stats -> /api/max-stats/[id1]/[id2]
-    if (slug && slug[0] === 'max-stats' && slug.length === 3) {
+    else if (slug && slug[0] === 'max-stats' && slug.length === 3) {
       const id1 = slug[1];
       const id2 = slug[2];
       const data = await db.getStatsMaximas(id1, id2);
@@ -379,7 +379,7 @@ export default async function handler(req, res) {
     }
 
 
-    if (slug && slug[0] === 'ultimos-partidos' && slug.length === 3) {
+    else if (slug && slug[0] === 'ultimos-partidos' && slug.length === 3) {
       const id1 = slug[1];
       const id2 = slug[2];
       const data = await db.getPartidos(id1, id2);
@@ -387,7 +387,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    if (slug && slug[0] === 'comparacion-evoluciones' && slug.length === 3) {
+    else if (slug && slug[0] === 'comparacion-evoluciones' && slug.length === 3) {
       const id1 = slug[1];
       const id2 = slug[2];
       const data = await db.getComparacionEvolucionEquipos(id1, id2);
@@ -396,7 +396,7 @@ export default async function handler(req, res) {
     }
 
 
-    if (slug && slug[0] === 'comparacion-estadisticas-equipos' && slug.length === 3) {
+    else if(slug && slug[0] === 'comparacion-estadisticas-equipos' && slug.length === 3) {
       const id1 = slug[1];
       const id2 = slug[2];
       const data = await db.getComparacionStatsEquipos(id1, id2);

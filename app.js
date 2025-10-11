@@ -14,7 +14,12 @@ app.get('/api/image-proxy', async (req, res) => {
   }
 
   try {
-    const imageResponse = await fetch(imageUrl);
+    const imageResponse = await fetch(imageUrl, {
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Referer': 'https://www.sofascore.com/' // Esta cabecera es muy efectiva
+        }
+    });
 
     if (!imageResponse.ok) {
       return res.status(imageResponse.status).json({ error: 'Failed to fetch image' });
