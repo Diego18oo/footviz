@@ -8,36 +8,7 @@ const app = express()
 app.use(express.static("public"))
 
 
-app.get('/api/image-proxy', async (req, res) => {
-  const imageUrl = req.query.url;
 
-  if (!imageUrl) {
-    return res.status(400).json({ error: 'Image URL is required' });
-  }
-
-  try {
-    const imageResponse = await fetch(imageUrl, {
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Referer': 'https://www.sofascore.com/' // Esta cabecera es muy efectiva
-        }
-    });
-
-    if (!imageResponse.ok) {
-      return res.status(imageResponse.status).json({ error: 'Failed to fetch image' });
-    }
-
-    const contentType = imageResponse.headers.get('content-type');
-    const imageBuffer = await imageResponse.arrayBuffer();
-
-    res.setHeader('Content-Type', contentType);
-    res.send(Buffer.from(imageBuffer));
-
-  } catch (error) {
-    console.error('Local image proxy error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
 
 
 app.get("/api/plantilla-club/:id", async (req, res) => {
