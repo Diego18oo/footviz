@@ -243,7 +243,7 @@
                 
                 function cargarTablaStats(ligaSeleccionada){
                     let endpoints = { "premierleague": "1", "laliga": "2", "seriea": "3", "bundesliga": "4", "ligueone": "5" };
-                    fetch(`/estadisticas-ofensivas-equipo/${endpoints[ligaSeleccionada]}`).then(r => r.json()).then(data => {
+                    fetch(`/api/estadisticas-ofensivas-equipo/${endpoints[ligaSeleccionada]}`).then(r => r.json()).then(data => {
                         const tbodyStatsOfensivas = document.querySelector("#estadisticas-ofensivas-equipo tbody");
                         tbodyStatsOfensivas.innerHTML = "";
                         data.forEach(stat => {
@@ -364,14 +364,14 @@
                             const equipoId = this.getAttribute("data-equipo-id");
                             const equipoNombre = this.getAttribute("data-equipo-nombre");
                             
-                            fetch(`/goles-esperados-equipo/${equipoId}`).then(r => r.json()).then(info => {
+                            fetch(`/api/goles-esperados-equipo/${equipoId}`).then(r => r.json()).then(info => {
                                 const ctx = document.getElementById('lineChart').getContext('2d');
                                 if (lineChartInstance) lineChartInstance.destroy();
                                 const currentOptions = body.classList.contains('light-mode') ? lightLineOptions : darkLineOptions;
                                 lineChartInstance = new Chart(ctx, { type: 'line', data: { labels: info.map(item => `J${item.jornada}`), datasets: [{ label: 'xG a Favor', data: info.map(item => item.xg_equipo), borderColor: 'rgba(54, 162, 235, 1)', backgroundColor: 'rgba(54, 162, 235, 0.2)', fill: true, tension: 0.4 }, { label: 'xG en Contra', data: info.map(item => item.xg_rival), borderColor: 'rgba(255, 99, 132, 1)', backgroundColor: 'rgba(255, 99, 132, 0.2)', fill: true, tension: 0.4 }] }, options: currentOptions });
                             });
                             
-                            fetch(`/mapa-disparos/${equipoId}`).then(r => r.json()).then(data => {
+                            fetch(`/api/mapa-disparos/${equipoId}`).then(r => r.json()).then(data => {
                                 document.getElementById("label-equipo").textContent = `Mapa de disparos de: ${equipoNombre}`;
                                 const campoCanvas = document.getElementById("campoCanvas");
                                 const ctxCampo = campoCanvas.getContext("2d");

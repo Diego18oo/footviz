@@ -179,7 +179,7 @@
             
 
             function cargarInfoClub(club){
-                fetch(`/info-club/${club}`)
+                fetch(`/api/info-club/${club}`)
                 .then(response => response.json())
                 .then(data => { 
                     if (!data) {
@@ -203,7 +203,7 @@
             }
 
             function cargarUltimosPartidos(club){
-                fetch(`/ultimos-partidos-club/${club}`)
+                fetch(`/api/ultimos-partidos-club/${club}`)
                 .then(response => response.json())
                 .then(data => {
                     if (!data) {
@@ -242,7 +242,7 @@
             }   
 
             function cargarAlineacion(club){
-                fetch(`/alineacion-club/${club}`)
+                fetch(`/api/alineacion-club/${club}`)
                 .then(response => response.json())
                 .then(data => {
                     const alineacion = data[0];
@@ -302,7 +302,7 @@
 
 
             function cargarEvolucion(club){
-                fetch(`/evolucion-equipos/${club}`)
+                fetch(`/api/evolucion-equipos/${club}`)
                 .then(response => response.json())
                 .then(data => {
                     if (!data || data.length === 0) return;
@@ -377,7 +377,7 @@
             }
 
             function cargarMapaDisparos(club){
-                fetch(`/mapa-disparos/${club}`)
+                fetch(`/api/mapa-disparos/${club}`)
                 .then(response => response.json())
                 .then(shots => {
                     if (!shots || shots.length === 0) return;
@@ -440,7 +440,7 @@
             }
 
             function cargarPlantilla(club){
-                fetch(`/plantilla-club/${club}`)
+                fetch(`/api/plantilla-club/${club}`)
                 .then(response => response.json())
                 .then(data => {
                     const tbody = document.querySelector('#plantilla-tabla tbody');

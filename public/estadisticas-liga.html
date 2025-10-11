@@ -283,16 +283,16 @@
             var tbody = document.querySelector("#tabla-equipos tbody");
             
             var endpoints = {
-                "premierleague": "/premier-league",
-                "laliga": "/la-liga",
-                "seriea": "/serie-a",
-                "bundesliga": "/bundesliga",
-                "ligueone": "/ligue-one"
+                "premierleague": "/api/premier-league",
+                "laliga": "/api/la-liga",
+                "seriea": "/api/serie-a",
+                "bundesliga": "/api/bundesliga",
+                "ligueone": "/api/ligue-one"
             };
 
             function cargarGraficaEvo(equipoSeleccionado, nombreEquipo, color, slot){
                 console.log(equipoSeleccionado)
-                fetch(`/evolucion-equipos/${equipoSeleccionado}`)
+                fetch(`/api/evolucion-equipos/${equipoSeleccionado}`)
                 .then(response => response.json())
                 .then(info => {
                     const evolucion = info[0];
@@ -384,7 +384,7 @@
                     "ligueone" : "Ligue 1",
                 }
 
-                fetch(`/promedios-liga/${endpoints2[ligaSeleccionada]}`)
+                fetch(`/api/promedios-liga/${endpoints2[ligaSeleccionada]}`)
                 .then(response => response.json())
                 .then(info => {
                     const loadImage = (src) => new Promise(resolve => {

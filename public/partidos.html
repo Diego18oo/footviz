@@ -261,7 +261,7 @@
                     tbody.innerHTML = "";
                     const endpoints = { "premierleague" : "1", "laliga" : "2", "seriea" : "3", "bundesliga" : "4", "ligueone" : "5" };
                     try {
-                        const response = await fetch(`/ultimos-partidos/${endpoints[ligaSeleccionada]}/${jornadaSeleccionada}`);
+                        const response = await fetch(`/api/ultimos-partidos/${endpoints[ligaSeleccionada]}/${jornadaSeleccionada}`);
                         const partidos = await response.json();
                         const hoyNormalizada = new Date();
                         hoyNormalizada.setHours(0, 0, 0, 0);
@@ -272,7 +272,7 @@
                             const fila = document.createElement("tr");
 
                             if (hoyNormalizada > fechaPartidoNormalizada) {
-                                const resResponse = await fetch(`/resultado-partido/${partido.id_partido}`); 
+                                const resResponse = await fetch(`/api/resultado-partido/${partido.id_partido}`); 
                                 const resultado = await resResponse.json();
                                 fila.innerHTML = `
                                     <td class="match-cell">

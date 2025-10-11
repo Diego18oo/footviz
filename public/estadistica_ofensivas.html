@@ -290,16 +290,16 @@
                 });
 
                 const endpoints = {
-                    "premierleague": "/estadisticas-ofensivas-premier-league", "laliga": "/estadisticas-ofensivas-la-liga",
-                    "seriea": "/estadisticas-ofensivas-serie-a", "bundesliga": "/estadisticas-ofensivas-bundesliga",
-                    "ligueone": "/estadisticas-ofensivas-ligue-one"
+                    "premierleague": "/api/estadisticas-ofensivas-premier-league", "laliga": "/api/estadisticas-ofensivas-la-liga",
+                    "seriea": "/api/estadisticas-ofensivas-serie-a", "bundesliga": "/api/estadisticas-ofensivas-bundesliga",
+                    "ligueone": "/api/estadisticas-ofensivas-ligue-one"
                 };
 
                 function cargarMejoresGoles (ligaSeleccionada){  
                     let endpoints = {
                         "premierleague": "1", "laliga": "2", "seriea": "3", "bundesliga": "4", "ligueone": "5"
                     };
-                    fetch(`/mejores-goles/${endpoints[ligaSeleccionada]}`)
+                    fetch(`/api/mejores-goles/${endpoints[ligaSeleccionada]}`)
                         .then(response => response.json())
                         .then(data => {
                             const tbodyMejoresGoles = document.querySelector("#mejores-goles-jugadores");
@@ -329,7 +329,7 @@
                         const resultsDiv = document.getElementById(`searchResults${jugadorNum}`);
                         resultsDiv.innerHTML ="";
                         if (query.length < 2) return;
-                        const res = await fetch(`/buscar-jugadores?nombre=${query}`);
+                        const res = await fetch(`/api/buscar-jugadores?nombre=${query}`);
                         const jugadores = await res.json();
                         jugadores.forEach(jugador => {
                             const div = document.createElement("div");
@@ -344,11 +344,11 @@
                                 resultsDiv.innerHTML="";
                                 if (jugadorNum === 1) {
                                     jugador1Id = jugador.id_jugador;
-                                    const res = await fetch(`/estadisticas-jugador/${jugador.id_jugador}`);
+                                    const res = await fetch(`/api/estadisticas-jugador/${jugador.id_jugador}`);
                                     jugador1Stats = await res.json();
                                 } else {
                                     jugador2Id = jugador.id_jugador;
-                                    const res = await fetch(`/estadisticas-jugador/${jugador.id_jugador}`);
+                                    const res = await fetch(`/api/estadisticas-jugador/${jugador.id_jugador}`);
                                     jugador2Stats = await res.json();
                                 }
                                 if (jugador1Id && jugador2Id) {
@@ -598,7 +598,7 @@
                 cargarMejoresGoles(liga.value);
                 
                 async function getMaxStats(id1, id2) {
-                    const res = await fetch(`/max-stats/${id1}/${id2}`);
+                    const res = await fetch(`/api/max-stats/${id1}/${id2}`);
                     return await res.json();
                 }
                 setupSearch("searchInput1", 1);

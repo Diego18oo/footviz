@@ -339,7 +339,7 @@
                         const query = e.target.value;
                         resultsDiv.innerHTML = "";
                         if (query.length < 2) return;
-                        const res = await fetch(`/buscar-jugadores?nombre=${query}`);
+                        const res = await fetch(`/api/buscar-jugadores?nombre=${query}`);
                         const jugadores = await res.json();
                         jugadores.forEach(jugador => {
                             const div = document.createElement("div");
@@ -351,7 +351,7 @@
                 }
 
                 function cargarInfoBasicaJugador(player) {
-                    fetch(`/jugador/${player.id}`).then(r => r.json()).then(data => {
+                    fetch(`/api/jugador/${player.id}`).then(r => r.json()).then(data => {
                         if (!data) return;
                         const infoContainer = document.getElementById(`info-general-${player.id}`);
                         const fechaNac = new Date(data.fec_nac).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -369,7 +369,7 @@
                 }
 
                 function cargarPercentilesJugador(player) {
-                    fetch(`/percentiles-jugador/${player.id}`).then(r => r.json()).then(data => {
+                    fetch(`/api/percentiles-jugador/${player.id}`).then(r => r.json()).then(data => {
                         if (!data || data.length === 0) return;
                         const percentiles = data[0];
                         const ctx = document.getElementById('percentileChart').getContext('2d');
@@ -397,7 +397,7 @@
 
 
                 function cargarMapaDeCalorJugador(player) {
-                    fetch(`/mapa-calor-jugador/${player.id}`)
+                    fetch(`/api/mapa-calor-jugador/${player.id}`)
                     .then(response => response.json())
                     .then(data => {
                         if (!data || data.length === 0) return;
@@ -418,7 +418,7 @@
                 }
                 
                 function cargarMapaDeDisparosJugador(player) {
-                    fetch(`/mapa-disparos-jugador/${player.id}`)
+                    fetch(`/api/mapa-disparos-jugador/${player.id}`)
                     .then(response => response.json())
                     .then(shots => {
                         if (!shots || shots.length === 0) return;
@@ -452,7 +452,7 @@
                 }
 
                 function cargarEstadisticasJugador(player){
-                    fetch(`/jugador/${player.id}`)
+                    fetch(`/api/jugador/${player.id}`)
                     .then(response => response.json())
                     .then(data => {
                         if (!data) {
@@ -461,7 +461,7 @@
                         }
 
                         if (data.posicion == 'G'){
-                            fetch(`/estadisticas-portero/${player.id}`)
+                            fetch(`/api/estadisticas-portero/${player.id}`)
                             .then(response => response.json())
                             .then(data => {
                                 const statsContainer = document.getElementById(`stats-general-${player.id}`);
@@ -485,7 +485,7 @@
                             })
                         }
                         else{
-                            fetch(`/estadisticas-jugador/${player.id}`)
+                            fetch(`/api/estadisticas-jugador/${player.id}`)
                             .then(response => response.json())
                             .then(data => {
                                 const statsContainer = document.getElementById(`stats-general-${player.id}`);

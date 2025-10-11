@@ -240,7 +240,7 @@
                 let nombreLocal = 'Equipo Local';
                 let nombreVisitante = 'Equipo Visitante';
                 function cargarInfoPartido(partido){
-                    fetch(`/info-prepartido/${partido}`).then(r => r.json()).then(data => {
+                    fetch(`/api/info-prepartido/${partido}`).then(r => r.json()).then(data => {
                         if (!data) return;
                         // Guardamos los IDs para poder redibujar el gráfico de evolución al cambiar de tema
                         equiposEvolucion = { local: data.id_local, visitante: data.id_visitante, total: data.total_equipos_liga };
@@ -271,7 +271,7 @@
                 }
 
                 function cargarAlineacionLocal(partido){
-                    fetch(`/alineaciones/${partido}`)
+                    fetch(`/api/alineaciones/${partido}`)
                     .then(response => response.json())
                     .then(data => {
                         const container = document.getElementById('id-alineacion-local-container');
@@ -347,7 +347,7 @@
                 
 
                 function cargarAlineacionVisitante(partido){
-                    fetch(`/alineaciones/${partido}`)
+                    fetch(`/api/alineaciones/${partido}`)
                     .then(response => response.json())
                     .then(data => {
                         const container = document.getElementById('id-alineacion-visitante-container');
@@ -431,7 +431,7 @@
                 function cargarUltimosEnfrentamientos(partido){
                     const ultimosEnfrentamientos = document.getElementById('ultimos-enfrentamientos');
                     ultimosEnfrentamientos.innerHTML="";
-                    fetch(`/ultimos-enfrentamientos/${partido}`)
+                    fetch(`/api/ultimos-enfrentamientos/${partido}`)
                     .then(response => response.json())
                     .then(data => {
                         data.forEach((partido) => {
@@ -456,7 +456,7 @@
                 }
 
                 function cargarComparacionStats(equipoLocal, equipoVisitante){
-                    fetch(`/comparacion-estadisticas-equipos/${equipoLocal}/${equipoVisitante}`)
+                    fetch(`/api/comparacion-estadisticas-equipos/${equipoLocal}/${equipoVisitante}`)
                     .then(response => response.json())
                     .then(data => {
                         const container = document.getElementById('stats-comparison-container');
@@ -516,7 +516,7 @@
                 }
                 
                 function cargarEvolucionEquipos(equipoLocal, equipoVisitante, totalEquiposLiga){
-                    fetch(`/comparacion-evoluciones/${equipoLocal}/${equipoVisitante}`)
+                    fetch(`/api/comparacion-evoluciones/${equipoLocal}/${equipoVisitante}`)
                     .then(response => response.json())
                     .then(data => {
                         if (!data || data.length < 2) {
