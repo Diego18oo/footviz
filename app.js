@@ -5,6 +5,34 @@ import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValora
 const app = express() 
 app.use(express.static("public"))
 
+
+app.get('/api/image-proxy', async (req, res) => {
+  const imageUrl = req.query.url;
+
+  if (!imageUrl) {
+    return res.status(400).json({ error: 'Image URL is required' });
+  }
+
+  try {
+    const imageResponse = await fetch(imageUrl);
+
+    if (!imageResponse.ok) {
+      return res.status(imageResponse.status).json({ error: 'Failed to fetch image' });
+    }
+
+    const contentType = imageResponse.headers.get('content-type');
+    const imageBuffer = await imageResponse.arrayBuffer();
+
+    res.setHeader('Content-Type', contentType);
+    res.send(Buffer.from(imageBuffer));
+
+  } catch (error) {
+    console.error('Local image proxy error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
 app.get("/api/plantilla-club/:id", async (req, res) => {
     try {
         const { id } = req.params; 
@@ -557,7 +585,7 @@ app.get("/api/index", async(req,res) => {
     
 })
 
-app.get("/api/premier-league", async(req,res) => {
+app.get("/api/liga/premier-league", async(req,res) => {
     console.log("Se hizo una solicitud a /premier-league");
     const tabla_liga = await getTablaLiga(1)
     const ultimos_partidos = await getUltimosPartidos(1)
@@ -569,7 +597,7 @@ app.get("/api/premier-league", async(req,res) => {
 
 
 
-app.get("/api/la-liga", async(req,res) => {
+app.get("/api/liga/la-liga", async(req,res) => {
     console.log("Se hizo una solicitud a /la-liga");
     const tabla_liga = await getTablaLiga(2) 
     const ultimos_partidos = await getUltimosPartidos(2)
@@ -578,7 +606,7 @@ app.get("/api/la-liga", async(req,res) => {
     res.json({ tabla_liga, ultimos_partidos, maximos_goleadores, mejores_valorados });
 })
 
-app.get("/api/serie-a", async(req,res) => {
+app.get("/api/liga/serie-a", async(req,res) => {
     console.log("Se hizo una solicitud a /serie-a");
     const tabla_liga = await getTablaLiga(3)
     const ultimos_partidos = await getUltimosPartidos(3)
@@ -587,7 +615,7 @@ app.get("/api/serie-a", async(req,res) => {
     res.json({ tabla_liga, ultimos_partidos, maximos_goleadores, mejores_valorados });
 })
 
-app.get("/api/bundesliga", async(req,res) => {
+app.get("/api/liga/bundesliga", async(req,res) => {
     console.log("Se hizo una solicitud a /bundesliga");
     const tabla_liga = await getTablaLiga(4)
     const ultimos_partidos = await getUltimosPartidos(4)
@@ -597,7 +625,7 @@ app.get("/api/bundesliga", async(req,res) => {
     
 })
 
-app.get("/api/ligue-one", async(req,res) => {
+app.get("/api/liga/ligue-one", async(req,res) => {
     console.log("Se hizo una solicitud a /ligue-one");
     const tabla_liga = await getTablaLiga(5)
     const ultimos_partidos = await getUltimosPartidos(5)
