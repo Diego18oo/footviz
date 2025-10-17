@@ -4,7 +4,7 @@ dotenv.config()
 import mysql from 'mysql2/promise'
 
 
- 
+  
 const dbConfig = {
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -1174,3 +1174,55 @@ export async function getPlantillaClub(club) {
         `, [club])
     return rows;
 }
+
+
+export async function getTodosLosEquipos() {
+    const [rows] = await pool.query(`
+    SELECT id_equipo, nombre, url_imagen FROM equipo;
+        `)
+    return rows;
+    
+}
+
+export async function getTodosLosPaises() {
+    const [rows] = await pool.query(`
+    SELECT id_pais, nombre FROM pais;
+        `)
+    return rows;
+    
+}
+
+
+export async function crearUsuario(datos) {
+  const { username, correo, hashed_password, fecha_nacimiento, pais_id, equipo_favorito_id } = datos;
+  
+  const [result] = await pool.query(`
+    INSERT INTO usuario (username, email, hashed_password, fecha_nacimiento, pais_id, equipo_favorito_id)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `, [username, correo, hashed_password, fecha_nacimiento, pais_id, equipo_favorito_id]);
+
+  return { id: result.insertId };
+}
+
+// ✅ Función para las validaciones (SELECT)
+export async function buscarUsuarioPorUsername(username) {
+  const [rows] = await pool.query('SELECT id_usuario FROM usuario WHERE username = ?', [username]);
+  return rows[0];
+}
+
+// ✅ También necesitarás una para el correo, etc.
+export async function buscarUsuarioPorEmail(email) {
+    const [rows] = await pool.query('SELECT id_usuario FROM usuario WHERE email = ?', [email]);
+    return rows[0];
+}
+
+
+export async function findUserByEmail(email) {
+  // Seleccionamos el id y la contraseña hasheada
+  const [rows] = await pool.query(
+    'SELECT id_usuario, hashed_password FROM usuario WHERE email = ?',
+    [email]
+  );
+  return rows[0]; // Devuelve el usuario si existe, o undefined si no
+}
+

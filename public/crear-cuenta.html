@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>FootViz - Crear Cuenta</title>
+    </head>
+    <body>
+        
+        <div>
+            <h1>Crear Cuenta</h1>
+            <form>
+                <div>
+                    <input type="text" name="username" id="username-input" placeholder="Nombre de usuario" required>
+
+                </div>
+                <div>
+                    <input type="email" name="correo" id="correo-input" placeholder="Correo electronico" required>
+
+                </div>
+                <div>
+                    <input type="password" name="contrasenia" id="contrasenia-input" placeholder="Contraseña" required>
+
+                </div>
+                <div>
+                    <input type="password" name="repetirContrasenia" id="repetir-contrasenia-input" placeholder="Repite la contraseña" required>
+                </div>
+                <div>
+                    <label for="pais">Pais</label>
+                    <select name="pais" id="pais"></select>
+                </div>
+                <div>
+                    <input type="date" name="fecnac" id="fecnac-input" required>
+                </div>
+                <div>
+                    <label for="fav">Equipo Favorito</label>
+                    <select id="fav" name="equipo_favorito"></select>
+                </div>
+
+                <button type="submit">Crear cuenta</button>
+            </form>
+        </div>
+
+        <script>
+            const equipoFavorito = document.getElementById('fav');
+            const paisSelect = document.getElementById('pais');
+            paisSelect.innerHTML="";
+            equipoFavorito.innerHTML = "";
+            fetch(`/api/lista-equipos`)
+            .then(response => response.json())
+            .then(data => { 
+                data.forEach(equipo => {
+                    const option = document.createElement("option");
+                    option.value = equipo.id_equipo;
+                    option.textContent = equipo.nombre;
+                    
+                    equipoFavorito.appendChild(option);
+                });
+            })
+
+            fetch(`/api/lista-paises`)
+            .then(response => response.json())
+            .then(data => { 
+                data.forEach(pais => {
+                    const option = document.createElement("option");
+                    option.value = pais.id_pais;
+                    option.textContent = pais.nombre;
+                    
+                    paisSelect.appendChild(option);
+                });
+            })
+
+            // --- El nuevo código para manejar el POST ---
+            const form = document.querySelector('form');
+
+            form.addEventListener('submit', async (event) => {
+                // 1. Evita que la página se recargue al enviar el formulario
+                event.preventDefault();
+
+                // 2. Recolecta todos los datos del formulario en un objeto
+                const formData = new FormData(form);
+                
+                // ¡OJO! El <select> necesita un atributo 'name' para ser incluido
+                equipoFavorito.name = 'equipo_favorito'; 
+                
+                const data = Object.fromEntries(formData.entries());
+                console.log(data)
+                // Aquí irían tus validaciones de frontend (contraseñas coinciden, etc.)
+                if (data.contrasenia !== data.repetirContrasenia) {
+                    alert('Las contraseñas no coinciden.');
+                    return; // Detiene el envío
+                }
+
+                // 3. Envía el objeto a la "cocina" (tu backend) usando POST
+                try {
+                    const response = await fetch('/api/registrar-usuario', {
+                        method: 'POST', // Especificamos que es una petición POST
+                        headers: {
+                            'Content-Type': 'application/json' // Le decimos a la cocina que le enviamos JSON
+                        },
+                        body: JSON.stringify(data) // Convertimos nuestro objeto JS a un string JSON
+                    });
+
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        // Si la cocina nos devuelve un error (ej: "usuario ya existe")
+                        throw new Error(result.error || 'Algo salió mal en el servidor.');
+                    }
+
+                    // 4. ¡Éxito! La cocina nos dio una buena respuesta.
+                    alert('¡Cuenta creada exitosamente! Ahora inicia sesión.');
+                    window.location.href = '/login.html'; // Redirige al usuario
+
+                } catch (error) {
+                    // Muestra cualquier error al usuario
+                    alert('Error: ' + error.message);
+                }
+            });
+                
+              
+                
+            
+
+        </script>
+        
+
+    </body>
+</html>

@@ -1,13 +1,113 @@
 
 
 import express from 'express'
-import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub} from './database.js'
+import bcrypt from 'bcrypt'; // Importa bcrypt para hashear contraseñas
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail} from './database.js'
  
 
-const app = express() 
+const app = express()  
 app.use(express.static("public"))
+app.use(express.json());
 
 
+app.post("/api/login", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        // 1. Buscar al usuario en la BD por su email
+        const user = await findUserByEmail(email);
+
+        // Si el usuario no existe, las credenciales son inválidas
+        if (!user) {
+            return res.status(401).json({ error: "Credenciales inválidas" });
+        }
+
+        // 2. Comparar la contraseña enviada con el hash guardado en la BD
+        const isMatch = await bcrypt.compare(password, user.hashed_password);
+
+        // Si la comparación falla, las credenciales son inválidas
+        if (!isMatch) {
+            return res.status(401).json({ error: "Credenciales inválidas" });
+        }
+
+        // 3. ¡Éxito! La contraseña es correcta.
+        // Aquí es donde en el futuro crearías un Token JWT (RQNF3)
+        // Por ahora, solo enviamos un mensaje de éxito.
+        res.status(200).json({ message: "Login exitoso", userId: user.id_usuario });
+
+    } catch (error) {
+        console.error("Error en el login:", error);
+        res.status(500).json({ error: "Error interno del servidor" });
+    }
+});
+
+app.post("/api/registrar-usuario", async (req, res) => {
+    try {
+        // req.body es el objeto JSON que enviaste desde el frontend
+        const { username, correo, contrasenia, fecnac, pais, equipo_favorito } = req.body;
+
+        // --- Aquí van tus validaciones de backend (las más importantes) ---
+        // Ejemplo: ¿Ya existe el username?
+        const usuarioExistente = await buscarUsuarioPorUsername(username);
+        if (usuarioExistente) {
+            return res.status(409).json({ error: "El nombre de usuario ya está en uso." });
+        }
+        // ... aquí irían el resto de tus validaciones (email, edad, etc.) ...
+        
+        // Hashea la contraseña ANTES de guardarla
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(contrasenia, saltRounds);
+
+        // Si todo está bien, crea el usuario
+        const nuevoUsuario = await crearUsuario({
+            username,
+            correo,
+            hashed_password: hashedPassword, // ¡Guardamos la versión segura!
+            fecha_nacimiento: fecnac,
+            pais_id: pais,
+            equipo_favorito_id: equipo_favorito
+        });
+
+        res.status(201).json({ message: "Usuario creado con éxito", userId: nuevoUsuario.id });
+
+    } catch (error) {
+        console.error("Error al registrar usuario:", error);
+        res.status(500).json({ error: "Error interno del servidor" });
+    }
+});
+
+
+app.get("/api/lista-paises", async (req, res) => {
+    try {
+        
+        const info = await getTodosLosPaises();
+
+        if (info.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del club" });
+        }
+
+        res.json(info);   
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del club" });
+    }
+});
+
+app.get("/api/lista-equipos", async (req, res) => {
+    try {
+        
+        const info = await getTodosLosEquipos();
+
+        if (info.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del club" });
+        }
+
+        res.json(info);   
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del club" });
+    }
+});
 
 
 

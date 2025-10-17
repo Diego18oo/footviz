@@ -20,7 +20,12 @@ from rapidfuzz import process, fuzz
 fbref = ls.Fbref()
 # --- 1. CONFIGURACIÓN DE CLOUDINARY ---
 # Pega aquí tus credenciales
-
+cloudinary.config(
+  cloud_name = "donni11al",
+  api_key = "725784717463829",
+  api_secret = "URBwQFCj3Q7Ukl1KVioBnTUr6_E",
+  secure = True
+)
 
 ligas_ids = [17, 8, 23, 35, 34] 
 temporadas_ids = [76986, 77559, 76457, 77333, 77356]
@@ -1895,3 +1900,44 @@ def prematch_ref(engine, partido):
             print("Arbitro no disponibles")
 
     return
+
+
+def extract_img_url(engine, df, driver):
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    arreglo_url = []
+    for i in range(len(df)):
+        url_img = df.iloc[i]['url_imagen']
+        nombre_equipo = df.iloc[i]['nombre']
+        cloudinary_public_id = f"teams/team_{nombre_equipo}"
+        print(f"Procesando imagen para el equipo {nombre_equipo}...")
+        new_cloudinary_url = upload_image_from_url(driver, url_img, cloudinary_public_id)
+        final_image_url = new_cloudinary_url if new_cloudinary_url else "URL_DE_IMAGEN_POR_DEFECTO.PNG"
+        print(f"Resultado para {nombre_equipo}: {final_image_url}")
+        
+        arreglo_url.append(final_image_url)
+        
+    return arreglo_url
+
+
+def transfer_to_database(engine, arreglo_url, df):
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    tabla_entrenador = meta.tables['jugador']
+
+    with engine.begin() as conn: 
+        for i in range(len(arreglo_url)):
+            insert_url_stmt = insert(tabla_entrenador).values(
+                id_jugador = df.iloc[i]['id_jugador'],
+                url_imagen = arreglo_url[i]
+            )
+
+            update_url_stmt = insert_url_stmt.on_duplicate_key_update(
+                url_imagen = insert_url_stmt.inserted.url_imagen
+            )
+
+            conn.execute(update_url_stmt)
+            print("Url actualizada exitosamente")
+
+    return 
+ 

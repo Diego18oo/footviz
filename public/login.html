@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>FootViz - Iniciar Sesion</title>
+    </head>
+    <body>
+        <div>
+            <form action="">
+                <h2>Login</h2>
+                <div>
+                    <span>
+                        <ion-icon name="mail"></ion-icon>
+                    </span>
+                    <input type="email" name="email" required>
+                    <label>Email</label>
+                </div>
+                <div>
+                    <span class="icon">
+                        <ion-icon name="lock-closed-outline"></ion-icon>
+                    </span>
+                    <input type="password" name="password" required>
+                    <label>Password</label>
+                </div>
+                <button type="submit">Login</button>
+                <div>
+                    <p>No tienes cuenta todavia?<a href="crear-cuenta.html">Registrate</a> </p>
+                </div>
+            </form>
+        </div>
+
+        <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+        <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+
+
+        <script>
+            const form = document.querySelector('form');
+
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault(); // Evita que la página se recargue
+
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData.entries());
+
+                try {
+                    const response = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        // Si el servidor dice que las credenciales son incorrectas
+                        throw new Error(result.error || 'Error en el servidor.');
+                    }
+
+                    // ¡Éxito! El login fue correcto.
+                    alert('¡Bienvenido de nuevo!');
+                    // Redirigir a la página principal del fantasy
+                    window.location.href = '/fantasy.html'; // O la página que corresponda
+
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                }
+            });
+        </script>
+
+    </body>
+</html>

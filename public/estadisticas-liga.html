@@ -277,17 +277,17 @@
                     applyTheme(newTheme);
                 });
             });
-
+ 
             let totalEquiposLiga = 20;
             var liga = document.getElementById('liga');
             var tbody = document.querySelector("#tabla-equipos tbody");
             
             var endpoints = {
-                "premierleague": "/api/premier-league",
-                "laliga": "/api/la-liga",
-                "seriea": "/api/serie-a",
-                "bundesliga": "/api/bundesliga",
-                "ligueone": "/api/ligue-one"
+                "premierleague": "/api/liga/premier-league",
+                "laliga": "/api/liga/la-liga",
+                "seriea": "/api/liga/serie-a",
+                "bundesliga": "/api/liga/bundesliga",
+                "ligueone": "/api/liga/ligue-one"
             };
 
             function cargarGraficaEvo(equipoSeleccionado, nombreEquipo, color, slot){
