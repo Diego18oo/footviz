@@ -831,7 +831,6 @@ def insert_estadistica_partido_jugador(data, engine ,id_sofascore, posicion, tar
     return
 
 def insert_mapa_de_calor(engine, driver, id_sofascore):
-    engine = create_engine('mysql+pymysql://root@localhost/footviz')
     df_jugadores = pd.read_sql('SELECT id_jugador, nombre FROM jugador', engine)
     mapa_jugadores = dict(zip(df_jugadores['nombre'], df_jugadores['id_jugador']))
     df_partido = pd.read_sql('SELECT id_partido, url_sofascore FROM partido', engine)
@@ -996,7 +995,6 @@ def insert_mapa_de_calor(engine, driver, id_sofascore):
 
 
 def insert_mapa_de_disparos(engine, driver, id_sofascore):
-    engine = create_engine('mysql+pymysql://root@localhost/footviz')
     df_jugadores = pd.read_sql('SELECT id_jugador, nombre FROM jugador', engine)
     mapa_jugadores = dict(zip(df_jugadores['nombre'], df_jugadores['id_jugador']))
     df_partido = pd.read_sql('SELECT id_partido, url_sofascore FROM partido', engine)
@@ -1333,7 +1331,8 @@ def update_standings_evolution_graph(liga_a_scrapear, engine,  temporada):
                     jornada30 = jornadas[29],
                     jornada31 = jornadas[30],
                     jornada32 = jornadas[31],
-                    jornada34 = jornadas[32],
+                    jornada33 = jornadas[32],
+                    jornada34 = jornadas[33],
                     jornada35 = jornadas[34],
                     jornada36 = jornadas[35],
                     jornada37 = jornadas[36],

@@ -351,7 +351,7 @@ export async function getMapaDeDisparosEquipo(equipo){
             mp.pitch_y, 
             mp.goal_mouth_y,
             mp.goal_mouth_z,
-            mp.xg, 
+            mp.xg,  
             mp.resultado, 
             p.id_partido,
             CASE

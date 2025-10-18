@@ -2,28 +2,166 @@
 <html>
     <head>
         <title>FootViz - Iniciar Sesion</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+        <style>
+            /* --- ESTILOS GENERALES Y DE CUERPO --- */
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: 'Poppins', sans-serif;
+                background-color: #1a1a2e;
+                color: #e0e0e0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                padding: 20px;
+            }
+
+            /* --- CONTENEDOR DEL FORMULARIO (LA "TARJETA") --- */
+            .login-card {
+                background-color: #1e1e3f;
+                border-radius: 12px;
+                padding: 40px;
+                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+                width: 100%;
+                max-width: 400px;
+                text-align: center;
+            }
+
+            /* --- TÍTULOS Y TEXTOS --- */
+            h2 {
+                font-size: 2.2rem;
+                color: #ffffff;
+                font-weight: 700;
+                margin-bottom: 35px;
+            }
+
+            /* --- GRUPOS DE INPUTS Y EFECTO DE ETIQUETA FLOTANTE --- */
+            .input-group {
+                position: relative;
+                margin-bottom: 30px;
+            }
+
+            .input-group input {
+                width: 100%;
+                height: 50px;
+                background: transparent;
+                border: none;
+                outline: none;
+                border-bottom: 2px solid #4a4a6a;
+                font-size: 1rem;
+                color: #ffffff;
+                padding: 0 5px 0 35px; /* Espacio para el ícono */
+                transition: border-color 0.3s;
+            }
+
+            /* La magia de la etiqueta flotante */
+            .input-group label {
+                position: absolute;
+                top: 50%;
+                left: 35px; /* Alineada con el texto del input */
+                transform: translateY(-50%);
+                font-size: 1rem;
+                color: #a0a0c0;
+                pointer-events: none;
+                transition: all 0.3s ease;
+            }
+            
+            /* Cuando el usuario hace clic o ya ha escrito algo, la etiqueta sube */
+            .input-group input:focus ~ label,
+            .input-group input:valid ~ label {
+                top: -5px;
+                font-size: 0.8rem;
+                color: #4a69ff;
+            }
+            
+            .input-group input:focus {
+                border-bottom-color: #4a69ff;
+            }
+
+            /* --- ÍCONOS DENTRO DE LOS INPUTS --- */
+            .input-group ion-icon {
+                position: absolute;
+                left: 5px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #a0a0c0;
+                transition: color 0.3s;
+            }
+            
+            .input-group input:focus ~ ion-icon {
+                color: #4a69ff;
+            }
+
+            /* --- BOTÓN DE LOGIN --- */
+            button[type="submit"] {
+                width: 100%;
+                background-color: #4a69ff;
+                color: #ffffff;
+                border: none;
+                border-radius: 8px;
+                padding: 14px 20px;
+                font-family: 'Poppins', sans-serif;
+                font-size: 1rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: background-color 0.2s, transform 0.1s;
+                margin-top: 10px;
+            }
+
+            button[type="submit"]:hover {
+                background-color: #5a79ff;
+            }
+
+            button[type="submit"]:active {
+                transform: scale(0.98);
+            }
+
+            /* --- ENLACE INFERIOR PARA REGISTRARSE --- */
+            .register-link {
+                margin-top: 25px;
+                font-size: 0.9rem;
+                color: #a0a0c0;
+            }
+
+            .register-link a {
+                color: #4a69ff;
+                text-decoration: none;
+                font-weight: 600;
+                transition: color 0.2s;
+            }
+
+            .register-link a:hover {
+                color: #7a99ff;
+                text-decoration: underline;
+            }
+
+        </style>
     </head>
     <body>
-        <div>
-            <form action="">
+        <div class="login-card">
+            <form>
                 <h2>Login</h2>
-                <div>
-                    <span>
-                        <ion-icon name="mail"></ion-icon>
-                    </span>
+                <div class="input-group">
                     <input type="email" name="email" required>
                     <label>Email</label>
+                    <ion-icon name="mail-outline"></ion-icon>
                 </div>
-                <div>
-                    <span class="icon">
-                        <ion-icon name="lock-closed-outline"></ion-icon>
-                    </span>
+                <div class="input-group">
                     <input type="password" name="password" required>
                     <label>Password</label>
+                    <ion-icon name="lock-closed-outline"></ion-icon>
                 </div>
                 <button type="submit">Login</button>
-                <div>
-                    <p>No tienes cuenta todavia?<a href="crear-cuenta.html">Registrate</a> </p>
+                <div class="register-link">
+                    <p>¿No tienes cuenta todavía? <a href="crear-cuenta.html">Regístrate</a></p>
                 </div>
             </form>
         </div>

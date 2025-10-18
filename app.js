@@ -51,7 +51,11 @@ app.post("/api/registrar-usuario", async (req, res) => {
         const usuarioExistente = await buscarUsuarioPorUsername(username);
         if (usuarioExistente) {
             return res.status(409).json({ error: "El nombre de usuario ya está en uso." });
-        }
+        } 
+        const correoExistente = await buscarUsuarioPorEmail(correo);
+        if (correoExistente) {
+            return res.status(409).json({ error: "El correo ya está en uso." });
+        } 
         // ... aquí irían el resto de tus validaciones (email, edad, etc.) ...
         
         // Hashea la contraseña ANTES de guardarla

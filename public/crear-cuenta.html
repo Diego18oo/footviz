@@ -2,41 +2,192 @@
 <html>
     <head>
         <title>FootViz - Crear Cuenta</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+        <style>
+            /* --- ESTILOS GENERALES Y DE CUERPO --- */
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: 'Poppins', sans-serif;
+                background-color: #1a1a2e;
+                color: #e0e0e0;
+                /* Centra el formulario en la pantalla */
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                padding: 20px;
+            }
+
+            /* --- CONTENEDOR DEL FORMULARIO (LA "TARJETA") --- */
+            .form-card {
+                background-color: #1e1e3f;
+                border-radius: 12px;
+                padding: 40px;
+                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+                width: 100%;
+                max-width: 500px;
+                text-align: center;
+            }
+
+            /* --- TÍTULOS Y TEXTOS --- */
+            h1 {
+                font-size: 2.2rem;
+                color: #ffffff;
+                font-weight: 700;
+                margin-bottom: 30px;
+            }
+
+            label {
+                display: block;
+                text-align: left;
+                font-size: 0.9rem;
+                font-weight: 300;
+                color: #a0a0c0;
+                margin-bottom: 8px;
+            }
+
+            /* --- GRUPOS DE INPUTS Y ESTILOS DE CAMPOS --- */
+            .input-group {
+                margin-bottom: 20px;
+                text-align: left;
+            }
+
+            input[type="text"],
+            input[type="email"],
+            input[type="password"],
+            input[type="date"],
+            select {
+                width: 100%;
+                background-color: #2a2a4a;
+                color: #e0e0e0;
+                border: 1px solid #4a4a6a;
+                border-radius: 8px;
+                padding: 12px 15px;
+                font-family: 'Poppins', sans-serif;
+                font-size: 1rem;
+                transition: border-color 0.2s, box-shadow 0.2s;
+            }
+            
+            /* Efecto de foco para una mejor UX */
+            input:focus,
+            select:focus {
+                outline: none;
+                border-color: #4a69ff;
+                box-shadow: 0 0 0 3px rgba(74, 105, 255, 0.2);
+            }
+
+            /* Pequeño truco para que el calendario del input de fecha use el tema oscuro */
+            input[type="date"] {
+                color-scheme: dark;
+            }
+
+            /* --- BOTÓN DE ENVÍO --- */
+            button[type="submit"] {
+                width: 100%;
+                background-color: #4a69ff;
+                color: #ffffff;
+                border: none;
+                border-radius: 8px;
+                padding: 14px 20px;
+                font-family: 'Poppins', sans-serif;
+                font-size: 1rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: background-color 0.2s, transform 0.1s;
+                margin-top: 10px;
+            }
+
+            button[type="submit"]:hover {
+                background-color: #5a79ff;
+            }
+
+            button[type="submit"]:active {
+                transform: scale(0.98);
+            }
+
+            /* --- ENLACE INFERIOR --- */
+            .login-link {
+                margin-top: 25px;
+                font-size: 0.9rem;
+                color: #a0a0c0;
+            }
+
+            .login-link a {
+                color: #4a69ff;
+                text-decoration: none;
+                font-weight: 600;
+                transition: color 0.2s;
+            }
+
+            .login-link a:hover {
+                color: #7a99ff;
+                text-decoration: underline;
+            }
+            
+            /* --- DISEÑO RESPONSIVO PARA MÓVILES --- */
+            @media (max-width: 600px) {
+                .form-card {
+                    padding: 25px;
+                }
+                h1 {
+                    font-size: 1.8rem;
+                }
+            }
+        </style>
     </head>
     <body>
         
-        <div>
+        <div class="form-card">
             <h1>Crear Cuenta</h1>
             <form>
-                <div>
-                    <input type="text" name="username" id="username-input" placeholder="Nombre de usuario" required>
+                <div class="input-group">
+                    <label for="username-input">Nombre de usuario</label>
+                    <input type="text" name="username" id="username-input" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="correo-input">Correo electrónico</label>
+                    <input type="email" name="correo" id="correo-input" required>
+                </div>
 
+                <div class="input-group">
+                    <label for="contrasenia-input">Contraseña</label>
+                    <input type="password" name="contrasenia" id="contrasenia-input" required>
                 </div>
-                <div>
-                    <input type="email" name="correo" id="correo-input" placeholder="Correo electronico" required>
 
+                <div class="input-group">
+                    <label for="repetir-contrasenia-input">Repite la contraseña</label>
+                    <input type="password" name="repetirContrasenia" id="repetir-contrasenia-input" required>
                 </div>
-                <div>
-                    <input type="password" name="contrasenia" id="contrasenia-input" placeholder="Contraseña" required>
 
-                </div>
-                <div>
-                    <input type="password" name="repetirContrasenia" id="repetir-contrasenia-input" placeholder="Repite la contraseña" required>
-                </div>
-                <div>
-                    <label for="pais">Pais</label>
-                    <select name="pais" id="pais"></select>
-                </div>
-                <div>
+                <div class="input-group">
+                    <label for="fecnac-input">Fecha de Nacimiento</label>
                     <input type="date" name="fecnac" id="fecnac-input" required>
                 </div>
-                <div>
-                    <label for="fav">Equipo Favorito</label>
-                    <select id="fav" name="equipo_favorito"></select>
+                
+                <div class="input-group">
+                    <label for="pais">País</label>
+                    <select name="pais" id="pais" required></select>
                 </div>
 
-                <button type="submit">Crear cuenta</button>
+                <div class="input-group">
+                    <label for="fav">Equipo Favorito</label>
+                    <select id="fav" name="equipo_favorito" required></select>
+                </div>
+
+                <button type="submit">Crear Cuenta</button>
             </form>
+            <div class="login-link">
+                <p>¿Ya tienes una cuenta? <a href="login.html">Inicia Sesión</a></p>
+            </div>
         </div>
 
         <script>
@@ -72,6 +223,7 @@
             const form = document.querySelector('form');
 
             form.addEventListener('submit', async (event) => {
+                
                 // 1. Evita que la página se recargue al enviar el formulario
                 event.preventDefault();
 
@@ -81,11 +233,48 @@
                 // ¡OJO! El <select> necesita un atributo 'name' para ser incluido
                 equipoFavorito.name = 'equipo_favorito'; 
                 
+
                 const data = Object.fromEntries(formData.entries());
-                console.log(data)
+                const fechaNacimientoStr = data.fecnac;
+                const fechaNacimiento = new Date(fechaNacimientoStr);
+                const hoy = new Date();
+
+                const fechaLimite = new Date(hoy.getFullYear() - 13, hoy.getMonth(), hoy.getDate());
+
+                
+                const usernameRegex = /^\w+$/;
+                const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
                 // Aquí irían tus validaciones de frontend (contraseñas coinciden, etc.)
                 if (data.contrasenia !== data.repetirContrasenia) {
                     alert('Las contraseñas no coinciden.');
+                    return; // Detiene el envío
+                }
+
+                if (data.username.length < 3 || data.username.length > 20) {
+                    alert('El nombre de usuario debe contener minimo 2 caracteres y maximo 20.');
+                    return; // Detiene el envío
+                }
+
+                if (data.fecnac > data.repetirContrasenia) {
+                    alert('Las contraseñas no coinciden.');
+                    return; // Detiene el envío
+                }
+
+                if (fechaNacimiento > fechaLimite) {
+                    alert('Debes tener al menos 13 años para registrarte.');
+                    return; // Detiene el envío
+                }
+
+                
+
+                if (!usernameRegex.test(data.username)) {
+                    // Si el test falla, mostramos un error y detenemos el envío
+                    alert('El nombre de usuario solo puede contener letras, números y guiones bajos.');
+                    return; 
+                }
+
+                if (!passwordRegex.test(data.contrasenia)) {
+                    alert('La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número.');
                     return; // Detiene el envío
                 }
 
