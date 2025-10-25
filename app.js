@@ -4,7 +4,7 @@ import express from 'express'
 import bcrypt from 'bcrypt'; 
 import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
-import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail} from './database.js'
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail, getUsuarioData} from './database.js'
  
 
 const app = express()  
@@ -44,14 +44,14 @@ app.get("/api/fantasy-dashboard", authenticateToken, async (req, res) => {
 
     try {
         // Llama a funciones de database.js pasándoles el userId
-        const equipoData = await getEquipoFantasyUsuario(userId);
-        const ligasData = await getLigasUsuario(userId);
+        const userData = getUsuarioData(userId);
+        //const equipoData = await getEquipoFantasyUsuario(userId);
+        //const ligasData = await getLigasUsuario(userId);
         // ... obtener el resto de los datos (partidos, etc.)
 
         // Devuelve los datos específicos de ESE usuario
         res.status(200).json({
-            equipo: equipoData,
-            ligas: ligasData,
+            userData
             // ...
         });
     } catch (error) {

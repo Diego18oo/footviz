@@ -1226,3 +1226,12 @@ export async function findUserByEmail(email) {
   return rows[0]; // Devuelve el usuario si existe, o undefined si no
 }
 
+
+export async function getUsuarioData(id_usuario){
+    const [rows] = await pool.query(
+    'SELECT * from usuario where id_usuario = ?',
+    [id_usuario]
+  );
+  return rows[0];
+
+}

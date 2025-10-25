@@ -106,7 +106,7 @@
                             Nivel <strong id="user-level">7</strong>
                         </div>
                         <div>
-                            <span id="user-xp">179</span>/<span id="xp-next-level">200</span> xp
+                            <span id="user-xp">179</span>
                         </div>
                     </div>
                     <h2 id="username-display">Nombre</h2>
@@ -216,15 +216,18 @@
                     }
 
                     const data = await response.json();
-                    // ... poblar tu página con los datos recibidos (data.equipo, data.ligas, etc.) ...
+                    username = document.getElementById('username-display');
+                    username.innerHTML =`${data.username}`;
+                    userXp = document.getElementById('user-xp');
+                    userXp.innerHTML = `${data.xp_total}`;
+                    nivel = document.getElementById('user-level');
+                    nivel.innerHTML = `${data.nivel}`;
 
                 } catch (error) {
                     console.error("Error:", error);
-                    // Mostrar un mensaje de error genérico al usuario
                 }
             }
 
-            // Llamar a la función al cargar la página
             cargarDatosDashboard();
         </script>
 
