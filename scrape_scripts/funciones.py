@@ -3,8 +3,9 @@ import cloudinary
 import cloudinary.uploader
 import requests
 import time
+import numpy as np
+
 from playwright.async_api import async_playwright 
-# ... otros imports que ya tengas
 
 
 import LanusStats as ls
@@ -606,42 +607,61 @@ def insert_jugador(engine, data_jugador, conn, tabla_jugador):
     base_url_img = 'https://img.sofascore.com/api/v1/player/'
     id_sofascore = data_jugador['player']['id']
     nombre_pais = data_jugador['player']['country'].get('name', None)
-    if dob_timestamp is not None:
-        fecnac = datetime.utcfromtimestamp(dob_timestamp).strftime('%Y-%m-%d')
-    else: 
-        fecnac = None
-    insert_jugador_stmt = insert(tabla_jugador).values(
-        nombre = data_jugador['player']['name'],
-        dorsal = data_jugador['player'].get('jerseyNumber', None),
-        fec_nac = fecnac,
-        posicion = data_jugador['player'].get('position', None),
-        valor_mercado = data_jugador['player'].get('proposedMarketValue', None),
-        altura = data_jugador['player'].get('height', None),
-        pie_preferido = data_jugador['player'].get('preferredFoot', None),
-        id_sofascore = id_sofascore,
-        url_imagen = f"{base_url_img}{id_sofascore}/image",
-        pais = mapa_pais.get(nombre_pais)
-    )
+    try:
+        if dob_timestamp is not None:
+            fecnac = datetime.utcfromtimestamp(dob_timestamp).strftime('%Y-%m-%d')
+        else: 
+            fecnac = None
+        dorsal_raw = data_jugador['player'].get('jerseyNumber')
+        
+        # 2. Limpiar el valor
+        dorsal_final = None  # Empezamos asumiendo que será NULL
+        
+        # Comprobamos que no sea None Y que no sea un string vacío
+        if dorsal_raw is not None and dorsal_raw != '':
+            try:
+                # Intentamos convertirlo a entero
+                dorsal_final = int(dorsal_raw)
+            except ValueError:
+                # Si falla (ej: es "N/A" o algo raro), lo dejamos como None
+                print(f"Valor de dorsal no válido '{dorsal_raw}' para {data_jugador['player']['name']}. Se usará NULL.")
+                dorsal_final = None
+        insert_jugador_stmt = insert(tabla_jugador).values(
+            nombre = data_jugador['player']['name'],
+            dorsal = dorsal_final,
+            fec_nac = fecnac,
+            posicion = data_jugador['player'].get('position', None),
+            valor_mercado = data_jugador['player'].get('proposedMarketValue', None),
+            altura = data_jugador['player'].get('height', None),
+            pie_preferido = data_jugador['player'].get('preferredFoot', None),
+            id_sofascore = id_sofascore,
+            url_imagen = f"{base_url_img}{id_sofascore}/image",
+            pais = mapa_pais.get(nombre_pais)
+        )
 
-    update_jugador_stmt = insert_jugador_stmt.on_duplicate_key_update(
-        nombre=insert_jugador_stmt.inserted.nombre,
-        dorsal=insert_jugador_stmt.inserted.dorsal,
-        fec_nac=insert_jugador_stmt.inserted.fec_nac,
-        posicion=insert_jugador_stmt.inserted.posicion,
-        valor_mercado=insert_jugador_stmt.inserted.valor_mercado,
-        altura=insert_jugador_stmt.inserted.altura,
-        pie_preferido=insert_jugador_stmt.inserted.pie_preferido, 
-        id_sofascore=insert_jugador_stmt.inserted.id_sofascore, 
-        url_imagen=insert_jugador_stmt.inserted.url_imagen, 
-        pais=insert_jugador_stmt.inserted.pais, 
-    )
+        update_jugador_stmt = insert_jugador_stmt.on_duplicate_key_update(
+            nombre=insert_jugador_stmt.inserted.nombre,
+            dorsal=insert_jugador_stmt.inserted.dorsal,
+            fec_nac=insert_jugador_stmt.inserted.fec_nac,
+            posicion=insert_jugador_stmt.inserted.posicion,
+            valor_mercado=insert_jugador_stmt.inserted.valor_mercado,
+            altura=insert_jugador_stmt.inserted.altura,
+            pie_preferido=insert_jugador_stmt.inserted.pie_preferido, 
+            id_sofascore=insert_jugador_stmt.inserted.id_sofascore, 
+            url_imagen=insert_jugador_stmt.inserted.url_imagen, 
+            pais=insert_jugador_stmt.inserted.pais, 
+        )
 
-    conn.execute(update_jugador_stmt)
-    print(f"Jugador {data_jugador['player']['name']} insertado correctamente")
+        conn.execute(update_jugador_stmt)
+        print(f"Jugador {data_jugador['player']['name']} insertado correctamente")
+    except OSError:
+        print("Ocurrio un error al insertar este jugador")
+        return
+    
     return 
 
-def insert_update_plantilla_equipos(engine, driver, ligas, temporadas):
-    engine = create_engine('mysql+pymysql://root@localhost/footviz')
+def insert_update_plantilla_equipos(engine, driver, ligas, temporadas, db_url):
+    engine = create_engine(db_url)
     df_jugadores = pd.read_sql('SELECT id_jugador, nombre FROM jugador', engine)
     mapa_jugadores = dict(zip(df_jugadores['nombre'], df_jugadores['id_jugador']))
     df_equipos = pd.read_sql('SELECT id_equipo, nombre FROM equipo', engine)
@@ -1066,8 +1086,8 @@ def buscar_jugador(nombre_fbref, lista_jugadores, mapa_jugadores, mapa_alias, df
     
     return None
 
-def insert_estadistica_jugador(engine,  ids_para_scrapear_temp):
-    engine = create_engine('mysql+pymysql://root@localhost/footviz')
+def insert_estadistica_jugador(engine,  ids_para_scrapear_temp, db_url):
+    engine = create_engine(db_url)
     df_jugadores = pd.read_sql('SELECT id_jugador, nombre FROM jugador', engine)
     mapa_jugadores = dict(zip(df_jugadores['nombre'], df_jugadores['id_jugador'])) 
     df_alias = pd.read_sql('SELECT jugador, alias FROM alias_jugador', engine)
@@ -1939,4 +1959,172 @@ def transfer_to_database(engine, arreglo_url, df):
             print("Url actualizada exitosamente")
 
     return 
- 
+
+
+
+def procesar_puntos_partido(engine, id_partido):
+    """
+    Procesa todos los puntos fantasy de un partido completo en lote,
+    evitando consultas N+1 y usando vectorización.
+    """
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    tabla_puntos = meta.tables['puntos_jugador_jornada']
+
+    # --- 1. OBTENER DATOS (3 Consultas en total) ---
+
+    # Obtener info del partido (1 consulta)
+    df_partido = pd.read_sql(f'SELECT jornada FROM partido WHERE id_partido = {id_partido}', engine)
+    
+    if df_partido.empty:
+        print(f"Partido {id_partido} no encontrado. Saltando.")
+        return
+    jornada = df_partido['jornada'].iloc[0]
+
+    # Obtener TODOS los jugadores de campo con sus stats (1 consulta)
+    sql_jugadores = f"""
+        SELECT j.id_jugador, j.posicion, s.* FROM estadistica_jugador_partido s
+        JOIN jugador j ON s.jugador = j.id_jugador
+        WHERE s.partido = {id_partido}
+    """
+    df_jugadores = pd.read_sql(sql_jugadores, engine)
+    print(f"Hubo {len(df_jugadores)} jugadores de campo en el partido")
+
+    # Obtener TODOS los porteros con sus stats (1 consulta)
+    sql_porteros = f"""
+        SELECT j.id_jugador, j.posicion, s.* FROM estadistica_jugador_portero s
+        JOIN jugador j ON s.jugador = j.id_jugador
+        WHERE s.partido = {id_partido}
+    """
+    df_porteros = pd.read_sql(sql_porteros, engine)
+    print(f"Hubo {len(df_porteros)} porteros en el partido")
+
+    # --- 2. CALCULAR MVP (Una sola vez, en memoria) ---
+    
+    # Concatenar ratings de ambos dataframes
+    ratings_jug = df_jugadores[['id_jugador', 'rating']] if not df_jugadores.empty else pd.DataFrame(columns=['id_jugador', 'rating'])
+    ratings_por = df_porteros[['id_jugador', 'rating']] if not df_porteros.empty else pd.DataFrame(columns=['id_jugador', 'rating'])
+    all_ratings = pd.concat([ratings_jug, ratings_por], ignore_index=True)
+
+    id_mvp = None
+    if not all_ratings.empty:
+        # Encontrar el id_jugador con el rating máximo
+        id_mvp = all_ratings.loc[all_ratings['rating'].idxmax()]['id_jugador']
+        print(f"El mvp del partido fue: {id_mvp}")
+
+    # Lista para guardar todos los datos a insertar
+    data_para_insertar = []
+
+    # --- 3. PROCESAR JUGADORES (Vectorizado) ---
+    if not df_jugadores.empty:
+        # Empezar con una Serie de ceros
+        puntos = pd.Series(0, index=df_jugadores.index, dtype=int)
+
+        # Minutos
+        minutos_jug = df_jugadores['minutos'].fillna(0)
+        puntos += (minutos_jug > 59) * 2
+        puntos += ((minutos_jug > 0) & (minutos_jug <= 59)) * 1
+
+        # Goles (usando np.select para lógica condicional)
+        goles_jug = df_jugadores['goles'].fillna(0)
+        condiciones_goles = [
+            (df_jugadores['posicion'] == 'D'),
+            (df_jugadores['posicion'] == 'M')
+        ]
+        puntos_por_gol = [
+            goles_jug * 6, # Puntos para Defensas
+            goles_jug * 5  # Puntos para Medios
+        ]
+        # El default es 4 puntos (para delanteros u otros)
+        puntos += np.select(condiciones_goles, puntos_por_gol, default=goles_jug * 4)
+
+        # Asistencias
+        puntos += df_jugadores['asistencias'].fillna(0) * 3
+
+        # Tarjetas
+        puntos -= df_jugadores['tarjeta_amarilla'].fillna(0) * 1
+        puntos -= df_jugadores['tarjeta_roja'].fillna(0) * 3
+
+        # Recuperaciones
+        recuperaciones = df_jugadores['intercepciones'].fillna(0) + df_jugadores['despejes'].fillna(0)
+        puntos += (recuperaciones // 3) * 1  # Suma 1 por cada 3 recuperaciones
+
+        # Autogoles
+        puntos -= df_jugadores['autogoles'].fillna(0) * 3
+
+        # MVP
+        if id_mvp is not None:
+            puntos += (df_jugadores['id_jugador'] == id_mvp) * 3
+
+        # Asignar puntos finales al DataFrame
+        df_jugadores['puntos_fantasy'] = puntos
+
+        # Preparar datos para inserción en lote
+        for row in df_jugadores.itertuples():
+            data_para_insertar.append({
+                'id_jugador': int(row.id_jugador),
+                'id_partido': int(id_partido),
+                'jornada': int(jornada),
+                'puntos_fantasy': int(row.puntos_fantasy)
+            })
+
+    # --- 4. PROCESAR PORTEROS (Vectorizado) ---
+    if not df_porteros.empty:
+        puntos_p = pd.Series(0, index=df_porteros.index, dtype=int)
+
+        # Minutos
+        minutos_por = df_porteros['minutos'].fillna(0)
+        puntos_p += (minutos_por > 59) * 2
+        puntos_p += ((minutos_por > 0) & (minutos_por <= 59)) * 1
+
+        # Goles
+        puntos_p += df_porteros['goles'].fillna(0) * 10
+
+        # Asistencias
+        puntos_p += df_porteros['asistencias'].fillna(0) * 3
+        
+        # Penales atajados
+        puntos_p += df_porteros['penales_atajados'].fillna(0) * 6
+
+        # Atajadas
+        puntos_p += (df_porteros['atajadas'].fillna(0) // 3) * 1 # Suma 1 por cada 3 atajadas
+
+        # Tarjetas
+        puntos_p -= df_porteros['tarjeta_amarilla'].fillna(0) * 1
+        puntos_p -= df_porteros['tarjeta_roja'].fillna(0) * 3
+
+        # MVP
+        if id_mvp is not None:
+            puntos_p += (df_porteros['id_jugador'] == id_mvp) * 3
+
+        # Asignar al DF
+        df_porteros['puntos_fantasy'] = puntos_p
+
+        # Añadir a la lista de inserción
+        for row in df_porteros.itertuples():
+            data_para_insertar.append({
+                'id_jugador': int(row.id_jugador),
+                'id_partido': int(id_partido),
+                'jornada': int(jornada),
+                'puntos_fantasy': int(row.puntos_fantasy)
+            })
+
+    # --- 5. INSERTAR EN LOTE (Una sola transacción) ---
+    if data_para_insertar:
+        stmt = insert(tabla_puntos)
+        
+        # Define la parte ON DUPLICATE KEY UPDATE
+        update_stmt = stmt.on_duplicate_key_update(
+            jornada = stmt.inserted.jornada,
+            puntos_fantasy = stmt.inserted.puntos_fantasy
+        )
+        
+        # Ejecuta la inserción en lote
+        with engine.begin() as conn:
+            conn.execute(update_stmt, data_para_insertar)
+            
+        print(f"Partido {id_partido}: Insertados/Actualizados {len(data_para_insertar)} jugadores.")
+    else:
+        print(f"Partido {id_partido}: No se encontraron datos de jugadores para procesar.")
+
+    return

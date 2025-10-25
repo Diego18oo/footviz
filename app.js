@@ -1,14 +1,64 @@
 
 
 import express from 'express'
-import bcrypt from 'bcrypt'; // Importa bcrypt para hashear contraseñas
+import bcrypt from 'bcrypt'; 
+import jwt from 'jsonwebtoken';
+import cookieParser from 'cookie-parser';
 import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail} from './database.js'
  
 
 const app = express()  
 app.use(express.static("public"))
 app.use(express.json());
+app.use(cookieParser());
 
+const JWT_SECRET = process.env.JWT_SECRET || 'tu_super_secreto_de_desarrollo';
+
+function authenticateToken(req, res, next) {
+    // 1. Obtener el token de la cookie
+    const token = req.cookies.authToken;
+
+    // Si no hay token, el usuario no está autenticado
+    if (!token) {
+        return res.sendStatus(401); // 401 Unauthorized
+    }
+
+    // 2. Verificar la firma del token
+    jwt.verify(token, JWT_SECRET, (err, decodedPayload) => {
+        if (err) {
+            // Si el token es inválido o ha caducado
+            return res.sendStatus(403); // 403 Forbidden
+        }
+
+        // 3. ¡Token válido! Guardamos el ID del usuario en el objeto `req`
+        // para que las rutas posteriores sepan quién es.
+        req.userId = decodedPayload.userId;
+        next(); // Permite que la petición continúe a la ruta solicitada
+    });
+}
+
+app.get("/api/fantasy-dashboard", authenticateToken, async (req, res) => {
+    // Gracias al middleware, ahora tenemos acceso a req.userId
+    const userId = req.userId;
+    console.log(`Usuario ${userId} está pidiendo su dashboard.`);
+
+    try {
+        // Llama a funciones de database.js pasándoles el userId
+        const equipoData = await getEquipoFantasyUsuario(userId);
+        const ligasData = await getLigasUsuario(userId);
+        // ... obtener el resto de los datos (partidos, etc.)
+
+        // Devuelve los datos específicos de ESE usuario
+        res.status(200).json({
+            equipo: equipoData,
+            ligas: ligasData,
+            // ...
+        });
+    } catch (error) {
+        console.error(`Error al obtener dashboard para usuario ${userId}:`, error);
+        res.status(500).json({ error: "Error interno al obtener datos del dashboard" });
+    }
+});
 
 app.post("/api/login", async (req, res) => {
     try {
@@ -30,9 +80,21 @@ app.post("/api/login", async (req, res) => {
             return res.status(401).json({ error: "Credenciales inválidas" });
         }
 
-        // 3. ¡Éxito! La contraseña es correcta.
-        // Aquí es donde en el futuro crearías un Token JWT (RQNF3)
-        // Por ahora, solo enviamos un mensaje de éxito.
+        // 1. Crear el "payload" (la información dentro de la credencial)
+        const payload = { userId: user.id_usuario };
+
+        // 2. Firmar el token con tu secreto y ponerle una caducidad (ej. 1 hora)
+        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+
+        // 3. Enviar el token en una cookie segura
+        res.cookie('authToken', token, {
+            httpOnly: true, // El navegador no permite a JS leer esta cookie (seguridad XSS)
+            secure: process.env.NODE_ENV === 'production', // Solo enviar por HTTPS en producción
+            sameSite: 'strict', // Protección CSRF
+            maxAge: 3600000 // Tiempo de vida de la cookie en milisegundos (1 hora)
+        });
+
+        // 4. Enviar respuesta de éxito (sin el token en el cuerpo)
         res.status(200).json({ message: "Login exitoso", userId: user.id_usuario });
 
     } catch (error) {
@@ -46,8 +108,7 @@ app.post("/api/registrar-usuario", async (req, res) => {
         // req.body es el objeto JSON que enviaste desde el frontend
         const { username, correo, contrasenia, fecnac, pais, equipo_favorito } = req.body;
 
-        // --- Aquí van tus validaciones de backend (las más importantes) ---
-        // Ejemplo: ¿Ya existe el username?
+        // --- Aquí van tus validaciones de backend  ---
         const usuarioExistente = await buscarUsuarioPorUsername(username);
         if (usuarioExistente) {
             return res.status(409).json({ error: "El nombre de usuario ya está en uso." });
@@ -56,17 +117,15 @@ app.post("/api/registrar-usuario", async (req, res) => {
         if (correoExistente) {
             return res.status(409).json({ error: "El correo ya está en uso." });
         } 
-        // ... aquí irían el resto de tus validaciones (email, edad, etc.) ...
         
         // Hashea la contraseña ANTES de guardarla
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(contrasenia, saltRounds);
 
-        // Si todo está bien, crea el usuario
         const nuevoUsuario = await crearUsuario({
             username,
             correo,
-            hashed_password: hashedPassword, // ¡Guardamos la versión segura!
+            hashed_password: hashedPassword, 
             fecha_nacimiento: fecnac,
             pais_id: pais,
             equipo_favorito_id: equipo_favorito

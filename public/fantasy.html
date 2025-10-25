@@ -2,23 +2,231 @@
 <html>
     <head>
         <title>FootViz - Fantasy</title>
+        
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+        <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+        <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
         <style>
-            .contenedor-imagen {
-                width: 100vw;
-                height: 100vh;
-            }
+        /* --- Estilos Base y Layout Principal --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #1a1a2e; /* Azul oscuro de fondo */
+            color: #e0e0e0;
+            padding: 20px;
+        }
+        .dashboard-container {
+            display: grid;
+            /* Definimos las áreas de la cuadrícula */
+            grid-template-areas:
+                "header header header"
+                "main-left main-right main-right"
+                "main-left mvp graph";
+            grid-template-columns: 1fr 1fr 1fr; /* Tres columnas flexibles */
+            grid-template-rows: auto 1fr auto; /* Filas: header auto, contenido flexible, pie auto */
+            gap: 20px;
+            max-width: 1400px; /* O el ancho que prefieras */
+            margin: 0 auto;
+            min-height: calc(100vh - 40px);
+        }
 
-            .contenedor-imagen img {
-                width: 100%; /* Asegura que la imagen ocupe todo el ancho del contenedor */
-                height: 100%; /* Asegura que la imagen ocupe todo el alto del contenedor */
-                object-fit: cover; /* Mantiene la relación de aspecto y recorta si es necesario */
+        /* --- Ubicación de cada sección en la cuadrícula --- */
+        .fantasy-header { grid-area: header; }
+        .main-left-column { grid-area: main-left; display: flex; flex-direction: column; gap: 20px; }
+        .main-right-column { grid-area: main-right; display: flex; flex-direction: column; gap: 20px; }
+        #mvp-section { grid-area: mvp; }
+        #graph-section { grid-area: graph; }
+
+        /* --- Estilos básicos para las "Tarjetas" --- */
+        .card {
+            background-color: #1e1e3f; /* Azul un poco más claro */
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        h2, h3 { color: #ffffff; margin-bottom: 15px; }
+
+        /* --- Estilos específicos del Header --- */
+        .fantasy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #1e1e3f;
+            padding: 15px 25px;
+            border-radius: 12px;
+            margin-bottom: 20px; /* Separación extra */
+        }
+        .user-profile-summary { display: flex; align-items: center; gap: 15px; }
+        .user-level-xp { text-align: right; }
+        .user-icons { display: flex; gap: 10px; font-size: 1.5rem; }
+        .user-icons ion-icon { cursor: pointer; } /* Para indicar que son clickables */
+
+        /* --- Otros estilos placeholder --- */
+        #stadium-banner img { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; }
+        #team-display-visual { height: 200px; background-color: #2a2a4a; border-radius: 8px; display: flex; justify-content: center; align-items: center; }
+        #mvp-section img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin: 0 auto 10px auto; display: block; }
+        #points-chart { max-width: 100%; background-color: #2a2a4a; border-radius: 8px; }
+        .league-table table { width: 100%; text-align: center; } /* Tablas de liga */
+        .league-table th, .league-table td { padding: 5px; }
+        #fixtures-list button { background-color: #4a69ff; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; }
+        #fixtures-list li { list-style: none; margin-bottom: 5px; }
+
+        /* --- Responsividad Básica --- */
+        @media (max-width: 900px) {
+            .dashboard-container {
+                grid-template-areas:
+                    "header"
+                    "main-left"
+                    "main-right"
+                    "mvp"
+                    "graph";
+                grid-template-columns: 1fr; /* Una sola columna */
+                grid-template-rows: auto;
             }
+            .main-right-column { flex-direction: row; flex-wrap: wrap; } /* Ligas una al lado de la otra */
+            .league-table { flex-basis: calc(50% - 10px); }
+        }
+         @media (max-width: 600px) {
+             .main-right-column { flex-direction: column; } /* Ligas una debajo de otra */
+             .league-table { flex-basis: 100%; }
+             .fantasy-header { flex-direction: column; gap: 10px; }
+         }
         </style>
     </head>
     <body>
-        <div class="contenedor-imagen">
-            <img src="https://www.nicepng.com/png/detail/152-1526179_website-under-construction-png-graphic-transparent-website-under.png" alt="Imagen de fondo">
+        <div class="dashboard-container">
+
+            <header class="fantasy-header">
+                <div class="user-profile-summary">
+                    <ion-icon name="extension-puzzle-outline" title="Mis Piezas"></ion-icon>
+                    <div class="user-level-xp"> 
+                        <div>
+                            Nivel <strong id="user-level">7</strong>
+                        </div>
+                        <div>
+                            <span id="user-xp">179</span>/<span id="xp-next-level">200</span> xp
+                        </div>
+                    </div>
+                    <h2 id="username-display">Nombre</h2>
+                </div>
+                <div class="user-icons">
+                    <ion-icon name="trophy-outline" title="Mis Logros"></ion-icon>
+                    <ion-icon name="person-circle-outline" title="Mi Perfil"></ion-icon>
+                </div>
+            </header>
+
+            <div class="main-left-column">
+                <section id="stadium-banner" class="card">
+                    <img src="placeholder-stadium.jpg" alt="Banner Estadio">
+                </section>
+
+                <section id="my-team-section" class="card">
+                    <h3>Mi Equipo</h3> <div id="team-display-visual">
+                        <p>Aqui aparecera el equipo</p>
+                    </div>
+                    <div id="team-controls" style="margin-top: 15px; text-align: center;">
+                        <span>Presupuesto: <strong id="budget-remaining">-- M</strong></span> |
+                        <span>Fichajes: <strong id="transfers-remaining">--</strong></span>
+                        <p>Deadline: <strong id="deadline-timer">En X hr Y min</strong></p> 
+                        <button onclick="window.location.href='mi-equipo.html'">Gestionar Equipo</button>
+                    </div>
+                </section>
+            </div>
+
+            <div class="main-right-column">
+                <section id="fixtures-section" class="card">
+                    <button id="view-all-fixtures-btn">Ver próximos partidos</button>
+                    <h3>Partidos Jornada <span id="current-gameweek-fixtures">X</span></h3> 
+                    <ul id="fixtures-list">
+                        <li>Barcelona vs Osasuna</li>
+                        <li>Real Madrid vs Cadiz</li>
+                    </ul>
+                </section>
+
+                <div class="league-table card" id="global-league">
+                    <h3>Liga Global</h3> 
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Nombre</th>
+                                <th>Pts</th>
+                            </tr>
+                        </thead>
+                        <tbody id="global-league-ranking">
+                            <tr>
+                                <td>132</td>
+                                <td>Usuario Pepito</td>
+                                <td>82</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="league-table card" id="local-league">
+                    <h3>Liga Local (<span id="local-league-country">País</span>)</h3> <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Nombre</th>
+                                <th>Pts</th>
+                            </tr>
+                        </thead>
+                        <tbody id="local-league-ranking">
+                            <tr>
+                                <td>12</td>
+                                <td>Uusario Pepito</td>
+                                <td>82</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <section id="mvp-section" class="card">
+                <h2>MVP de la Jornada <span id="mvp-gameweek">X</span></h2> <img id="mvp-image" src="placeholder-player.jpg" alt="MVP Jugador">
+                <p><strong id="mvp-name">Nombre Jugador</strong> (<span id="mvp-club">Club</span>)</p>
+                <p><span id="mvp-points">X</span> Puntos</p>
+            </section>
+
+            <section id="graph-section" class="card">
+                <h2>Puntuación en las últimas jornadas</h2> 
+                <canvas id="points-chart"></canvas>
+                <p id="points-graph-placeholder" style="display: none;">(Gráfica aparecerá aquí)</p>
+            </section>
+
         </div>
+
+        <script>
+            async function cargarDatosDashboard() {
+                try {
+                    const response = await fetch('/api/fantasy-dashboard'); // El navegador envía la cookie
+
+                    if (response.status === 401 || response.status === 403) {
+                        // ¡Sesión inválida o expirada!
+                        alert("Tu sesión ha expirado. Por favor, inicia sesión de nuevo.");
+                        window.location.href = '/login.html'; // Redirigir al login
+                        return;
+                    }
+
+                    if (!response.ok) {
+                        throw new Error('Error al cargar los datos del dashboard.');
+                    }
+
+                    const data = await response.json();
+                    // ... poblar tu página con los datos recibidos (data.equipo, data.ligas, etc.) ...
+
+                } catch (error) {
+                    console.error("Error:", error);
+                    // Mostrar un mensaje de error genérico al usuario
+                }
+            }
+
+            // Llamar a la función al cargar la página
+            cargarDatosDashboard();
+        </script>
 
     </body>
 </html>
