@@ -264,14 +264,17 @@
                         const response = await fetch(`/api/ultimos-partidos/${endpoints[ligaSeleccionada]}/${jornadaSeleccionada}`);
                         const partidos = await response.json();
                         const hoyNormalizada = new Date();
+
                         hoyNormalizada.setHours(0, 0, 0, 0);
+                        const tomorrow = new Date(hoyNormalizada);
+                        tomorrow.setDate(hoyNormalizada.getDate() + 1);
 
                         for (const partido of partidos) {
                             const fechaPartidoNormalizada = new Date(partido.fecha);
                             fechaPartidoNormalizada.setHours(0, 0, 0, 0);
                             const fila = document.createElement("tr");
 
-                            if (hoyNormalizada > fechaPartidoNormalizada) {
+                            if (tomorrow > fechaPartidoNormalizada) {
                                 const resResponse = await fetch(`/api/resultado-partido/${partido.id_partido}`); 
                                 const resultado = await resResponse.json();
                                 fila.innerHTML = `

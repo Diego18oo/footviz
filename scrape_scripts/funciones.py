@@ -9,7 +9,7 @@ from playwright.async_api import async_playwright
 
 
 import LanusStats as ls
-from sqlalchemy import create_engine, MetaData, Table
+from sqlalchemy import create_engine, MetaData, Table, text
 from sqlalchemy.dialects.mysql import insert
 from scrape_sofa import get_sofascore_api_data, init_driver, get_all_teams_stats_fbref, get_all_urls_fbref, get_all_players_stats_fbref
 #from scrape import links_totales 
@@ -1963,6 +1963,7 @@ def transfer_to_database(engine, arreglo_url, df):
 
 
 def procesar_puntos_partido(engine, id_partido):
+
     """
     Procesa todos los puntos fantasy de un partido completo en lote,
     evitando consultas N+1 y usando vectorización.
@@ -2128,3 +2129,110 @@ def procesar_puntos_partido(engine, id_partido):
         print(f"Partido {id_partido}: No se encontraron datos de jugadores para procesar.")
 
     return
+
+def actualizar_valor_mercado_fantasy(engine):
+    """
+    Actualiza el valor de mercado de TODOS los jugadores fantasy
+    basado en la fórmula: V = Vbase + (W1*Rendimiento) + (W2*Popularidad)
+    """
+    
+    # --- 1. Definir Constantes ---
+    W1_RENDIMIENTO = 0.75
+    W2_POPULARIDAD = 0.25
+    DIVISOR_VALOR_BASE = 15000000.0  # Usamos float para asegurar división decimal
+
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    tabla_valor_fantasy = meta.tables['valor_jugador_fantasy']
+
+    # --- 2. Crear la consulta SQL para obtener TODOS los datos ---
+    # Esta consulta une las 3 tablas necesarias:
+    # 1. jugador (para Vbase = valor_mercado / DIVISOR)
+    # 2. valor_jugador_fantasy (para Popularidad)
+    # 3. puntos_jugador_jornada (para calcular AVG(puntos_fantasy) como Rendimiento)
+    
+    sql_query = text(f"""
+        SELECT
+            j.id_jugador,
+            j.valor_mercado,
+            COALESCE(v.popularidad, 0) as popularidad,
+            COALESCE(r.rendimiento, 0) as rendimiento
+        FROM
+            jugador j
+        LEFT JOIN
+            valor_jugador_fantasy v ON j.id_jugador = v.id_jugador
+        LEFT JOIN
+            (
+                SELECT
+                    id_jugador,
+                    AVG(puntos_fantasy) as rendimiento
+                FROM
+                    puntos_jugador_jornada
+                GROUP BY
+                    id_jugador
+            ) r ON j.id_jugador = r.id_jugador
+    """)
+
+    # --- 3. Ejecutar consulta y cargar en Pandas ---
+    df_data = pd.read_sql(sql_query, engine)
+    
+    if df_data.empty:
+        print("No se encontraron jugadores para actualizar.")
+        return
+ 
+    # --- 4. Limpiar datos (por si acaso) ---
+    # COALESCE en SQL ya debería haber hecho esto, pero es una buena práctica
+    df_data['valor_mercado'] = df_data['valor_mercado'].fillna(0)
+    df_data['popularidad'] = df_data['popularidad'].fillna(0)
+    df_data['rendimiento'] = df_data['rendimiento'].fillna(0)
+
+    # --- 5. Calcular el nuevo valor (Vectorizado) ---
+    
+    # Vbase = Valor inicial del jugador
+    v_base = df_data['valor_mercado'] / DIVISOR_VALOR_BASE
+    
+    # Rendimiento ponderado (W1 * Rendimiento)
+    rendimiento_pond = W1_RENDIMIENTO * df_data['rendimiento']
+    
+    # Popularidad ponderada (W2 * Popularidad)
+    popularidad_pond = W2_POPULARIDAD * df_data['popularidad']
+    
+    # Vjugador = Vbase + (W1 * Rendimiento) + (W2 * Popularidad)
+    v_jugador_nuevo = v_base + rendimiento_pond + popularidad_pond
+    
+    # Asignamos el valor nuevo al DataFrame
+    # Redondeamos a 2 decimales, como lo pide tu tabla DECIMAL(5,2)
+    df_data['valor_actual_nuevo'] = round(v_jugador_nuevo, 2)
+
+    # --- 6. Preparar datos para la inserción en lote ---
+    data_para_insertar = []
+    for row in df_data.itertuples():
+        # ¡Importante! Convertimos a float, no a int, 
+        # para no perder los decimales de tu columna DECIMAL(5,2)
+        data_para_insertar.append({
+            'id_jugador': int(row.id_jugador),
+            'valor_actual': float(row.valor_actual_nuevo)
+            # No necesitamos pasar 'popularidad' aquí, 
+            # ya que solo estamos actualizando 'valor_actual'
+        }) 
+
+    # --- 7. Ejecutar la actualización en lote ---
+    if data_para_insertar:
+        stmt = insert(tabla_valor_fantasy)
+        
+        # Define la parte ON DUPLICATE KEY UPDATE
+        # Esto solo actualizará 'valor_actual' si el 'id_jugador' ya existe
+        update_stmt = stmt.on_duplicate_key_update(
+            valor_actual = stmt.inserted.valor_actual
+        )
+        
+        # Ejecuta la inserción en lote
+        with engine.begin() as conn:
+            conn.execute(update_stmt, data_para_insertar)
+            
+        print(f"Valor fantasy actualizado para {len(data_para_insertar)} jugadores.")
+    else:
+        print("Fallo mi loco: No hubo datos para insertar.")
+    
+    return
+    

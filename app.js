@@ -44,16 +44,13 @@ app.get("/api/fantasy-dashboard", authenticateToken, async (req, res) => {
 
     try {
         // Llama a funciones de database.js pasándoles el userId
-        const userData = getUsuarioData(userId);
+        const userData = await getUsuarioData(userId);
         //const equipoData = await getEquipoFantasyUsuario(userId);
         //const ligasData = await getLigasUsuario(userId);
         // ... obtener el resto de los datos (partidos, etc.)
 
         // Devuelve los datos específicos de ESE usuario
-        res.status(200).json({
-            userData
-            // ...
-        });
+        res.status(200).json(userData);
     } catch (error) {
         console.error(`Error al obtener dashboard para usuario ${userId}:`, error);
         res.status(500).json({ error: "Error interno al obtener datos del dashboard" });
