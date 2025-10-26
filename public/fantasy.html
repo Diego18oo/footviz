@@ -124,13 +124,13 @@
 
                 <section id="my-team-section" class="card">
                     <h3>Mi Equipo</h3> <div id="team-display-visual">
-                        <p>Aqui aparecera el equipo</p>
+                        <p id="verificar-equipo-text">Aqui aparecera el equipo</p>
                     </div>
                     <div id="team-controls" style="margin-top: 15px; text-align: center;">
                         <span>Presupuesto: <strong id="budget-remaining">-- M</strong></span> |
                         <span>Fichajes: <strong id="transfers-remaining">--</strong></span>
                         <p>Deadline: <strong id="deadline-timer">En X hr Y min</strong></p> 
-                        <button onclick="window.location.href='mi-equipo.html'">Gestionar Equipo</button>
+                        <button onclick="window.location.href='mi-equipo.html'" id="manage-team-button">Gestionar Equipo</button>
                     </div>
                 </section>
             </div>
@@ -214,20 +214,40 @@
                     if (!response.ok) {
                         throw new Error('Error al cargar los datos del dashboard.');
                     }
-
+                    
                     const data = await response.json();
+                    userData = data.userData;
                     username = document.getElementById('username-display');
-                    username.innerHTML =`${data.username}`;
+                    username.innerHTML =`${userData.username}`;
                     userXp = document.getElementById('user-xp');
-                    userXp.innerHTML = `${data.xp_total} XP`;
+                    userXp.innerHTML = `${userData.xp_total} XP`;
                     nivel = document.getElementById('user-level');
-                    nivel.innerHTML = `${data.nivel}`;
+                    nivel.innerHTML = `${userData.nivel}`;
+
+                    equipoData = data.equipoData;
+                    textoVerifiacion = document.getElementById('verificar-equipo-text');
+                    botonManejador = document.getElementById('manage-team-button');
+                    if (equipoData) {
+                        textoVerifiacion.innerHTML = "Aqui aparecera el equipo del usuario";
+                        botonManejador.innerHTML = "Gestionar Equipo";
+
+                    }else{
+                        textoVerifiacion.innerHTML = "Accede a Crear Equipo";
+                        botonManejador.innerHTML = "Crear Equipo";
+                        botonManejador.onclick = function() {
+                            window.location.href='crear-equipo.html'
+                        };
+
+                    }
+
 
                 } catch (error) {
                     console.error("Error:", error);
                 }
-            }
+            } 
 
+
+            
             cargarDatosDashboard();
         </script>
 

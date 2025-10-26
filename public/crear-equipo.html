@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>FootViz - Crea tu Equipo Fantasy</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+        <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+        <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+        <style>
+            /* --- Estilos Base y Layout Principal --- */
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Poppins', sans-serif;
+                background-color: #0f172a; /* Azul muy oscuro, similar a la imagen */
+                color: #e0e0e0;
+                padding: 20px;
+                display: flex;
+                flex-direction: column;
+                min-height: 100vh;
+            }
+
+            .team-creation-container {
+                display: flex;
+                gap: 20px;
+                flex-grow: 1; /* Ocupa el espacio disponible */
+                max-width: 1600px;
+                margin: 20px auto;
+                width: 100%;
+            }
+
+            /* --- Columna Izquierda: Campo y Equipo --- */
+            .pitch-column {
+                flex: 1; /* Ocupa la mitad izquierda */
+                display: flex;
+                flex-direction: column;
+                background-color: #1e293b; /* Azul grisáceo oscuro */
+                border-radius: 12px;
+                padding: 20px;
+            }
+            .pitch-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+            }
+            .pitch-header h2 { color: #fff; font-size: 1.3rem; }
+            .auto-complete-btn {
+                background-color: #3b82f6; /* Azul brillante */
+                color: white;
+                border: none;
+                padding: 8px 15px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 0.9rem;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+            }
+            .pitch-advice { font-size: 0.8rem; color: #94a3b8; margin-bottom: 20px; }
+            .pitch-display {
+                background-color: #047857; /* Verde campo */
+                border-radius: 8px;
+                padding: 20px;
+                aspect-ratio: 7 / 10; /* Proporción similar a un campo */
+                display: grid;
+                grid-template-rows: repeat(4, 1fr); /* 4 filas para POR, DEF, CEN, DEL */
+                gap: 10px;
+                position: relative; /* Para líneas si las añades */
+            }
+            .pitch-row { display: flex; justify-content: space-around; align-items: center; }
+            .player-slot {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                cursor: pointer;
+                padding: 5px;
+                border-radius: 4px;
+                transition: background-color 0.2s;
+            }
+            .player-slot:hover { background-color: rgba(255, 255, 255, 0.1); }
+            .player-slot img { width: 40px; height: auto; margin-bottom: 3px; } /* Camiseta */
+            .player-name { font-size: 0.7rem; color: #fff; background-color: rgba(0,0,0,0.5); padding: 1px 4px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60px; }
+            .player-price { font-size: 0.6rem; color: #cbd5e1; }
+
+            /* --- Columna Derecha: Selección de Jugadores --- */
+            .player-selection-column {
+                flex: 1; /* Ocupa la mitad derecha */
+                background-color: #1e293b;
+                border-radius: 12px;
+                padding: 20px;
+                display: flex;
+                flex-direction: column;
+            }
+            .filters { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+            .filters select, .filters input[type="text"] {
+                background-color: #334155;
+                color: #e0e0e0;
+                border: 1px solid #475569;
+                border-radius: 6px;
+                padding: 8px 10px;
+                font-size: 0.9rem;
+            }
+            .filters input[type="text"] { flex-grow: 1; max-width: 200px; } /* Campo de búsqueda */
+            .player-list-container {
+                flex-grow: 1; /* Ocupa el espacio restante */
+                overflow-y: auto; /* Permite scroll si hay muchos jugadores */
+            }
+            .player-list table { width: 100%; border-collapse: collapse; }
+            .player-list th, .player-list td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #334155; font-size: 0.85rem; }
+            .player-list th { color: #94a3b8; font-weight: 400; }
+            .player-list td img { width: 24px; height: 24px; border-radius: 50%; vertical-align: middle; margin-right: 8px; }
+            .player-list tbody tr:hover { background-color: #334155; cursor: pointer; }
+            .add-player-btn { background: none; border: none; color: #3b82f6; font-size: 1.2rem; cursor: pointer; } /* Botón '+' visual */
+
+            /* --- Barra Inferior: Resumen y Continuar --- */
+            .summary-bar {
+                background-color: #1e293b;
+                border-radius: 12px;
+                padding: 15px 25px;
+                margin-top: 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .summary-info span { margin-right: 20px; font-size: 0.9rem; }
+            .summary-info strong { color: #fff; }
+            .continue-btn {
+                background-color: #059669; /* Verde */
+                color: white;
+                border: none;
+                padding: 10px 25px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 1rem;
+                font-weight: 600;
+            }
+            .continue-btn:disabled { background-color: #475569; cursor: not-allowed; } /* Estilo si no se puede continuar */
+            .pagination-controls {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 15px 0;
+                gap: 10px;
+            }
+            .pagination-controls button {
+                background-color: #334155;
+                color: #e0e0e0;
+                border: 1px solid #475569;
+                border-radius: 4px;
+                padding: 5px 10px;
+                cursor: pointer;
+                transition: background-color 0.2s;
+            }
+            .pagination-controls button:hover:not(:disabled) {
+                background-color: #475569;
+            }
+            .pagination-controls button:disabled {
+                cursor: not-allowed;
+                opacity: 0.5;
+            }
+            .pagination-controls .page-number {
+                padding: 5px 8px;
+                cursor: pointer;
+                border-radius: 4px;
+                transition: background-color 0.2s;
+            }
+            .pagination-controls .page-number:hover {
+                background-color: #475569;
+            }
+            .pagination-controls .page-number.active {
+                background-color: #3b82f6;
+                color: white;
+                font-weight: 600;
+            }
+
+        </style>
+    </head>
+    <body>
+        <div class="summary-bar">
+            <div class="summary-info">
+                <span>Jugadores Restantes: <strong id="players-remaining">15</strong>/15</span>
+                <span>Presupuesto: <strong id="budget-display">$100m</strong></span>
+            </div>
+            <button class="continue-btn" id="continue-button" disabled>Continuar</button>
+        </div>
+        <div class= "team-creation-container">
+
+            <div class="pitch-column">
+                <div class="pitch-header">
+                    <h2>Elige tu equipo</h2>
+                    <button class="auto-complete-btn" id="auto-complete">
+                        <ion-icon name="shuffle-outline"></ion-icon> Auto-completar
+                    </button>
+                </div>
+                <p class="pitch-advice">CONSEJO: Puedes autocompletar tu plantilla ahora y afinarla antes del primer partido</p>
+
+                <div class="pitch-display" id="pitch">
+                    <div class="pitch-row">
+                        <div class="player-slot" data-position="F" data-slot="1">
+                            <ion-icon name="shirt-outline"></ion-icon>
+                            <span class="player-name">(Vacío)</span>
+                            <span class="player-price">--M</span>
+                        </div>
+                        <div class="player-slot" data-position="F" data-slot="2">
+                            <ion-icon name="shirt-outline"></ion-icon>
+                            <span class="player-name">(Vacío)</span>
+                            <span class="player-price">--M</span>
+                        </div>
+                        <div class="player-slot" data-position="F" data-slot="3">
+                            <ion-icon name="shirt-outline"></ion-icon>
+                            <span class="player-name">(Vacío)</span>
+                            <span class="player-price">--M</span>
+                        </div>
+                    </div>
+                    <div class="pitch-row">
+                        <div class="player-slot" data-position="M" data-slot="1">
+                            <ion-icon name="shirt-outline"></ion-icon>
+                            <span class="player-name">(Vacío)</span><span class="player-price">--M</span></div>
+                        <div class="player-slot" data-position="M" data-slot="2"><ion-icon name="shirt-outline"></ion-icon><span class="player-name">(Vacío)</span><span class="player-price">--M</span></div>
+                        <div class="player-slot" data-position="M" data-slot="3"><ion-icon name="shirt-outline"></ion-icon><span class="player-name">(Vacío)</span><span class="player-price">--M</span></div>
+                        <div class="player-slot" data-position="M" data-slot="4"><ion-icon name="shirt-outline"></ion-icon><span class="player-name">(Vacío)</span><span class="player-price">--M</span></div>
+                        <div class="player-slot" data-position="M" data-slot="5"><ion-icon name="shirt-outline"></ion-icon><span class="player-name">(Vacío)</span><span class="player-price">--M</span></div>
+                    </div>
+                    <div class="pitch-row">
+                        <div class="player-slot" data-position="D" data-slot="1"><ion-icon name="shirt-outline"></ion-icon><span class="player-name">(Vacío)</span><span class="player-price">--M</span></div>
+                        <div class="player-slot" data-position="D" data-slot="2"><ion-icon name="shirt-outline"></ion-icon><span class="player-name">(Vacío)</span><span class="player-price">--M</span></div>
+                        <div class="player-slot" data-position="D" data-slot="3"><ion-icon name="shirt-outline"></ion-icon><span class="player-name">(Vacío)</span><span class="player-price">--M</span></div>
+                        <div class="player-slot" data-position="D" data-slot="4"><ion-icon name="shirt-outline"></ion-icon><span class="player-name">(Vacío)</span><span class="player-price">--M</span></div>
+                        <div class="player-slot" data-position="D" data-slot="5"><ion-icon name="shirt-outline"></ion-icon><span class="player-name">(Vacío)</span><span class="player-price">--M</span></div>
+                    </div>
+                    <div class="pitch-row">
+                        <div class="player-slot" data-position="G" data-slot="1"><ion-icon name="shirt-outline"></ion-icon><span class="player-name">(Vacío)</span><span class="player-price">--M</span></div>
+                    <div class="player-slot" data-position="G" data-slot="2"><ion-icon name="shirt-outline"></ion-icon><span class="player-name">(Vacío)</span><span class="player-price">--M</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="player-selection-column">
+                <div class="filters">
+                    <select id="position-filter">
+                        <option value="ALL">Posición: Todos</option>
+                        <option value="G">Porteros (POR)</option>
+                        <option value="D">Defensas (DEF)</option>
+                        <option value="M">Centrocampistas (CEN)</option>
+                        <option value="F">Delanteros (DEL)</option>
+                    </select>
+                    <select id="team-filter">
+                        <option value="ALL">Equipo: Todos</option>
+                        </select>
+                    <select id="price-filter">
+                        <option value="ALL">Precio: Todos</option>
+                        </select>
+                    <input type="text" id="search-player" placeholder="Buscar jugador...">
+                    <button id="search-btn"><ion-icon name="search-outline"></ion-icon></button>
+                </div>
+
+                <div class="player-list-container">
+                    <table class="player-list" id="player-list-table">
+                        <thead>
+                            <tr>
+                                <th>Jugador</th>
+                                <th>Equipo</th>
+                                <th>Precio</th>
+                                <th>Popularidad</th> 
+                                <th>Pts</th> 
+                                <th></th> 
+                            </tr>
+                        </thead>
+                        <tbody id="player-list-body">
+                            
+                        </tbody>
+                    </table>
+                    <div class="pagination-controls" id="pagination">
+                        <button id="prev-page" disabled>&laquo; Anterior</button>
+                        <span id="page-numbers"></span> <button id="next-page">Siguiente &raquo;</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        
+        
+        <script>
+            let allPlayers = []; // Aquí guardaremos TODOS los jugadores
+            let currentPage = 1;
+            const playersPerPage = 15; // ¿Cuántos jugadores mostrar por página?
+            let filteredPlayers = [];
+            let selectedPlayers = []; // Array to store the IDs of players currently in the team
+            let currentBudget = 100.0; // Starting budget
+
+            // --- Elementos del DOM ---
+            const tbodyListaJugs = document.getElementById('player-list-body');
+            const paginationContainer = document.getElementById('pagination');
+            const prevButton = document.getElementById('prev-page');
+            const nextButton = document.getElementById('next-page');
+            const pageNumbersContainer = document.getElementById('page-numbers');
+            const pitchSlots = document.querySelectorAll('.player-slot');
+            const agregarBoton  = document.querySelectorAll('.add-player-btn');
+            const positionFilter = document.getElementById('position-filter');
+            const teamFilter = document.getElementById('team-filter');
+            const priceFilter = document.getElementById('price-filter');
+            const searchInput = document.getElementById('search-player');
+            const searchButton = document.getElementById('search-btn'); // Si usas el botón
+            const playersRemainingDisplay = document.getElementById('players-remaining');
+            const budgetDisplay = document.getElementById('budget-display');
+            const continueButton = document.getElementById('continue-button');
+            const pitchDisplay = document.getElementById('pitch');
+            // Aquí irá toda la lógica:
+            // 1. Cargar la lista inicial de jugadores (fetch a un endpoint como /api/fantasy/available-players)
+            function applyFiltersAndDisplay() {
+                // Obtener los valores actuales de los filtros
+                const selectedPosition = positionFilter.value;
+                const selectedTeamId = teamFilter.value; // Asume que el value es el id_equipo
+                const selectedPrice = priceFilter.value; // Necesitarás lógica para interpretar esto
+                const searchTerm = searchInput.value.toLowerCase().trim();
+
+                // Empezar con la lista completa
+                filteredPlayers = allPlayers;
+
+                // Aplicar filtro de Posición
+                if (selectedPosition !== "ALL") {
+                    filteredPlayers = filteredPlayers.filter(player => player.posicion === selectedPosition);
+                }
+
+                // Aplicar filtro de Equipo
+                if (selectedTeamId !== "ALL") {
+                    // Asegúrate de que 'id_equipo' exista en tus objetos de jugador
+                    filteredPlayers = filteredPlayers.filter(player => player.id_equipo == selectedTeamId); // Usamos == por si uno es string y otro número
+                }
+
+                // Aplicar filtro de Precio (¡Ejemplo simple! Adapta según tus <option>)
+                if (selectedPrice !== "ALL") {
+                    // Ejemplo: si tus values son como "0-5", "5-7", "7+"
+                    if (selectedPrice.includes('-')) {
+                        const [min, max] = selectedPrice.split('-').map(Number);
+                        filteredPlayers = filteredPlayers.filter(player => player.valor_actual >= min && player.valor_actual < max);
+                    } else if (selectedPrice.endsWith('+')) {
+                        const min = Number(selectedPrice.replace('+', ''));
+                        filteredPlayers = filteredPlayers.filter(player => player.valor_actual >= min);
+                    }
+                    // Puedes añadir más lógica si usas valores exactos
+                }
+
+                // Aplicar filtro de Búsqueda por Nombre
+                if (searchTerm !== "") {
+                    filteredPlayers = filteredPlayers.filter(player =>
+                        player.nombre_jugador.toLowerCase().includes(searchTerm)
+                    );
+                }
+
+                // ¡Importante! Reinicia a la página 1 y muestra los resultados filtrados
+                displayPage(1);
+            }
+
+            function displayPage(page) {
+                currentPage = page;
+                tbodyListaJugs.innerHTML = ""; // Limpia la tabla actual
+
+                // Calcula qué jugadores mostrar
+                const startIndex = (page - 1) * playersPerPage;
+                const endIndex = startIndex + playersPerPage;
+                const playersToShow = filteredPlayers.slice(startIndex, endIndex);
+                // Renderiza solo esos jugadores
+                playersToShow.forEach(jugador => {
+                    const fila = document.createElement("tr");
+                    // Asignar un data-id para identificar al jugador al hacer clic en '+'
+                    fila.dataset.playerId = jugador.id_jugador;
+                    fila.innerHTML = `
+                        <td><img src="${jugador.url_imagen_jugador || 'placeholder-player-face.png'}" alt="Jugador"> ${jugador.nombre_jugador}</td>
+                        <td><img src="${jugador.img_equipo || 'placeholder-player-face.png'}" alt="Equipo"> </td>
+                        <td>$${jugador.valor_actual}M</td>
+                        <td>${jugador.popularidad} %</td>
+                        <td>${jugador.total_puntos_fantasy}</td>
+                        <td><button class="add-player-btn" title="Añadir jugador"><ion-icon name="add-circle-outline"></ion-icon></button></td>
+                    `;
+                    tbodyListaJugs.appendChild(fila);
+                });
+
+                updatePaginationButtons();
+                updatePageNumbers();
+                updatePlayerListUI();
+            }
+
+            // --- Función para ACTUALIZAR el estado de los botones Anterior/Siguiente ---
+            function updatePaginationButtons() {
+                const totalPages = Math.ceil(filteredPlayers.length / playersPerPage);
+                prevButton.disabled = currentPage === 1;
+                nextButton.disabled = currentPage === totalPages;
+            }
+
+            // --- Función para GENERAR los números de página ---
+            function updatePageNumbers() {
+                pageNumbersContainer.innerHTML = ""; // Limpia los números anteriores
+                const totalPages = Math.ceil(filteredPlayers.length / playersPerPage);
+
+                // Lógica para mostrar solo algunos números si hay muchas páginas (opcional)
+                const maxPagesToShow = 5;
+                let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+                let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+                if (endPage - startPage + 1 < maxPagesToShow) {
+                    startPage = Math.max(1, endPage - maxPagesToShow + 1);
+                }
+                
+                // Botón '...' al principio
+                if (startPage > 1) {
+                    const firstPage = document.createElement('span');
+                    firstPage.textContent = '1';
+                    firstPage.classList.add('page-number');
+                    firstPage.onclick = () => displayPage(1);
+                    pageNumbersContainer.appendChild(firstPage);
+                    if (startPage > 2) pageNumbersContainer.appendChild(document.createTextNode(' ... '));
+                }
+
+
+                for (let i = startPage; i <= endPage; i++) {
+                    const pageNumber = document.createElement('span');
+                    pageNumber.textContent = i;
+                    pageNumber.classList.add('page-number');
+                    if (i === currentPage) {
+                        pageNumber.classList.add('active');
+                    }
+                    pageNumber.onclick = () => displayPage(i);
+                    pageNumbersContainer.appendChild(pageNumber);
+                }
+                
+                // Botón '...' al final
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) pageNumbersContainer.appendChild(document.createTextNode(' ... '));
+                    const lastPage = document.createElement('span');
+                    lastPage.textContent = totalPages;
+                    lastPage.classList.add('page-number');
+                    lastPage.onclick = () => displayPage(totalPages);
+                    pageNumbersContainer.appendChild(lastPage);
+                }
+
+            }
+            
+            
+            async function cargarJugadoresDisponibles() {
+                try {
+                    const response = await fetch('/api/fantasy/available-players'); // Asegúrate que este endpoint exista
+                    if (!response.ok) {
+                        if (response.status === 401 || response.status === 403) {
+                            alert("Tu sesión ha expirado."); window.location.href = '/login.html'; return;
+                        }
+                        throw new Error('Error al cargar jugadores.');
+                    }
+                    allPlayers = await response.json(); // Guarda TODOS los jugadores
+                    console.log(allPlayers.length);
+                    // Ordena los jugadores por puntos (o valor si prefieres, ajusta 'total_puntos_fantasy')
+                    allPlayers.sort((a, b) => b.total_puntos_fantasy - a.total_puntos_fantasy);
+                    populateTeamFilter();
+                    populatePriceFilter();
+                    // Inicializa filteredPlayers con todos los jugadores al principio
+                    filteredPlayers = [...allPlayers];
+
+                    displayPage(1); // Muestra la primera página
+                } catch (error) {
+                    console.error("Error al cargar jugadores:", error);
+                    tbodyListaJugs.innerHTML = `<tr><td colspan="5">Error al cargar jugadores. Intenta recargar.</td></tr>`;
+                }
+            }
+
+            function populateTeamFilter() {
+                // Usamos un Set para obtener equipos únicos automáticamente
+                const teams = new Map(); // Usamos Map para guardar ID y Nombre
+                allPlayers.forEach(player => {
+                    // Asegúrate de que tu objeto jugador tenga 'id_equipo' y 'nombre_equipo'
+                    if (player.id_equipo && player.nombre_equipo) {
+                        teams.set(player.id_equipo, player.nombre_equipo);
+                    }
+                });
+
+                // Ordenamos los equipos alfabéticamente por nombre
+                const sortedTeams = Array.from(teams.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+
+                // Añadimos las opciones al select
+                sortedTeams.forEach(([id, name]) => {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = name;
+                    teamFilter.appendChild(option);
+                });
+            }
+
+            // --- FUNCIÓN (Opcional) para llenar el filtro de precios ---
+            // Puedes definir rangos fijos o calcularlos dinámicamente si prefieres
+            function populatePriceFilter() {
+                // Ejemplo con rangos fijos
+                const priceRanges = ["0-5", "5-7", "7-9", "9-11", "11+"];
+                priceRanges.forEach(range => {
+                    const option = document.createElement('option');
+                    option.value = range;
+                    option.textContent = `€${range.replace('-', ' a €').replace('+', ' o más')}`;
+                    priceFilter.appendChild(option);
+                });
+            }
+
+            function addPlayerToPitch(player) {
+                const teamIdToAdd = player.id_equipo;
+                let countSameTeam = 0;
+
+                // Contamos cuántos jugadores ya seleccionados son del mismo equipo
+                selectedPlayers.forEach(selectedPlayerId => {
+                    const existingPlayer = allPlayers.find(p => p.id_jugador === selectedPlayerId);
+                    if (existingPlayer && existingPlayer.id_equipo === teamIdToAdd) {
+                        countSameTeam++;
+                    }
+                });
+
+                // Si ya tenemos 2 o más, mostramos error y salimos
+                if (countSameTeam >= 2) {
+                    alert(`Ya tienes el máximo de 2 jugadores del equipo ${player.nombre_equipo}.`);
+                    return; // Detiene la ejecución de la función
+                }
+                // 1. Find the first EMPTY slot for the player's position
+                const availableSlot = document.querySelector(
+                    `.player-slot[data-position="${player.posicion}"]:not([data-player-id])`
+                    // Selects a slot matching the position AND that DOESN'T have a player ID yet
+                );
+
+                if (availableSlot) {
+                    // 2. Update the slot visuals
+                    const nameSpan = availableSlot.querySelector('.player-name');
+                    const priceSpan = availableSlot.querySelector('.player-price');
+                    // Optional: Update the image/icon if you have player images for the pitch
+                    const icon = availableSlot.querySelector('ion-icon');
+                    if (icon) { // Asegurarnos de que el ícono todavía exista
+                        // 1. Crear el nuevo elemento <img>
+                        const playerImage = document.createElement('img');
+                        
+                        // 2. Establecer la URL de la imagen y texto alternativo
+                        playerImage.src = player.url_imagen_jugador || 'placeholder-player-face.png'; // Usa placeholder si no hay imagen
+                        playerImage.alt = player.nombre_jugador;
+                        
+                        // 3. (Opcional) Puedes añadirle una clase si quieres darle estilos específicos
+                        // playerImage.classList.add('pitch-player-image'); 
+                        
+                        // 4. ¡La Magia! Reemplazar el nodo del ícono con el nodo de la imagen
+                        icon.replaceWith(playerImage);
+                    }
+
+                    
+
+                    nameSpan.textContent = player.nombre_jugador;
+                    priceSpan.textContent = `$${player.valor_actual}M`;
+
+                    // 3. Mark the slot as filled by adding the player's ID
+                    availableSlot.dataset.playerId = player.id_jugador;
+
+                    // 4. TODO: Update your internal state (player count, budget)
+                    updateTeamState(player, 'add'); 
+
+                    console.log(`Added ${player.nombre_jugador} to position ${player.posicion}`);
+
+                } else {
+                    // No empty slots found for this position
+                    alert(`Ya tienes el máximo de jugadores para la posición ${player.posicion}.`);
+                }
+            }
+
+            // --- FUNCTION TO UPDATE TEAM STATE (COUNT, BUDGET, BUTTON) ---
+            function updateTeamState(player, action) {
+                if (action === 'add') {
+                    selectedPlayers.push(player.id_jugador);
+                    currentBudget -= parseFloat(player.valor_actual); // Subtract player price
+                } else if (action === 'remove') {
+                    // Logic to remove player (we'll add this later)
+                    selectedPlayers = selectedPlayers.filter(id => id !== player.id_jugador);
+                    currentBudget += parseFloat(player.valor_actual); // Add player price back
+                }
+
+                // Update the summary display
+                const playersSelectedCount = selectedPlayers.length;
+                playersRemainingDisplay.textContent = `${15 - playersSelectedCount}`; // Show remaining slots
+                budgetDisplay.textContent = `$${currentBudget.toFixed(1)}m`; // Format budget
+
+                // Enable/Disable continue button
+                // TODO: Add validation for correct number of players per position
+                if (playersSelectedCount === 15 && currentBudget >= 0) {
+                    continueButton.disabled = false;
+                } else {
+                    continueButton.disabled = true;
+                }
+
+                // Optional: Add visual feedback (e.g., disable add button for added player)
+                updatePlayerListUI();
+            }
+            
+
+            // --- FUNCTION TO UPDATE PLAYER LIST UI (e.g., disable buttons) ---
+            function updatePlayerListUI() {
+                const addButtons = tbodyListaJugs.querySelectorAll('.add-player-btn');
+                addButtons.forEach(button => {
+                    const row = button.closest('tr');
+                    const playerId = parseInt(row.dataset.playerId);
+                    // Disable button if player is already selected
+                    button.disabled = selectedPlayers.includes(playerId);
+                    // You could also change the icon or style here
+                    const icon = button.querySelector('ion-icon');
+                    if (selectedPlayers.includes(playerId)) {
+                        icon.setAttribute('name', 'checkmark-circle-outline'); // Change icon to a checkmark
+                        icon.style.color = '#059669'; // Make it green
+                    } else {
+                        icon.setAttribute('name', 'add-circle-outline');
+                        icon.style.color = '#3b82f6'; // Reset color
+                    }
+
+                });
+            }
+            
+
+            function resetPlayerSlot(slotElement) {
+                // 1. Busca la imagen del jugador dentro del slot
+                const playerImage = slotElement.querySelector('img');
+
+                if (playerImage) {
+                    // 2. Crea el icono de camiseta de reemplazo
+                    const shirtIcon = document.createElement('ion-icon');
+                    shirtIcon.setAttribute('name', 'shirt-outline');
+
+                    // 3. Reemplaza la imagen con el icono
+                    playerImage.replaceWith(shirtIcon);
+                }
+
+                // 4. Limpia el nombre y el precio
+                const nameSpan = slotElement.querySelector('.player-name');
+                const priceSpan = slotElement.querySelector('.player-price');
+                nameSpan.textContent = "(Vacío)";
+                priceSpan.textContent = "--M";
+
+                // 5. ¡Importante! Elimina el ID del jugador del slot para marcarlo como vacío
+                delete slotElement.dataset.playerId;
+
+                console.log("Slot reseteado.");
+            }
+
+            prevButton.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    displayPage(currentPage - 1);
+                }
+            });
+
+            nextButton.addEventListener('click', () => {
+                const totalPages = Math.ceil(allPlayers.length / playersPerPage);
+                if (currentPage < totalPages) {
+                    displayPage(currentPage + 1);
+                }
+            });
+            
+            
+            // 2. Manejar clics en los slots del campo para filtrar la lista de jugadores por posición.
+            // 3. Manejar los filtros (posición, equipo, precio, búsqueda).
+            pitchSlots.forEach(slot => {
+                slot.addEventListener('click', () => {
+                    // 1. Get the position from the clicked slot's data attribute
+                    const position = slot.dataset.position; // Gets 'POR', 'DEF', 'CEN', or 'DEL'
+
+                    // 2. Find the position filter dropdown
+                    const positionFilterSelect = document.getElementById('position-filter');
+
+                    // 3. Set the dropdown's value to the clicked position
+                    positionFilterSelect.value = position;
+
+                    // 4. Trigger the filtering function to update the table
+                    applyFiltersAndDisplay();
+
+                    // Optional: Scroll to the player list for better UX
+                    document.querySelector('.player-selection-column').scrollIntoView({ behavior: 'smooth' });
+                });
+            });
+           
+            // 4. Manejar clics en el botón '+' para añadir un jugador al equipo (actualizar el campo visual y el estado).
+            tbodyListaJugs.addEventListener('click', (event) => {
+                // Check if the clicked element is the button OR the icon inside the button
+                const addButton = event.target.closest('.add-player-btn');
+
+                if (addButton) {
+                    // Find the table row (tr) containing the button
+                    const playerRow = addButton.closest('tr');
+                    // Get the player ID we stored earlier
+                    const playerId = parseInt(playerRow.dataset.playerId); // Convert string to number
+                    // Find the full player data from our original list
+                    const playerToAdd = allPlayers.find(p => p.id_jugador === playerId);
+
+                    if (playerToAdd) {
+                        addPlayerToPitch(playerToAdd);
+                    } else {
+                        console.error("Couldn't find player data for ID:", playerId);
+                    }
+                }
+            });
+
+            pitchDisplay.addEventListener('click', (event) => {
+                // Busca el .player-slot más cercano al elemento clickeado
+                const clickedSlot = event.target.closest('.player-slot');
+
+                // Verifica si se hizo clic en un slot Y si ese slot TIENE un jugador
+                if (clickedSlot && clickedSlot.dataset.playerId) {
+                    const playerIdToRemove = parseInt(clickedSlot.dataset.playerId);
+
+                    // Busca los datos completos del jugador para obtener su precio
+                    const playerToRemove = allPlayers.find(p => p.id_jugador === playerIdToRemove);
+
+                    if (playerToRemove) {
+                        // Llama a la función para resetear visualmente el slot
+                        resetPlayerSlot(clickedSlot);
+                        // Llama a la función para actualizar el estado (presupuesto, contador)
+                        updateTeamState(playerToRemove, 'remove'); // Tu lógica 'remove' ya funciona
+                    } else {
+                        console.error("Error: No se encontraron datos para el jugador a eliminar ID:", playerIdToRemove);
+                    }
+                }
+            });
+
+            // 5. Validar presupuesto, número de jugadores por posición y por equipo.
+            // 6. Habilitar/deshabilitar el botón "Continuar" según las validaciones.
+            // 7. Implementar la lógica de "Auto-completar".
+            // 8. Al hacer clic en "Continuar", enviar el equipo seleccionado al backend (POST a /api/fantasy/crear-equipo).
+
+
+
+            
+            
+
+            cargarJugadoresDisponibles();
+
+            positionFilter.addEventListener('change', applyFiltersAndDisplay);
+            teamFilter.addEventListener('change', applyFiltersAndDisplay);
+            priceFilter.addEventListener('change', applyFiltersAndDisplay);
+
+            // Para la búsqueda, actualizamos mientras el usuario escribe
+            searchInput.addEventListener('input', applyFiltersAndDisplay);
+
+            // Si quieres que la búsqueda solo se active al pulsar el botón:
+            // searchButton.addEventListener('click', applyFiltersAndDisplay);
+            // Y cambia el listener de searchInput de 'input' a 'keydown' para detectar Enter, si quieres.
+            
+            
+
+
+            // Ejemplo simple para habilitar el botón cuando se cumplen las condiciones (simulado)
+            // const continueButton = document.getElementById('continue-button');
+            // const playersRemaining = document.getElementById('players-remaining');
+            // const budgetDisplay = document.getElementById('budget-display');
+            
+            // Simular que se han seleccionado 15 jugadores y el presupuesto es válido
+            // setTimeout(() => {
+            //     playersRemaining.textContent = '0/15';
+            //     budgetDisplay.textContent = '€0.5m'; // Ejemplo
+            //     continueButton.disabled = false;
+            // }, 5000); // Habilitar después de 5 segundos (simulación)
+        </script>
+
+    </body>
+</html>

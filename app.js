@@ -4,7 +4,7 @@ import express from 'express'
 import bcrypt from 'bcrypt'; 
 import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
-import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail, getUsuarioData} from './database.js'
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail, getUsuarioData, getEquipoFantasyUsuario, getJugadoresFantasy} from './database.js'
  
 
 const app = express()  
@@ -37,6 +37,21 @@ function authenticateToken(req, res, next) {
     });
 }
 
+app.get("/api/fantasy/available-players", authenticateToken, async (req, res) => {
+    const userId = req.userId;
+    console.log(`Usuario ${userId} está pidiendo jugadores disponibles.`);
+
+    try {
+        
+        const playersData = await getJugadoresFantasy();
+        
+        res.status(200).json(playersData);
+    } catch (error) {
+        console.error(`Error al obtener jugadores para usuario ${userId}:`, error);
+        res.status(500).json({ error: "Error interno al obtener datos" });
+    }
+});
+
 app.get("/api/fantasy-dashboard", authenticateToken, async (req, res) => {
     // Gracias al middleware, ahora tenemos acceso a req.userId
     const userId = req.userId;
@@ -45,12 +60,12 @@ app.get("/api/fantasy-dashboard", authenticateToken, async (req, res) => {
     try {
         // Llama a funciones de database.js pasándoles el userId
         const userData = await getUsuarioData(userId);
-        //const equipoData = await getEquipoFantasyUsuario(userId);
+        const equipoData = await getEquipoFantasyUsuario(userId);
         //const ligasData = await getLigasUsuario(userId);
         // ... obtener el resto de los datos (partidos, etc.)
 
         // Devuelve los datos específicos de ESE usuario
-        res.status(200).json(userData);
+        res.status(200).json({userData, equipoData});
     } catch (error) {
         console.error(`Error al obtener dashboard para usuario ${userId}:`, error);
         res.status(500).json({ error: "Error interno al obtener datos del dashboard" });
@@ -508,7 +523,7 @@ app.get("/api/info-prepartido/:id", async (req, res) => {
         res.status(500).json({ error: "Error al obtener estadísticas del partido" });
     }
 });
-
+ 
 
 app.get("/api/resultado-partido/:id", async (req, res) => {
     try {

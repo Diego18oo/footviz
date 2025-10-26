@@ -254,7 +254,7 @@
                     }
                     
                 
-                    
+                     
                 }
             
                 async function cargarPartidos(ligaSeleccionada, jornadaSeleccionada){
@@ -274,7 +274,7 @@
                             fechaPartidoNormalizada.setHours(0, 0, 0, 0);
                             const fila = document.createElement("tr");
 
-                            if (tomorrow > fechaPartidoNormalizada) {
+                            if (hoyNormalizada > fechaPartidoNormalizada) {
                                 const resResponse = await fetch(`/api/resultado-partido/${partido.id_partido}`); 
                                 const resultado = await resResponse.json();
                                 fila.innerHTML = `

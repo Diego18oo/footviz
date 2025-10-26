@@ -1235,3 +1235,82 @@ export async function getUsuarioData(id_usuario){
   return rows[0];
 
 }
+
+
+export async function getEquipoFantasyUsuario(id_usuario){
+    const [rows] = await pool.query(
+    'SELECT * from equipo_fantasy where id_usuario = ?',
+    [id_usuario]
+  );
+  return rows[0];
+
+}
+
+
+export async function getJugadoresFantasy(){
+    const [rows] = await pool.query(`
+        -- Usamos una CTE (Common Table Expression) para encontrar la última asignación de equipo
+        WITH LatestTeamAssignment AS (
+            SELECT
+                pe.jugador,
+                pe.equipo,
+                pe.temporada,
+                -- Asignamos un número de fila a cada registro de equipo para un jugador/temporada,
+                -- ordenando por id_plantilla DESC (el más alto obtiene el #1)
+                ROW_NUMBER() OVER(PARTITION BY pe.jugador, pe.temporada ORDER BY pe.id_plantilla DESC) as rn
+            FROM
+                plantilla_equipos pe
+            -- No necesitamos filtrar por temporada aquí todavía
+        )
+        SELECT
+            vj.id_jugador,
+            j.nombre AS nombre_jugador,
+            j.posicion,
+            j.url_imagen AS url_imagen_jugador,
+            vj.popularidad,
+            vj.valor_actual,
+            COALESCE(SUM(pjj.puntos_fantasy), 0) AS total_puntos_fantasy,
+            -- Columnas del equipo (ahora del equipo más reciente)
+            e.id_equipo,
+            e.nombre AS nombre_equipo,
+            e.url_imagen AS img_equipo -- Añadí la URL de la imagen del equipo también
+        FROM
+            valor_jugador_fantasy vj
+        JOIN
+            jugador j ON vj.id_jugador = j.id_jugador
+        -- 👇 Unimos con nuestra CTE para obtener SOLO la última asignación de equipo 👇
+        JOIN
+            LatestTeamAssignment lta ON j.id_jugador = lta.jugador 
+        -- 👇 Unimos con la tabla equipo usando el ID de la CTE 👇
+        JOIN
+            equipo e ON lta.equipo = e.id_equipo
+        -- 👇 Mantenemos los LEFT JOINs para los puntos 👇
+        LEFT JOIN
+            puntos_jugador_jornada pjj ON vj.id_jugador = pjj.id_jugador
+        LEFT JOIN
+            partido p ON pjj.id_partido = p.id_partido -- Aseguramos que los puntos sean de la misma temporada
+        WHERE
+            vj.valor_actual > 0
+            -- 👇 Filtramos por la temporada activa del fantasy 👇
+            -- 👇 ¡LA MAGIA! Solo seleccionamos el registro de equipo más reciente (rn=1) 👇
+            AND lta.rn = 1
+        GROUP BY
+            -- Agrupamos por todas las columnas no agregadas
+            vj.id_jugador,
+            j.nombre,
+            j.posicion,
+            j.url_imagen,
+            vj.popularidad,
+            vj.valor_actual,
+            e.id_equipo,
+            e.nombre,
+            e.url_imagen -- Añadimos la URL del equipo al GROUP BY
+        ORDER BY
+            total_puntos_fantasy DESC;`
+  );
+  return rows;
+
+}
+
+
+
