@@ -4,7 +4,7 @@ import express from 'express'
 import bcrypt from 'bcrypt'; 
 import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
-import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail, getUsuarioData, getEquipoFantasyUsuario, getJugadoresFantasy} from './database.js'
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail, getUsuarioData, getEquipoFantasyUsuario, getJugadoresFantasy, crearEquipoFantasyCompleto} from './database.js'
  
 
 const app = express()  
@@ -36,6 +36,41 @@ function authenticateToken(req, res, next) {
         next(); // Permite que la petición continúe a la ruta solicitada
     });
 }
+
+app.post("/api/fantasy/crear-equipo", authenticateToken, async (req, res) => {
+    try {
+        // 1. Obtenemos el ID del usuario desde el token verificado
+        const userId = req.userId;
+
+        // 2. Obtenemos los datos enviados desde el frontend
+        const { nombreEquipo, presupuestoRestante, plantilla } = req.body;
+
+        // 3. Validaciones de backend 
+        if (!nombreEquipo || nombreEquipo.trim().length < 3) {
+            return res.status(400).json({ error: "El nombre del equipo es muy corto." });
+        }
+        if (!plantilla || plantilla.length !== 15) {
+            return res.status(400).json({ error: "La plantilla debe tener exactamente 15 jugadores." });
+        }
+        if (presupuestoRestante < 0) {
+            return res.status(400).json({ error: "El presupuesto no puede ser negativo." });
+        }
+        
+        // 4. Llamamos a la nueva función en database.js para que haga la magia
+        // Le pasamos los datos y el ID del usuario
+        const nuevoEquipo = await crearEquipoFantasyCompleto(userId, nombreEquipo, presupuestoRestante, plantilla);
+
+        res.status(201).json({ message: "Equipo creado con éxito", equipoId: nuevoEquipo.id_equipo_fantasy });
+
+    } catch (error) {
+        console.error("Error al crear equipo fantasy:", error);
+        // Manejamos errores comunes, como "equipo ya existe"
+        if (error.code === 'ER_DUP_ENTRY') {
+             return res.status(409).json({ error: "Ya has creado un equipo para esta temporada." });
+        }
+        res.status(500).json({ error: "Error interno del servidor" });
+    }
+});
 
 app.get("/api/fantasy/available-players", authenticateToken, async (req, res) => {
     const userId = req.userId;

@@ -293,6 +293,7 @@
             let currentBudget = 100.0; // Starting budget
 
             // --- Elementos del DOM ---
+            const autoCompleteButton = document.getElementById('auto-complete');
             const tbodyListaJugs = document.getElementById('player-list-body');
             const paginationContainer = document.getElementById('pagination');
             const prevButton = document.getElementById('prev-page');
@@ -566,29 +567,26 @@
 
             // --- FUNCTION TO UPDATE TEAM STATE (COUNT, BUDGET, BUTTON) ---
             function updateTeamState(player, action) {
-                if (action === 'add') {
+                if (action === 'add' && player) {
                     selectedPlayers.push(player.id_jugador);
-                    currentBudget -= parseFloat(player.valor_actual); // Subtract player price
-                } else if (action === 'remove') {
-                    // Logic to remove player (we'll add this later)
+                    currentBudget -= parseFloat(player.valor_actual);
+                } else if (action === 'remove' && player) {
                     selectedPlayers = selectedPlayers.filter(id => id !== player.id_jugador);
-                    currentBudget += parseFloat(player.valor_actual); // Add player price back
+                    currentBudget += parseFloat(player.valor_actual);
+                } else if (action === 'reset') { // Nueva acción para resetear
+                    selectedPlayers = [];
+                    currentBudget = 100.0;
                 }
 
-                // Update the summary display
+                // ... (el resto de updateTeamState se queda igual) ...
                 const playersSelectedCount = selectedPlayers.length;
-                playersRemainingDisplay.textContent = `${15 - playersSelectedCount}`; // Show remaining slots
-                budgetDisplay.textContent = `$${currentBudget.toFixed(1)}m`; // Format budget
-
-                // Enable/Disable continue button
-                // TODO: Add validation for correct number of players per position
+                playersRemainingDisplay.textContent = `${15 - playersSelectedCount}`;
+                budgetDisplay.textContent = `$${currentBudget.toFixed(1)}m`;
                 if (playersSelectedCount === 15 && currentBudget >= 0) {
                     continueButton.disabled = false;
                 } else {
                     continueButton.disabled = true;
                 }
-
-                // Optional: Add visual feedback (e.g., disable add button for added player)
                 updatePlayerListUI();
             }
             
@@ -638,6 +636,88 @@
                 delete slotElement.dataset.playerId;
 
                 console.log("Slot reseteado.");
+            }
+
+            function autoCompleteTeam() {
+                console.log("Iniciando Auto-completar...");
+
+                // 1. Resetear el equipo actual
+                // Limpiamos los slots visuales y el estado interno
+                pitchSlots.forEach(slot => {
+                    if (slot.dataset.playerId) { // Solo reseteamos si tiene jugador
+                        // Buscamos los datos para devolver el presupuesto
+                        const playerToRemove = allPlayers.find(p => p.id_jugador === parseInt(slot.dataset.playerId));
+                        if(playerToRemove) {
+                            updateTeamState(playerToRemove, 'remove'); // Devuelve presupuesto
+                            resetPlayerSlot(slot); // Limpia visualmente
+                        } else {
+                            // Si no encontramos datos (raro), al menos limpiamos
+                            resetPlayerSlot(slot);
+                        }
+                    }
+                });
+                // Forzamos el reseteo del estado por si acaso
+                selectedPlayers = [];
+                currentBudget = 100.0;
+                updateTeamState(null, 'reset'); // Llama una vez para actualizar la UI a 15/100
+
+
+                // 2. Definir la plantilla objetivo (2 POR, 5 DEF, 5 CEN, 3 DEL)
+                const targetSquad = { 'G': 2, 'D': 5, 'M': 5, 'F': 3 };
+                const maxPricePerPlayer = 8; // Límite de precio que sugeriste
+                const maxPlayersPerTeam = 2;
+
+                // 3. Crear una copia 'barajada' de los jugadores disponibles (solo los baratos)
+                let availableCheapPlayers = allPlayers.filter(p => p.valor_actual <= maxPricePerPlayer);
+                // Barajar aleatoriamente para que la selección sea diferente cada vez
+                availableCheapPlayers.sort(() => 0.5 - Math.random());
+
+                // 4. Iterar por cada posición y llenar los slots
+                for (const position in targetSquad) {
+                    const playersNeeded = targetSquad[position];
+                    let playersAddedForPosition = 0;
+
+                    // Buscamos jugadores en la lista barajada
+                    for (const player of availableCheapPlayers) {
+                        // Si ya hemos llenado la posición, pasamos a la siguiente
+                        if (playersAddedForPosition >= playersNeeded) break;
+
+                        // Comprobar si el jugador cumple los requisitos
+                        if (
+                            player.posicion === position &&                       // ¿Es de la posición correcta?
+                            !selectedPlayers.includes(player.id_jugador) &&      // ¿No está ya seleccionado?
+                            currentBudget >= player.valor_actual                 // ¿Alcanza el presupuesto?
+                        ) {
+                            // Comprobar el límite por equipo ANTES de añadir
+                            const teamIdToAdd = player.id_equipo;
+                            let countSameTeam = 0;
+                            selectedPlayers.forEach(selectedPlayerId => {
+                                const existingPlayer = allPlayers.find(p => p.id_jugador === selectedPlayerId);
+                                if (existingPlayer && existingPlayer.id_equipo === teamIdToAdd) {
+                                    countSameTeam++;
+                                }
+                            });
+
+                            // Si añadirlo NO excede el límite...
+                            if (countSameTeam < maxPlayersPerTeam) {
+                                // ¡Lo añadimos! La función addPlayerToPitch ya se encarga de lo demás
+                                addPlayerToPitch(player);
+                                playersAddedForPosition++;
+                            }
+                        }
+                    } // Fin del bucle de jugadores disponibles
+
+                    // Comprobación de seguridad: ¿Se encontraron suficientes jugadores?
+                    if (playersAddedForPosition < playersNeeded) {
+                        console.warn(`No se pudieron encontrar suficientes jugadores (${playersAddedForPosition}/${playersNeeded}) para la posición ${position} con el presupuesto y límite de equipo.`);
+                        // Podrías mostrar un alert aquí o intentar una segunda pasada con jugadores más caros si quieres
+                    }
+
+                } // Fin del bucle de posiciones
+
+                console.log("Auto-completar finalizado.");
+                // El botón 'Continuar' debería habilitarse automáticamente si se llenaron los 15 slots
+                // y el presupuesto es >= 0, gracias a la llamada a updateTeamState dentro de addPlayerToPitch.
             }
 
             prevButton.addEventListener('click', () => {
@@ -722,10 +802,6 @@
             // 6. Habilitar/deshabilitar el botón "Continuar" según las validaciones.
             // 7. Implementar la lógica de "Auto-completar".
             // 8. Al hacer clic en "Continuar", enviar el equipo seleccionado al backend (POST a /api/fantasy/crear-equipo).
-
-
-
-            
             
 
             cargarJugadoresDisponibles();
@@ -736,6 +812,65 @@
 
             // Para la búsqueda, actualizamos mientras el usuario escribe
             searchInput.addEventListener('input', applyFiltersAndDisplay);
+
+            autoCompleteButton.addEventListener('click', () => {
+                // Preguntar al usuario si está seguro, ya que esto borrará su selección actual
+                if (confirm('¿Estás seguro de que quieres autocompletar? Esto reemplazará tu selección actual.')) {
+                    autoCompleteTeam();
+                }
+            });
+
+            continueButton.addEventListener('click', async () => {
+                // 1. Recopilar los datos del equipo
+                // El array 'selectedPlayers' ya tiene los 15 IDs de jugador
+                // La variable 'currentBudget' ya tiene el presupuesto restante
+
+                // Pedimos un nombre para el equipo
+                const nombreEquipo = prompt("¡Tu equipo está listo! Dale un nombre:");
+                if (!nombreEquipo || nombreEquipo.trim() === "") {
+                    alert("Debes darle un nombre a tu equipo.");
+                    return; // El usuario canceló o no escribió nada
+                }
+
+                // 2. Preparamos el "paquete" (body) para enviar al backend
+                const equipoData = {
+                    nombreEquipo: nombreEquipo,
+                    presupuestoRestante: currentBudget,
+                    plantilla: selectedPlayers // El array de 15 IDs de jugador
+                };
+
+                // 3. Hacemos la petición POST al backend
+                try {
+                    const response = await fetch('/api/fantasy/crear-equipo', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(equipoData)
+                    });
+
+                    // El navegador envió la cookie 'authToken' automáticamente
+                    
+                    if (response.status === 401 || response.status === 403) {
+                        alert("Tu sesión ha expirado. Por favor, inicia sesión de nuevo.");
+                        window.location.href = '/login.html';
+                        return;
+                    }
+
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(result.error || 'Algo salió mal en el servidor.');
+                    }
+
+                    // 4. ¡Éxito! El equipo se creó
+                    alert('¡Tu equipo ha sido creado con éxito!');
+                    window.location.replace('/fantasy.html'); // Redirigir al dashboard
+
+                } catch (error) {
+                    alert('Error al crear tu equipo: ' + error.message);
+                }
+            });
 
             // Si quieres que la búsqueda solo se active al pulsar el botón:
             // searchButton.addEventListener('click', applyFiltersAndDisplay);

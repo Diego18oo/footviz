@@ -42,7 +42,7 @@ liga_fbref = [
     '13/Ligue-1'
 ]
 
-ids_para_scrapear_temporada = df_partidos_futuros['temporada'].unique() 
+ids_para_scrapear_temporada = df_partidos_ayer['temporada'].unique() 
 #insert_estadistica_jugador(engine,  ids_para_scrapear_temporada, db_url)
 #insert_update_plantilla_equipos(engine, driver, ligas_ids, temporadas_ids, db_url)
 #print("Todo las plantillas estan actualizadas")
@@ -58,7 +58,7 @@ ids_para_scrapear_temporada = df_partidos_futuros['temporada'].unique()
 
 
 
-actualizar_valor_mercado_fantasy(engine)
+#actualizar_valor_mercado_fantasy(engine)
 
 #verifica que si haya partidos el dia de ayer
 if len(df_partidos_ayer) == 0:
@@ -90,20 +90,20 @@ else:
         #id_partido_actual = df_partidos_ayer.iloc[i]['id_partido']
         #procesar_puntos_partido(engine, id_partido_actual)
          
-    #for i in range(len(ids_para_scrapear_temporada)):
-        #liga_a_scrapear = ids_para_scrapear_temporada[i]
-        #insert_tabla_posiciones(liga_a_scrapear, engine=engine,temporada=temporadas_ids
-        #[liga_a_scrapear-1], liga=ligas_ids[liga_a_scrapear-1])   #actualiza la tabla de posiciones de todas las ligas
-        #update_standings_evolution_graph(liga_a_scrapear,engine=engine, temporada=temporadas_ids[liga_a_scrapear-1])
-        #print(f"Tabla {liga_a_scrapear} insertada correctamente")
+    for i in range(len(ids_para_scrapear_temporada)):
+        liga_a_scrapear = ids_para_scrapear_temporada[i]
+        insert_tabla_posiciones(liga_a_scrapear, engine=engine,temporada=temporadas_ids
+        [liga_a_scrapear-1], liga=ligas_ids[liga_a_scrapear-1])   #actualiza la tabla de posiciones de todas las ligas
+        update_standings_evolution_graph(liga_a_scrapear,engine=engine, temporada=temporadas_ids[liga_a_scrapear-1])
+        print(f"Tabla {liga_a_scrapear} insertada correctamente")
     
 #ultimos_partidos(engine, temporada = 4)
 #ultimos_partidos(engine, temporada = 5)
-#update_fecha_partidos(engine, temporada=1, jornada = 9)
-#update_fecha_partidos(engine, temporada=2, jornada = 10)
-#update_fecha_partidos(engine, temporada=3, jornada = 8)
-#update_fecha_partidos(engine, temporada=4, jornada = 8)
-#update_fecha_partidos(engine, temporada=5, jornada = 9)
+#update_fecha_partidos(engine, temporada=1, jornada = 10)
+#update_fecha_partidos(engine, temporada=2, jornada = 11)
+#update_fecha_partidos(engine, temporada=3, jornada = 9)
+#update_fecha_partidos(engine, temporada=4, jornada = 9)
+#update_fecha_partidos(engine, temporada=5, jornada = 10)
 #pending_odds(engine, df_partidos_pendientes)
 
 

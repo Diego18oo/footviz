@@ -1313,4 +1313,64 @@ export async function getJugadoresFantasy(){
 }
 
 
+export async function crearEquipoFantasyCompleto(id_usuario, nombreEquipo, presupuestoRestante, plantillaJugadores) {
+    const conn = await pool.getConnection(); // Obtenemos una conexión del pool
+    await conn.beginTransaction(); // Iniciamos la transacción
+
+    try {
+        // 1. Insertar el equipo principal en 'equipo_fantasy'
+        // (Asumimos que id_temporada = 1, cámbialo si es necesario)
+        
+        const [equipoResult] = await conn.query(
+            `INSERT INTO equipo_fantasy (id_usuario, nombre_equipo, presupuesto_restante)
+             VALUES (?, ?, ?)`,
+            [id_usuario,  nombreEquipo, presupuestoRestante]
+        );
+
+        const newTeamId = equipoResult.insertId; // Obtenemos el ID del equipo que acabamos de crear
+
+        // 2. Obtener los precios de los jugadores (¡seguridad!)
+        // No confiamos en el precio del cliente, lo buscamos en la BD
+        const placeholders = plantillaJugadores.map(() => '?').join(','); // Crea "(?,?,?,...)"
+        const [jugadoresConPrecio] = await conn.query(
+            `SELECT id_jugador, valor_actual FROM valor_jugador_fantasy 
+             WHERE id_jugador IN (${placeholders})`,
+            [...plantillaJugadores]
+        );
+
+        if (jugadoresConPrecio.length !== 15) {
+            throw new Error("No se encontraron los datos de precio para todos los jugadores.");
+        }
+
+        // 3. Preparar el INSERT masivo para 'plantilla_fantasy'
+        const plantillaValues = jugadoresConPrecio.map(j => {
+            // Asumimos que los primeros 11 son titulares (2 POR, 5 DEF, 5 CEN, 3 DEL -> 15 total)
+            // Esto es una simplificación, podrías enviar la info de titulares/banca desde el frontend
+            return [newTeamId, j.id_jugador, j.valor_actual, 1]; // [id_equipo, id_jugador, precio_compra, es_titular]
+        });
+
+        // 4. Insertar los 15 jugadores en la plantilla
+        await conn.query(
+            `INSERT INTO plantilla_fantasy (id_equipo_fantasy, id_jugador, precio_compra, es_titular)
+             VALUES ?`,
+            [plantillaValues] // [ [1, 101, 8.5, 1], [1, 102, 5.5, 1], ... ]
+        );
+
+        // 5. ¡Éxito! Confirmamos todos los cambios
+        await conn.commit();
+        conn.release(); // Devolvemos la conexión al pool
+        
+        return { id_equipo_fantasy: newTeamId };
+
+    } catch (error) {
+        // 6. ¡Error! Deshacemos todos los cambios
+        await conn.rollback();
+        conn.release(); // Devolvemos la conexión al pool
+        console.error("Error en la transacción de crear equipo:", error);
+        throw error; // Lanzamos el error para que app.js lo atrape
+    }
+}
+
+
+
 
