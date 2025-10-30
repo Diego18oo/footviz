@@ -49,12 +49,12 @@ ids_para_scrapear_temporada = df_partidos_ayer['temporada'].unique()
 
 
 
-#if len(df_partidos_futuros) > 0:
-    #print("Entrando...")
-    #for i in range(len(df_partidos_futuros)):
-        #prematch_ref(engine, df_partidos_futuros.iloc[i] )
-        #prematch_odds(engine, df_partidos_futuros.iloc[i])
-        #insert_predicted_lineups(engine, df_partidos_futuros.iloc[i])
+if len(df_partidos_futuros) > 0:
+    print("Entrando...")
+    for i in range(len(df_partidos_futuros)):
+        prematch_ref(engine, df_partidos_futuros.iloc[i] )
+        prematch_odds(engine, df_partidos_futuros.iloc[i])
+        insert_predicted_lineups(engine, df_partidos_futuros.iloc[i])
 
 
 

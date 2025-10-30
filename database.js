@@ -1343,15 +1343,27 @@ export async function crearEquipoFantasyCompleto(id_usuario, nombreEquipo, presu
         }
 
         // 3. Preparar el INSERT masivo para 'plantilla_fantasy'
-        const plantillaValues = jugadoresConPrecio.map(j => {
-            // Asumimos que los primeros 11 son titulares (2 POR, 5 DEF, 5 CEN, 3 DEL -> 15 total)
-            // Esto es una simplificación, podrías enviar la info de titulares/banca desde el frontend
-            return [newTeamId, j.id_jugador, j.valor_actual, 1]; // [id_equipo, id_jugador, precio_compra, es_titular]
+        const plantillaValues = jugadoresConPrecio.map((jugador, index) => {
+            const id_jugador = jugador.id_jugador;
+            const precio_compra = jugador.valor_actual;
+            
+            // Lógica para titulares y capitán:
+            
+            // ✅ Asigna 1 (titular) a los primeros 11 jugadores (índice 0 al 10)
+            //    y 0 (suplente) a los últimos 4 (índice 11 al 14).
+            const es_titular = (index < 11) ? 1 : 0; 
+            
+            // ✅ Asigna 1 (capitán) SOLO al primer jugador (índice 0)
+            //    y 0 (no capitán) a todos los demás.
+            const es_capitan = (index === 0) ? 1 : 0; 
+
+            // El array que se insertará para este jugador
+            return [newTeamId, id_jugador, precio_compra, es_titular, es_capitan];
         });
 
         // 4. Insertar los 15 jugadores en la plantilla
         await conn.query(
-            `INSERT INTO plantilla_fantasy (id_equipo_fantasy, id_jugador, precio_compra, es_titular)
+            `INSERT INTO plantilla_fantasy (id_equipo_fantasy, id_jugador, precio_compra, es_titular, es_capitan)
              VALUES ?`,
             [plantillaValues] // [ [1, 101, 8.5, 1], [1, 102, 5.5, 1], ... ]
         );
@@ -1370,6 +1382,94 @@ export async function crearEquipoFantasyCompleto(id_usuario, nombreEquipo, presu
         throw error; // Lanzamos el error para que app.js lo atrape
     }
 }
+
+
+
+export async function getPlantillaFantasy(id_usuario){
+    const [rows] = await pool.query(`
+        -- CTE 1: Encuentra la asignación de equipo y temporada MÁS RECIENTE de cada jugador
+        WITH LatestPlayerTeam AS (
+            SELECT
+                pe.jugador,
+                pe.equipo,
+                pe.temporada,
+                -- Asigna el ranking #1 al registro de plantilla más reciente
+                ROW_NUMBER() OVER(PARTITION BY pe.jugador ORDER BY pe.id_plantilla DESC) as rn
+            FROM
+                plantilla_equipos pe
+        ),
+        -- CTE 2: Encuentra el ID del último partido completado (hasta hoy) para CADA combo de equipo/temporada
+        LatestTeamMatch AS (
+            SELECT
+                team_id,
+                temporada_id,
+                match_id,
+                -- Asigna el ranking #1 al partido más reciente de cada equipo EN ESA TEMPORADA
+                ROW_NUMBER() OVER(PARTITION BY team_id, temporada_id ORDER BY match_fecha DESC, match_id DESC) as rn
+            FROM (
+                -- Partidos como local
+                SELECT p.equipo_local as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha
+                FROM partido p
+                WHERE p.fecha <= CURDATE() -- Solo partidos completados
+                UNION ALL
+                -- Partidos como visitante
+                SELECT p.equipo_visitante as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha
+                FROM partido p
+                WHERE p.fecha <= CURDATE()
+            ) AS all_team_matches
+        )
+        -- Consulta Principal
+        SELECT
+            pf.id_jugador,
+            pf.precio_compra,
+            pf.es_titular,
+            pf.es_capitan,
+            j.nombre AS nombre_jugador,
+            j.posicion,
+            j.url_imagen AS url_imagen_jugador,
+            e.id_equipo,
+            e.nombre AS nombre_equipo,
+            e.url_imagen AS img_equipo,
+            -- Volvemos a usar COALESCE. Si sale 0, es porque el LEFT JOIN no encontró puntos
+            -- para ESE PARTIDO en específico (porque el jugador no jugó)
+            COALESCE(pjj.puntos_fantasy, 0) AS puntos_ultima_jornada_equipo,
+            ltm.match_id
+        FROM
+            plantilla_fantasy pf
+        -- Uniones básicas para obtener el equipo fantasy del usuario
+        JOIN
+            equipo_fantasy ef ON pf.id_equipo_fantasy = ef.id_equipo_fantasy
+        JOIN
+            usuario us ON ef.id_usuario = us.id_usuario
+        -- Uniones para obtener los datos del jugador
+        JOIN
+            jugador j ON pf.id_jugador = j.id_jugador
+        -- 1. Unimos con la CTE 1 para encontrar el equipo y temporada MÁS RECIENTE del jugador
+        LEFT JOIN
+            LatestPlayerTeam lpt ON j.id_jugador = lpt.jugador AND lpt.rn = 1
+        -- 2. Unimos para obtener los detalles de ese equipo
+        LEFT JOIN
+            equipo e ON lpt.equipo = e.id_equipo
+        -- 3. Unimos con la CTE 2 para encontrar el ÚLTIMO PARTIDO de ese equipo EN ESA temporada
+        LEFT JOIN
+            LatestTeamMatch ltm ON lpt.equipo = ltm.team_id AND lpt.temporada = ltm.temporada_id AND ltm.rn = 1
+        -- 4. Finalmente, unimos con la tabla de puntos, buscando la coincidencia EXACTA
+        --    del jugador Y el ID del último partido del equipo en la temporada correcta
+        LEFT JOIN
+            puntos_jugador_jornada pjj ON pf.id_jugador = pjj.id_jugador AND ltm.match_id = pjj.id_partido
+        WHERE
+            us.id_usuario = ?  -- Filtramos por el usuario
+        ORDER BY
+            FIELD(j.posicion, 'G', 'D', 'M', 'F'), -- Orden G->D->M->F
+            pf.es_titular DESC,                   -- Titulares primero
+            j.nombre;`,
+        [id_usuario]
+  );
+  return rows;
+
+}
+
+
 
 
 

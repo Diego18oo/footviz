@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>FootViz - Mi Equipo Fantasy</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+        <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+        <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+        <style>
+            /* --- Estilos Base y Layout --- */
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Poppins', sans-serif;
+                background-color: #0f172a;
+                color: #e0e0e0;
+                padding: 20px;
+            }
+            .container { max-width: 1400px; margin: 0 auto; }
+
+            /* --- Cabecera --- */
+            .fantasy-header {
+                display: flex; justify-content: space-between; align-items: center;
+                background-color: #1e293b; padding: 15px 25px; border-radius: 12px; margin-bottom: 20px;
+            }
+            .user-profile-summary { display: flex; align-items: center; gap: 15px; }
+            .user-level-xp { text-align: right; }
+            .user-icons { display: flex; gap: 10px; font-size: 1.5rem; }
+            .user-icons ion-icon { cursor: pointer; }
+
+            /* --- Área Principal --- */
+            .team-management-grid {
+                display: grid;
+                grid-template-columns: 2fr 1fr; /* Columna del equipo más ancha */
+                gap: 20px;
+            }
+
+            /* --- Visualización del Equipo (Campo y Banca) --- */
+            .team-display-area .card { background-color: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+            h2, h3 { color: #fff; margin-bottom: 15px; }
+            .pitch-display {
+                background-color: #047857; border-radius: 8px; padding: 20px; aspect-ratio: 7 / 5; /* Más horizontal */
+                display: grid; grid-template-rows: repeat(4, 1fr); gap: 10px; position: relative; margin-bottom: 20px;
+            }
+            .pitch-row { display: flex; justify-content: space-around; align-items: center; }
+            .player-slot {
+                display: flex; flex-direction: column; align-items: center; cursor: pointer;
+                padding: 5px; border-radius: 4px; transition: background-color 0.2s; position: relative;
+            }
+            .player-slot img { width: 40px; height: auto; margin-bottom: 3px; }
+            .player-name { font-size: 0.7rem; color: #fff; background-color: rgba(0,0,0,0.6); padding: 1px 4px; border-radius: 3px; white-space: nowrap; max-width: 70px; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+            .player-points { font-size: 0.8rem; font-weight: 600; color: #fff; }
+            .captain-badge { position: absolute; top: 0; right: 0; background-color: #f59e0b; color: #000; font-size: 0.6rem; font-weight: 700; border-radius: 50%; width: 16px; height: 16px; display: flex; justify-content: center; align-items: center; }
+
+            .bench-display { display: flex; justify-content: space-around; align-items: center; background-color: #334155; padding: 10px; border-radius: 8px; }
+            .bench-display .player-slot { background-color: transparent; } /* Quitar fondo extra en banca */
+
+            /* --- Barra Lateral Derecha --- */
+            .sidebar-area { display: flex; flex-direction: column; gap: 20px; }
+            .sidebar-area .card { background-color: #1e293b; border-radius: 12px; padding: 20px; }
+            .team-status span, .team-status p { display: block; margin-bottom: 8px; font-size: 0.9rem; }
+            .team-status strong { color: #fff; }
+            .action-buttons button { background-color: #3b82f6; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-right: 10px; font-size: 0.9rem; }
+            #chips-list button { background-color: #4f46e5; margin-bottom: 5px; display: block; width: 100%; }
+            #chips-list button:disabled { background-color: #475569; cursor: not-allowed; }
+            #upcoming-fixtures li { list-style: none; margin-bottom: 8px; font-size: 0.9rem; border-bottom: 1px solid #334155; padding-bottom: 5px; }
+
+            /* --- Modal Oculto para Info del Jugador --- */
+            .player-modal {
+                display: none; /* Oculto por defecto */
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background-color: rgba(0,0,0,0.7);
+                justify-content: center; align-items: center; z-index: 1000;
+            }
+            .modal-content {
+                background-color: #1e293b; padding: 30px; border-radius: 12px;
+                max-width: 500px; width: 90%; text-align: center; position: relative;
+            }
+            .modal-close-btn { position: absolute; top: 10px; right: 15px; font-size: 1.8rem; color: #94a3b8; background: none; border: none; cursor: pointer; }
+            #modal-player-img { width: 80px; height: 80px; border-radius: 50%; margin-bottom: 10px; }
+            #modal-points-breakdown { max-height: 150px; overflow-y: auto; margin-top: 15px; border-top: 1px solid #334155; padding-top: 10px; }
+            /* Añadir estilos para botones de acción dentro del modal (Sustituir, Capitan) */
+
+        </style>
+    </head>
+    <body>
+        <div class="container">
+
+            <header class="fantasy-header">
+                <div class="user-profile-summary">
+                    <ion-icon name="extension-puzzle-outline" title="Mis Piezas"></ion-icon>
+                    <div class="user-level-xp">
+                        <div>Nivel <strong id="user-level">--</strong></div>
+                        <div><span id="user-xp">--</span>/<span id="xp-next-level">--</span> xp</div>
+                    </div>
+                    <h2 id="username-display">Usuario</h2>
+                </div>
+                <div class="user-icons">
+                    <ion-icon name="trophy-outline" title="Mis Logros"></ion-icon>
+                    <ion-icon name="person-circle-outline" title="Mi Perfil"></ion-icon>
+                    </div>
+            </header>
+
+            <main class="team-management-grid">
+
+                <div class="team-display-area">
+                    <div class="card team-status">
+                        <h3>Estado del Equipo</h3>
+                        <span>Presupuesto: <strong id="budget-remaining">-- M</strong></span>
+                        <span>Fichajes Restantes: <strong id="transfers-remaining">--</strong></span>
+                        <p>Deadline Jornada <span id="current-gameweek">X</span>: <strong id="deadline-timer">--</strong></p>
+                        
+                    </div>
+
+                    <div class="card pitch-container">
+                        <h2>Alineación Titular</h2>
+                        <div class="pitch-display" id="pitch">
+                            <div class="pitch-row" id="pitch-row-F"></div>
+                            <div class="pitch-row" id="pitch-row-M"></div>
+                            <div class="pitch-row" id="pitch-row-D"></div>
+                            <div class="pitch-row" id="pitch-row-G"></div>
+                        </div>
+                    </div>
+
+                    <div class="card bench-container">
+                        <h3>Banca</h3>
+                        <div class="bench-display" id="bench">
+                            <div class="player-slot" data-player-id="123" data-position="G">
+                                <img src="placeholder-player-face.png" alt="Jugador">
+                                <span class="player-name">Jugador Banca 1</span>
+                                <span class="player-points">0 Pts</span>
+                            </div>
+                            <div class="player-slot" data-player-id="124" data-position="D">
+                                <img src="placeholder-player-face.png" alt="Jugador">
+                                <span class="player-name">Jugador Banca 2</span>
+                                <span class="player-points">0 Pts</span>
+                            </div>
+                            </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-area">
+                    <div class="card chips-section">
+                        <h3>Fichas Disponibles</h3> <div id="chips-list">
+                            <button id="chip-triple-captain" disabled>Triple Capitán</button>
+                            <button id="chip-bench-boost" disabled>Banca Potenciada</button>
+                            </div>
+                    </div>
+
+                    <div class="card fixtures-section">
+                        <h3>Próximos Partidos</h3> <ul id="upcoming-fixtures">
+                            <li>Equipo A vs Equipo B - DD/MM</li>
+                        </ul>
+                    </div>
+                </div>
+            </main>
+
+            <div id="player-info-modal" class="player-modal">
+                <div class="modal-content">
+                    <button class="modal-close-btn" onclick="closePlayerModal()">&times;</button>
+                    <img id="modal-player-img" src="placeholder-player-face.png" alt="Jugador">
+                    <h3 id="modal-player-name">Nombre Jugador</h3>
+                    <p><span id="modal-player-club">Club</span> - <span id="modal-player-pos">POS</span></p>
+                    <p>Valor: <strong id="modal-player-value">--M</strong> | Popularidad: <strong id="modal-player-popularity">--%</strong></p>
+                    <p>Puntos Totales: <strong id="modal-player-total-points">--</strong></p>
+
+                    <h4>Desglose de Puntos por Jornada:</h4>
+                    <div id="modal-points-breakdown">
+                        </div>
+
+                    <h4>Próximo Partido:</h4>
+                    <p id="modal-next-fixture">Equipo A vs Equipo B</p>
+
+                    <div class="modal-actions" style="margin-top: 20px;">
+                        <button id="modal-substitute-btn">Sustituir</button>
+                        <button id="modal-make-captain-btn">Hacer Capitán</button>
+                        <button id="modal-transfer-out-btn" style="background-color: #dc2626;">Vender</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // --- Lógica Principal ---
+            async function loadTeamData() {
+                console.log("Cargando datos de Mi Equipo...");
+                try {
+                    // 1. Hacer fetch al backend para obtener TODOS los datos necesarios
+                    const response = await fetch('/api/fantasy/mi-equipo'); // Necesitarás crear este endpoint
+                    if (response.status === 401 || response.status === 403) {
+                        alert("Sesión expirada."); 
+                        window.location.href = '/login.html'; 
+                        return;
+                    }
+                    if (!response.ok) throw new Error('Error al cargar datos del equipo.');
+
+                    const data = await response.json(); // Espera un JSON con { equipoInfo, plantillaConDetalles, fichas, proximosPartidos }
+
+                    // 2. Poblar Header (Ya lo tienes del dashboard)
+                    document.getElementById('username-display').textContent = data.userInfo.username;
+                    document.getElementById('user-level').textContent = data.userInfo.nivel;
+                    document.getElementById('user-xp').textContent = data.userInfo.xp_total;
+                    // Calcular XP faltante si es necesario...
+
+                    // 3. Poblar Estado del Equipo
+                    document.getElementById('budget-remaining').textContent = `${data.equipoInfo.presupuesto_restante} M`;
+                    document.getElementById('transfers-remaining').textContent = data.equipoInfo.fichajes_jornada_restantes;
+                    // Calcular y mostrar deadline...
+
+                    // 4. Renderizar Campo y Banca
+                    renderPitchAndBench(data.plantillaConDetalles);
+
+                    // 5. Poblar Fichas Disponibles
+                    renderChips(data.fichas);
+
+                    // 6. Poblar Próximos Partidos
+                    renderFixtures(data.proximosPartidos);
+
+                } catch (error) {
+                    console.error("Error:", error);
+                    // Mostrar error en la UI
+                }
+            }
+
+            // --- Funciones Auxiliares ---
+            function renderPitchAndBench(plantilla) {
+                // Limpiar campo y banca
+                document.getElementById('pitch-row-F').innerHTML = '';
+                document.getElementById('pitch-row-M').innerHTML = '';
+                document.getElementById('pitch-row-D').innerHTML = '';
+                document.getElementById('pitch-row-G').innerHTML = '';
+                document.getElementById('bench').innerHTML = '';
+
+                const titulares = plantilla.filter(p => p.es_titular);
+                const suplentes = plantilla.filter(p => !p.es_titular);
+
+                // Renderizar Titulares
+                titulares.forEach(player => {
+                    const slotHTML = createPlayerSlotHTML(player);
+                    console.log(player)
+                    document.getElementById(`pitch-row-${player.posicion}`).innerHTML += slotHTML;
+                });
+
+                // Renderizar Suplentes
+                suplentes.forEach(player => {
+                    const slotHTML = createPlayerSlotHTML(player);
+                    document.getElementById('bench').innerHTML += slotHTML;
+                });
+                
+                // Añadir listeners a los nuevos slots para abrir el modal
+                addSlotClickListeners();
+            }
+
+            function createPlayerSlotHTML(player) {
+                // Necesitarás obtener los puntos de la jornada actual (podría venir en el objeto player)
+                const currentGameweekPoints = player.puntos_ultima_jornada_equipo || 0;
+                let captainBadge = '';
+                if (player.es_capitan) {
+                    captainBadge = '<span class="captain-badge">C</span>';
+                } // Podrías añadir lógica para 'V' (Vice) si lo tienes
+
+                return `
+                    <div class="player-slot" data-player-id="${player.id_jugador}" data-position="${player.posicion}">
+                        ${captainBadge}
+                        <img src="${player.url_imagen_jugador || 'placeholder-player-face.png'}" alt="${player.nombre_jugador}">
+                        <span class="player-name">${player.nombre_jugador}</span>
+                        <span class="player-points">${currentGameweekPoints} Pts</span>
+                    </div>
+                `;
+            }
+
+            function renderChips(fichasUsuario) {
+                const chipsList = document.getElementById('chips-list');
+                chipsList.innerHTML = ''; // Limpiar
+                // Aquí necesitarías una tabla 'ficha' con nombre y descripción
+                fichasUsuario.forEach(ficha => {
+                    const button = document.createElement('button');
+                    button.id = `chip-${ficha.id_ficha}`; // Asumiendo que tienes un ID
+                    button.textContent = ficha.nombre; // Asumiendo que tienes un nombre
+                    button.disabled = ficha.jornada_uso !== null; // Deshabilitar si ya se usó
+                    button.onclick = () => activateChip(ficha.id_ficha);
+                    chipsList.appendChild(button);
+                });
+            }
+
+            function renderFixtures(partidos) {
+                const fixturesList = document.getElementById('upcoming-fixtures');
+                fixturesList.innerHTML = '';
+                partidos.forEach(partido => {
+                    const li = document.createElement('li');
+                    const fecha = new Date(partido.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+                    li.textContent = `${partido.equipo_local} vs ${partido.equipo_visitante} - ${fecha}`;
+                    fixturesList.appendChild(li);
+                });
+            }
+
+            // --- Funciones para el Modal ---
+            const playerModal = document.getElementById('player-info-modal');
+
+            function openPlayerModal(playerId) {
+                console.log("Abriendo modal para jugador ID:", playerId);
+                // 1. Hacer fetch a un endpoint '/api/fantasy/player-details/{playerId}'
+                //    que devuelva toda la info detallada (nacionalidad, desglose puntos, prox partido, etc.)
+                // fetch(`/api/fantasy/player-details/${playerId}`).then(res => res.json()).then(data => {
+                //     document.getElementById('modal-player-name').textContent = data.nombre;
+                //     document.getElementById('modal-player-img').src = data.url_imagen;
+                //     document.getElementById('modal-player-club').textContent = data.nombre_club;
+                //     document.getElementById('modal-player-pos').textContent = data.posicion;
+                //     document.getElementById('modal-player-value').textContent = `${data.valor_actual}M`;
+                //     document.getElementById('modal-player-popularity').textContent = `${data.popularidad}%`;
+                //     document.getElementById('modal-player-total-points').textContent = data.total_puntos;
+                //     renderPointsBreakdown(data.desglose_puntos); // Función para llenar la lista de puntos
+                //     document.getElementById('modal-next-fixture').textContent = data.proximo_partido;
+                //     playerModal.style.display = 'flex'; // Mostrar el modal
+                // }).catch(err => console.error("Error al cargar detalles del jugador:", err));
+
+                // --- Datos de ejemplo mientras creas el endpoint ---
+                document.getElementById('modal-player-name').textContent = "Jugador Ejemplo";
+                document.getElementById('modal-player-img').src = 'placeholder-player-face.png';
+                document.getElementById('modal-player-club').textContent = "Club Ejemplo";
+                document.getElementById('modal-player-pos').textContent = "DEL";
+                document.getElementById('modal-player-value').textContent = `8.5M`;
+                document.getElementById('modal-player-popularity').textContent = `25.5%`;
+                document.getElementById('modal-player-total-points').textContent = 45;
+                document.getElementById('modal-points-breakdown').innerHTML = `<li>J1: 5 Pts</li><li>J2: 12 Pts</li><li>J3: 2 Pts</li>`;
+                document.getElementById('modal-next-fixture').textContent = "Equipo A vs Equipo B";
+                playerModal.style.display = 'flex';
+                // --- Fin datos de ejemplo ---
+
+            }
+
+            function closePlayerModal() {
+                playerModal.style.display = 'none';
+            }
+
+            function addSlotClickListeners() {
+                document.querySelectorAll('.player-slot').forEach(slot => {
+                    // Quitamos listeners anteriores por si acaso
+                    slot.removeEventListener('click', handleSlotClick); 
+                    // Añadimos el nuevo listener
+                    slot.addEventListener('click', handleSlotClick);
+                });
+            }
+            
+            function handleSlotClick(event) {
+                const slot = event.currentTarget; // El div .player-slot que se clickeó
+                if (slot.dataset.playerId) {
+                    openPlayerModal(parseInt(slot.dataset.playerId));
+                } else {
+                    console.log("Slot vacío clickeado."); // Podrías redirigir a fichajes
+                }
+            }
+
+
+            // --- Inicializar la Carga de Datos ---
+            loadTeamData();
+
+        </script>
+
+
+    </body>
+</html>
