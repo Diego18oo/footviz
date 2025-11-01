@@ -127,7 +127,7 @@ def get_all_players_stats_fbref(id_liga_fbref):
 
 
 
-def get_all_teams_stats_fbref(driver, id_liga_fbref):
+def get_all_teams_stats_fbref(id_liga_fbref):
     base_url = "https://fbref.com/en/comps/"
     full_url = f"{base_url}{id_liga_fbref}-Stats"
 
@@ -188,7 +188,7 @@ def get_all_teams_stats_fbref(driver, id_liga_fbref):
 
     return df_concat
 
-def get_all_urls_fbref(driver, liga_url, max_retries=5):
+def get_all_urls_fbref( liga_url, max_retries=5):
     links_fbref = []
     scraper = cloudscraper.create_scraper()  
     base_url = "https://fbref.com"

@@ -23,6 +23,10 @@
                 display: flex; justify-content: space-between; align-items: center;
                 background-color: #1e293b; padding: 15px 25px; border-radius: 12px; margin-bottom: 20px;
             }
+            .img-club-rival {
+                width: 40px;
+                height: 40px;
+            }
             .user-profile-summary { display: flex; align-items: center; gap: 15px; }
             .user-level-xp { text-align: right; }
             .user-icons { display: flex; gap: 10px; font-size: 1.5rem; }
@@ -31,7 +35,7 @@
             /* --- Área Principal --- */
             .team-management-grid {
                 display: grid;
-                grid-template-columns: 2fr 1fr; /* Columna del equipo más ancha */
+                grid-template-columns: 2fr 1fr;
                 gap: 20px;
             }
 
@@ -73,14 +77,74 @@
                 justify-content: center; align-items: center; z-index: 1000;
             }
             .modal-content {
-                background-color: #1e293b; padding: 30px; border-radius: 12px;
-                max-width: 500px; width: 90%; text-align: center; position: relative;
+                background-color: #1e293b; 
+                padding: 30px; 
+                border-radius: 12px;
+                max-width: 700px; /* Ya lo tienes, perfecto */
+                width: 90%;
+                text-align: center; 
+                position: relative;
+                
+                /* 👇 AÑADE ESTO 👇 */
+                display: flex;
+                flex-direction: column;
+                max-height: 90vh;
             }
             .modal-close-btn { position: absolute; top: 10px; right: 15px; font-size: 1.8rem; color: #94a3b8; background: none; border: none; cursor: pointer; }
             #modal-player-img { width: 80px; height: 80px; border-radius: 50%; margin-bottom: 10px; }
+            #modal-player-club { width: 40px; height: 40px;  }
             #modal-points-breakdown { max-height: 150px; overflow-y: auto; margin-top: 15px; border-top: 1px solid #334155; padding-top: 10px; }
             /* Añadir estilos para botones de acción dentro del modal (Sustituir, Capitan) */
+            .point-breakdown-item {
+                display: flex;         /* 👈 ¡La magia de Flexbox! Pone los elementos en línea */
+                align-items: center;   /* Centra la imagen y el texto verticalmente */
+                gap: 10px;             /* Espacio entre el texto y la imagen */
+                padding: 8px 0;        /* Un poco de espacio vertical entre cada fila */
+                border-bottom: 1px solid #334155; /* Un separador ligero */
+                font-size: 0.9rem;
+            }
 
+            .point-breakdown-item:last-child {
+                border-bottom: none;   /* Sin borde en el último elemento */
+            }
+
+            .rival-logo {
+                width: 24px;           /* Tamaño pequeño para el logo */
+                height: 24px;          /* Tamaño pequeño para el logo */
+                border-radius: 50%;    /* Redondito, como en tu app */
+                object-fit: cover;     /* Asegura que la imagen se vea bien */
+            }
+
+            .player-list-container {
+                flex-grow: 1; /* Ocupa el espacio restante */
+                overflow-y: auto; /* Permite scroll si hay muchos jugadores */
+                max-height: 400px; /* Ya lo tienes, pero ahora funcionará */
+            }
+            #transfer-modal .player-list {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            #transfer-player-list-body td {
+                padding: 10px 8px;
+                text-align: left;
+                border-bottom: 1px solid #334155;
+                font-size: 0.85rem;
+                vertical-align: middle; /* Alinea el texto con las imágenes */
+            }
+
+            #transfer-player-list-body img {
+                width: 24px;  /* Tamaño pequeño */
+                height: 24px; /* Tamaño pequeño */
+                border-radius: 50%;
+                object-fit: cover;
+                vertical-align: middle; /* Alinea la imagen con el texto */
+                margin-right: 8px;
+            }
+
+            #transfer-player-list-body tr:hover {
+                background-color: #334155; /* Efecto hover */
+            }
         </style>
     </head>
     <body>
@@ -140,18 +204,18 @@
                 </div>
 
                 <div class="sidebar-area">
+                    <div class="card action-buttons">
+                        <button id="save-team-changes-btn" style="width: 100%; ">
+                            Guardar Cambios
+                        </button>
+                    </div>
                     <div class="card chips-section">
                         <h3>Fichas Disponibles</h3> <div id="chips-list">
                             <button id="chip-triple-captain" disabled>Triple Capitán</button>
                             <button id="chip-bench-boost" disabled>Banca Potenciada</button>
                             </div>
                     </div>
-
-                    <div class="card fixtures-section">
-                        <h3>Próximos Partidos</h3> <ul id="upcoming-fixtures">
-                            <li>Equipo A vs Equipo B - DD/MM</li>
-                        </ul>
-                    </div>
+                    
                 </div>
             </main>
 
@@ -160,7 +224,7 @@
                     <button class="modal-close-btn" onclick="closePlayerModal()">&times;</button>
                     <img id="modal-player-img" src="placeholder-player-face.png" alt="Jugador">
                     <h3 id="modal-player-name">Nombre Jugador</h3>
-                    <p><span id="modal-player-club">Club</span> - <span id="modal-player-pos">POS</span></p>
+                    <p><img src="" id="modal-player-club"> - <span id="modal-player-pos">POS</span></p>
                     <p>Valor: <strong id="modal-player-value">--M</strong> | Popularidad: <strong id="modal-player-popularity">--%</strong></p>
                     <p>Puntos Totales: <strong id="modal-player-total-points">--</strong></p>
 
@@ -169,7 +233,9 @@
                         </div>
 
                     <h4>Próximo Partido:</h4>
-                    <p id="modal-next-fixture">Equipo A vs Equipo B</p>
+                    <p id="modal-next-fixture">
+                        
+                    </p>
 
                     <div class="modal-actions" style="margin-top: 20px;">
                         <button id="modal-substitute-btn">Sustituir</button>
@@ -180,13 +246,76 @@
             </div>
         </div>
 
+        <div id="transfer-modal" class="player-modal">
+            <div class="modal-content" style="max-width: 700px;">
+                <button class="modal-close-btn" onclick="closeTransferModal()">&times;</button>
+                <h3>Fichar Reemplazo</h3>
+                <p>Vendiendo a: <strong id="transfer-sell-player-name">...</strong></p>
+                <p>Presupuesto actual: <strong id="transfer-current-budget">...</strong></p>
+                
+                <div class="filters">
+                    <select id="transfer-position-filter">
+                        </select>
+                    <select id="transfer-team-filter">
+                        <option value="ALL">Equipo: Todos</option>
+                    </select>
+                    <input type="text" id="transfer-search-player" placeholder="Buscar jugador...">
+                </div>
+                
+                <div class="player-list-container" style="max-height: 400px;">
+                    <table class="player-list">
+                        <thead>
+                            <tr>
+                                <th>Jugador</th>
+                                <th>Equipo</th>
+                                <th>Precio</th>
+                                <th>Pts</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="transfer-player-list-body">
+                            </tbody>
+                    </table>
+                    <div class="pagination-controls" id="transfer-pagination">
+                        <button id="transfer-prev-page" disabled>&laquo;</button>
+                        <span id="transfer-page-numbers"></span>
+                        <button id="transfer-next-page">&raquo;</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <script>
+            // --- VARIABLES GLOBALES DE ESTADO ---
+            let miPlantilla = []; // Los 15 jugadores del usuario
+            let allAvailablePlayers = []; // TODOS los jugadores de la BD (para fichajes)
+            let transferFilteredPlayers = []; // Lista filtrada para el modal de fichajes
+            let currentPlayerIdInModal = null;
+            let draggedPlayerId = null;
+            let playerToSell = null;
+            let transferCurrentPage = 1;
+            const transferPlayersPerPage = 10;
+
+            // --- ELEMENTOS DEL DOM ---
+            const saveChangesButton = document.getElementById('save-team-changes-btn');
+            const playerModal = document.getElementById('player-info-modal');
+            const transferModal = document.getElementById('transfer-modal');
+            const pitchDisplay = document.getElementById('pitch');
+            const benchDisplay = document.getElementById('bench');
+            
+            // Elementos del modal de fichajes
+            const transferTBody = document.getElementById('transfer-player-list-body');
+            const transferPosFilter = document.getElementById('transfer-position-filter');
+            const transferTeamFilter = document.getElementById('transfer-team-filter');
+            const transferSearchInput = document.getElementById('transfer-search-player');
+            const transferPrevButton = document.getElementById('transfer-prev-page');
+            const transferNextButton = document.getElementById('transfer-next-page');
+            const transferPageNumbers = document.getElementById('transfer-page-numbers');
             // --- Lógica Principal ---
             async function loadTeamData() {
                 console.log("Cargando datos de Mi Equipo...");
                 try {
-                    // 1. Hacer fetch al backend para obtener TODOS los datos necesarios
-                    const response = await fetch('/api/fantasy/mi-equipo'); // Necesitarás crear este endpoint
+                    const response = await fetch('/api/fantasy/mi-equipo');
                     if (response.status === 401 || response.status === 403) {
                         alert("Sesión expirada."); 
                         window.location.href = '/login.html'; 
@@ -194,34 +323,168 @@
                     }
                     if (!response.ok) throw new Error('Error al cargar datos del equipo.');
 
-                    const data = await response.json(); // Espera un JSON con { equipoInfo, plantillaConDetalles, fichas, proximosPartidos }
+                    const data = await response.json(); 
+                    miPlantilla = data.plantillaConDetalles; // <-- GUARDA LA PLANTILLA GLOBALMENTE
 
-                    // 2. Poblar Header (Ya lo tienes del dashboard)
+                    // Poblar Header
                     document.getElementById('username-display').textContent = data.userInfo.username;
                     document.getElementById('user-level').textContent = data.userInfo.nivel;
                     document.getElementById('user-xp').textContent = data.userInfo.xp_total;
-                    // Calcular XP faltante si es necesario...
 
-                    // 3. Poblar Estado del Equipo
+                    // Poblar Estado del Equipo
                     document.getElementById('budget-remaining').textContent = `${data.equipoInfo.presupuesto_restante} M`;
                     document.getElementById('transfers-remaining').textContent = data.equipoInfo.fichajes_jornada_restantes;
-                    // Calcular y mostrar deadline...
+                    // ... (lógica del deadline) ...
 
-                    // 4. Renderizar Campo y Banca
-                    renderPitchAndBench(data.plantillaConDetalles);
+                    // Renderizar Campo y Banca
+                    renderPitchAndBench(miPlantilla);
 
-                    // 5. Poblar Fichas Disponibles
-                    renderChips(data.fichas);
-
-                    // 6. Poblar Próximos Partidos
-                    renderFixtures(data.proximosPartidos);
+                    // ... (poblar fichas y próximos partidos) ...
+                    // renderChips(data.fichas);
+                    // renderFixtures(data.proximosPartidos);
 
                 } catch (error) {
-                    console.error("Error:", error);
-                    // Mostrar error en la UI
+                    console.error("Error en loadTeamData:", error);
                 }
             }
 
+            async function initializeTransferModal(positionToBuy, maxBudget) {
+                try {
+                    // 1. Cargar jugadores SIEMPRE, o al menos, si está vacío
+                    if (allAvailablePlayers.length === 0) {
+                        console.log("Cargando lista de jugadores por primera vez...");
+                        const response = await fetch('/api/fantasy/available-players'); 
+                        if (!response.ok) throw new Error('Error al cargar jugadores');
+                        allAvailablePlayers = await response.json();
+                        console.log("Jugadores cargados:", allAvailablePlayers); // Confirmar
+                        populateTransferTeamFilter(); // Poblar el filtro de equipos
+                    }
+
+                    // 2. Mover el filtrado AQUÍ, *después* de que el await haya terminado
+                    console.log(`Filtrando por: pos=${positionToBuy}, maxBudget=${maxBudget}`);
+                    
+                    transferFilteredPlayers = allAvailablePlayers.filter(p =>
+                        p.posicion === positionToBuy && 
+                        p.valor_actual <= maxBudget && 
+                        !miPlantilla.find(mp => mp.id_jugador === p.id_jugador) 
+                    );
+                    
+                    console.log("Jugadores filtrados:", transferFilteredPlayers); // Este es el log clave
+
+                    // 3. El resto de la función (se queda igual)
+                    transferPosFilter.innerHTML = `<option value="${positionToBuy}">${positionToBuy}</option>`;
+                    transferPosFilter.disabled = true;
+                    transferTeamFilter.value = "ALL";
+                    transferSearchInput.value = "";
+                    
+                    // 4. Mostrar la primera página de la lista FILTRADA
+                    displayTransferPage(1); 
+
+                } catch (error) {
+                    console.error("Error en initializeTransferModal:", error);
+                    alert("Error al cargar la lista de jugadores. Inténtalo de nuevo.");
+                    return;
+                }
+            }
+
+            function displayTransferPage(page) {
+                transferCurrentPage = page;
+                transferTBody.innerHTML = "";
+                const startIndex = (page - 1) * transferPlayersPerPage;
+                const endIndex = startIndex + transferPlayersPerPage;
+                const playersToShow = transferFilteredPlayers.slice(startIndex, endIndex);
+
+                playersToShow.forEach(jugador => {
+                    const fila = document.createElement("tr");
+                    fila.innerHTML = `
+                        <td><img src="${jugador.url_imagen_jugador || 'placeholder-player-face.png'}" alt="Jugador"> ${jugador.nombre_jugador}</td>
+                        <td><img src="${jugador.img_equipo || 'placeholder-player-face.png'}" alt="Equipo"></td>
+                        <td>$${jugador.valor_actual}M</td>
+                        <td>${jugador.total_puntos_fantasy}</td>
+                        <td>
+                            <button class="add-player-btn" title="Fichar jugador" onclick="executeTransfer(${jugador.id_jugador})">
+                                <ion-icon name="add-circle-outline"></ion-icon>
+                            </button>
+                        </td>
+                    `;
+                    transferTBody.appendChild(fila);
+                });
+                updateTransferPaginationButtons();
+                updateTransferPageNumbers();
+            }
+
+            // 3. Funciones de paginación (copiadas y adaptadas para el modal)
+            function updateTransferPaginationButtons() {
+                const totalPages = Math.ceil(transferFilteredPlayers.length / transferPlayersPerPage);
+                transferPrevButton.disabled = transferCurrentPage === 1;
+                transferNextButton.disabled = transferCurrentPage === totalPages;
+            }
+            function updateTransferPageNumbers() {
+                // (Esta es una versión simplificada de la paginación, puedes copiar la compleja si quieres)
+                const totalPages = Math.ceil(transferFilteredPlayers.length / transferPlayersPerPage);
+                transferPageNumbers.textContent = `Pág ${transferCurrentPage} de ${totalPages}`;
+            }
+            transferPrevButton.addEventListener('click', () => {
+                if (transferCurrentPage > 1) displayTransferPage(transferCurrentPage - 1);
+            });
+            transferNextButton.addEventListener('click', () => {
+                const totalPages = Math.ceil(transferFilteredPlayers.length / transferPlayersPerPage);
+                if (transferCurrentPage < totalPages) displayTransferPage(transferCurrentPage + 1);
+            });
+
+            // 4. Función para poblar el filtro de equipos del modal
+            function populateTransferTeamFilter() {
+                const teams = new Map();
+                allAvailablePlayers.forEach(player => {
+                    if (player.id_equipo && player.nombre_equipo) {
+                        teams.set(player.id_equipo, player.nombre_equipo);
+                    }
+                });
+                const sortedTeams = Array.from(teams.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+                sortedTeams.forEach(([id, name]) => {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = name;
+                    transferTeamFilter.appendChild(option);
+                });
+            }
+
+            // 5. Función para ejecutar el fichaje (el POST final)
+            async function executeTransfer(playerToBuyId) {
+                if (!playerToSell) return;
+                const playerToBuy = allAvailablePlayers.find(p => p.id_jugador === playerToBuyId);
+                let countSameTeam = 0;
+                miPlantilla.forEach(p => {
+                    if (p.id_equipo === playerToBuy.id_equipo && p.id_jugador !== playerToSell.id_jugador) {
+                        countSameTeam++;
+                    }
+                });
+                if (countSameTeam >= 2) {
+                    alert(`No puedes fichar a ${playerToBuy.nombre_jugador}, ya tienes 2 jugadores de ${playerToBuy.nombre_equipo}.`);
+                    return;
+                }
+                if (!confirm(`¿Confirmar fichaje?\n\nVENDER: ${playerToSell.nombre_jugador}\nCOMPRAR: ${playerToBuy.nombre_jugador}`)) {
+                    return;
+                }
+                try {
+                    const response = await fetch('/api/fantasy/hacer-fichaje', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            jugadorSaleId: playerToSell.id_jugador,
+                            jugadorEntraId: playerToBuyId
+                        })
+                    });
+                    if (!response.ok) {
+                        const result = await response.json();
+                        throw new Error(result.error || 'Error en el servidor');
+                    }
+                    alert("¡Fichaje realizado con éxito!");
+                    window.location.reload(); 
+                } catch (error) {
+                    alert("Error al realizar el fichaje: " + error.message);
+                }
+            }
             // --- Funciones Auxiliares ---
             function renderPitchAndBench(plantilla) {
                 // Limpiar campo y banca
@@ -234,33 +497,30 @@
                 const titulares = plantilla.filter(p => p.es_titular);
                 const suplentes = plantilla.filter(p => !p.es_titular);
 
-                // Renderizar Titulares
                 titulares.forEach(player => {
                     const slotHTML = createPlayerSlotHTML(player);
-                    console.log(player)
                     document.getElementById(`pitch-row-${player.posicion}`).innerHTML += slotHTML;
                 });
 
-                // Renderizar Suplentes
                 suplentes.forEach(player => {
                     const slotHTML = createPlayerSlotHTML(player);
                     document.getElementById('bench').innerHTML += slotHTML;
                 });
                 
-                // Añadir listeners a los nuevos slots para abrir el modal
-                addSlotClickListeners();
+                addSlotClickListeners(); // Añadir listeners para modal
+                addDragListeners();      // Añadir listeners para drag/drop
             }
 
             function createPlayerSlotHTML(player) {
-                // Necesitarás obtener los puntos de la jornada actual (podría venir en el objeto player)
                 const currentGameweekPoints = player.puntos_ultima_jornada_equipo || 0;
                 let captainBadge = '';
                 if (player.es_capitan) {
                     captainBadge = '<span class="captain-badge">C</span>';
-                } // Podrías añadir lógica para 'V' (Vice) si lo tienes
-
+                }
+                
+                // ✅ Añadimos draggable="true"
                 return `
-                    <div class="player-slot" data-player-id="${player.id_jugador}" data-position="${player.posicion}">
+                    <div class="player-slot" data-player-id="${player.id_jugador}" data-position="${player.posicion}" draggable="true"> 
                         ${captainBadge}
                         <img src="${player.url_imagen_jugador || 'placeholder-player-face.png'}" alt="${player.nombre_jugador}">
                         <span class="player-name">${player.nombre_jugador}</span>
@@ -283,49 +543,75 @@
                 });
             }
 
-            function renderFixtures(partidos) {
-                const fixturesList = document.getElementById('upcoming-fixtures');
-                fixturesList.innerHTML = '';
-                partidos.forEach(partido => {
-                    const li = document.createElement('li');
-                    const fecha = new Date(partido.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
-                    li.textContent = `${partido.equipo_local} vs ${partido.equipo_visitante} - ${fecha}`;
-                    fixturesList.appendChild(li);
-                });
-            }
+            
 
             // --- Funciones para el Modal ---
-            const playerModal = document.getElementById('player-info-modal');
 
             function openPlayerModal(playerId) {
-                console.log("Abriendo modal para jugador ID:", playerId);
-                // 1. Hacer fetch a un endpoint '/api/fantasy/player-details/{playerId}'
-                //    que devuelva toda la info detallada (nacionalidad, desglose puntos, prox partido, etc.)
-                // fetch(`/api/fantasy/player-details/${playerId}`).then(res => res.json()).then(data => {
-                //     document.getElementById('modal-player-name').textContent = data.nombre;
-                //     document.getElementById('modal-player-img').src = data.url_imagen;
-                //     document.getElementById('modal-player-club').textContent = data.nombre_club;
-                //     document.getElementById('modal-player-pos').textContent = data.posicion;
-                //     document.getElementById('modal-player-value').textContent = `${data.valor_actual}M`;
-                //     document.getElementById('modal-player-popularity').textContent = `${data.popularidad}%`;
-                //     document.getElementById('modal-player-total-points').textContent = data.total_puntos;
-                //     renderPointsBreakdown(data.desglose_puntos); // Función para llenar la lista de puntos
-                //     document.getElementById('modal-next-fixture').textContent = data.proximo_partido;
-                //     playerModal.style.display = 'flex'; // Mostrar el modal
-                // }).catch(err => console.error("Error al cargar detalles del jugador:", err));
+                currentPlayerIdInModal = playerId;
+                const player = miPlantilla.find(p => p.id_jugador === playerId);
+                if (!player) return;
+                
+                fetch(`/api/fantasy/player-details/${playerId}`).then(res => res.json()).then(data => { 
+                    playerData = data[0];
+                    clubId = playerData.id_equipo_actual;
+                    console.log(clubId);
+                    puntosTotales = 0;
+                    desglose = document.getElementById('modal-points-breakdown');
+                    desglose.innerHTML = "";
+                    for (let i = 0; i < data.length; i++){
+                        puntosTotales += data[i].puntos_fantasy;
+                        desglose.innerHTML += `<li>J${data[i].jornada}: ${data[i].puntos_fantasy} Pts vs <img src="${data[i].img_rival}" class="rival-logo"></li>`;
+                    }
+                    document.getElementById('modal-player-name').textContent = playerData.nombre_jugador;
+                    document.getElementById('modal-player-img').src = playerData.url_imagen_jugador;
+                    document.getElementById('modal-player-club').src = playerData.img_equipo_actual;
+                    if (playerData.posicion == 'F'){
+                        document.getElementById('modal-player-pos').textContent = "DEL";
+                    } else if (playerData.posicion == 'M') {
+                        document.getElementById('modal-player-pos').textContent = "MED";
+                    } else if (playerData.posicion == 'D') {
+                        document.getElementById('modal-player-pos').textContent = "DEF";
+                    } else {
+                        document.getElementById('modal-player-pos').textContent = "POR";
+                    }
+                    document.getElementById('modal-player-value').textContent = playerData.valor_actual;
+                    document.getElementById('modal-player-popularity').textContent = playerData.popularidad;
+                    document.getElementById('modal-player-total-points').textContent = puntosTotales;
+                    
+                    fetch(`/api/fantasy/proximo-partido/${clubId}`).then(res => res.json()).then(data => {
+                        document.getElementById('modal-next-fixture').innerHTML = `
+                        <img class="rival-logo" src="${data.img_local}" alt="Loca"> vs
+                        <img class="rival-logo" src="${data.img_visitante}" alt="Visitante">`;
+                    })
+                    
+                    playerModal.style.display = 'flex';
 
-                // --- Datos de ejemplo mientras creas el endpoint ---
-                document.getElementById('modal-player-name').textContent = "Jugador Ejemplo";
-                document.getElementById('modal-player-img').src = 'placeholder-player-face.png';
-                document.getElementById('modal-player-club').textContent = "Club Ejemplo";
-                document.getElementById('modal-player-pos').textContent = "DEL";
-                document.getElementById('modal-player-value').textContent = `8.5M`;
-                document.getElementById('modal-player-popularity').textContent = `25.5%`;
-                document.getElementById('modal-player-total-points').textContent = 45;
-                document.getElementById('modal-points-breakdown').innerHTML = `<li>J1: 5 Pts</li><li>J2: 12 Pts</li><li>J3: 2 Pts</li>`;
-                document.getElementById('modal-next-fixture').textContent = "Equipo A vs Equipo B";
+                }).catch(err => console.error("Error al cargar detalles del jugador:", err));
+                
+                
+
+                const makeCaptainBtn = document.getElementById('modal-make-captain-btn');
+                const substituteBtn = document.getElementById('modal-substitute-btn');
+
+                // ¿Se puede hacer capitán?
+                if (player.es_titular && !player.es_capitan) {
+                    makeCaptainBtn.disabled = false;
+                    makeCaptainBtn.textContent = "Hacer Capitán";
+                } else if (player.es_capitan) {
+                    makeCaptainBtn.disabled = true;
+                    makeCaptainBtn.textContent = "Ya es Capitán";
+                } else {
+                    makeCaptainBtn.disabled = true;
+                    makeCaptainBtn.textContent = "Debe ser titular";
+                }
+
+                // Lógica de sustitución
+                substituteBtn.textContent = player.es_titular ? "Mover a la Banca" : "Mover a Titulares";
+
                 playerModal.style.display = 'flex';
-                // --- Fin datos de ejemplo ---
+
+
 
             }
 
@@ -335,23 +621,327 @@
 
             function addSlotClickListeners() {
                 document.querySelectorAll('.player-slot').forEach(slot => {
-                    // Quitamos listeners anteriores por si acaso
                     slot.removeEventListener('click', handleSlotClick); 
-                    // Añadimos el nuevo listener
                     slot.addEventListener('click', handleSlotClick);
                 });
             }
             
             function handleSlotClick(event) {
-                const slot = event.currentTarget; // El div .player-slot que se clickeó
+                const slot = event.currentTarget;
                 if (slot.dataset.playerId) {
                     openPlayerModal(parseInt(slot.dataset.playerId));
-                } else {
-                    console.log("Slot vacío clickeado."); // Podrías redirigir a fichajes
                 }
             }
 
+            function addDragListeners() {
+                const slots = document.querySelectorAll('.player-slot');
+                
+                slots.forEach(slot => {
+                    slot.addEventListener('dragstart', (e) => {
+                        draggedPlayerId = parseInt(e.currentTarget.dataset.playerId);
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.currentTarget.style.opacity = '0.5'; 
+                    });
 
+                    slot.addEventListener('dragover', (e) => {
+                        e.preventDefault(); 
+                        e.dataTransfer.dropEffect = 'move';
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                    });
+
+                    slot.addEventListener('dragleave', (e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                    });
+
+                    slot.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        const targetSlot = e.currentTarget;
+                        const targetPlayerId = parseInt(targetSlot.dataset.playerId);
+
+                        if (draggedPlayerId && draggedPlayerId !== targetPlayerId) {
+                            handleSwap(draggedPlayerId, targetPlayerId);
+                        }
+                    });
+                    
+                    slot.addEventListener('dragend', (e) => {
+                        e.currentTarget.style.opacity = '1';
+                        draggedPlayerId = null; // Resetea el ID
+                    });
+                });
+            }
+
+            function isFormationValid(plantilla) {
+                const titulares = plantilla.filter(p => p.es_titular === 1);
+                if (titulares.length !== 11) return false; 
+
+                const positions = { G: 0, D: 0, M: 0, F: 0 };
+                titulares.forEach(p => {
+                    if (positions.hasOwnProperty(p.posicion)) {
+                        positions[p.posicion]++;
+                    }
+                });
+                // Tus reglas: 1 POR, 3 DEF, 2 CEN, 1 DEL
+                return positions['G'] == 1 && positions['D'] >= 3 && positions['M'] >= 2 && positions['F'] >= 1;
+            }
+
+            function handleSwap(player1_id, player2_id) {
+                const player1 = miPlantilla.find(p => p.id_jugador === player1_id);
+                const player2 = miPlantilla.find(p => p.id_jugador === player2_id);
+
+                if (!player1 || !player2) {
+                    console.error("No se encontró uno de los jugadores en la plantilla");
+                    return;
+                }
+
+                // --- 👇 VALIDACIÓN CORREGIDA (RQF1) 👇 ---
+                // Solo revisamos al jugador que está EN LA BANCA.
+                // Si el jugador de la banca (es_titular === 0) ya jugó (puntos > 0), bloqueamos.
+                
+                // Caso 1: Se está arrastrando al jugador de la banca (player1)
+                if (player1.es_titular === 0 && player1.puntos_ultima_jornada_equipo > 0) {
+                    alert(`¡Movimiento no permitido! ${player1.nombre_jugador} (Banca) ya ha jugado y no puede entrar de titular.`);
+                    return; 
+                }
+                // Caso 2: Se está soltando sobre el jugador de la banca (player2)
+                if (player2.es_titular === 0 && player2.puntos_ultima_jornada_equipo > 0) {
+                    alert(`¡Movimiento no permitido! ${player2.nombre_jugador} (Banca) ya ha jugado y no puede entrar de titular.`);
+                    return;
+                }
+                // --- 👆 FIN DE VALIDACIÓN 👆 ---
+
+                // 1. Crea una copia temporal de la plantilla para probar el cambio
+                const tempPlantilla = JSON.parse(JSON.stringify(miPlantilla)); 
+                // ... (el resto de tu función handleSwap para validar la formación se queda igual) ...
+                // ...
+                const tempP1 = tempPlantilla.find(p => p.id_jugador === player1_id);
+                const tempP2 = tempPlantilla.find(p => p.id_jugador === player2_id);
+
+                [tempP1.es_titular, tempP2.es_titular] = [tempP2.es_titular, tempP1.es_titular];
+
+                if (isFormationValid(tempPlantilla)) {
+                    // ¡Válido! Aplica el cambio
+                    [player1.es_titular, player2.es_titular] = [player2.es_titular, player1.es_titular];
+                    
+                    if (player1.es_capitan && player1.es_titular === 0) player1.es_capitan = 0;
+                    if (player2.es_capitan && player2.es_titular === 0) player2.es_capitan = 0;
+
+                    renderPitchAndBench(miPlantilla);
+                    showSaveChangesButton();
+                } else {
+                    alert("¡Formación inválida! (Mín: 1-POR, 3-DEF, 2-CEN, 1-DEL)");
+                }
+            }
+
+            function showSaveChangesButton() {
+                saveChangesButton.style.display = 'block';
+            }
+
+            function closeTransferModal() {
+                transferModal.style.display = 'none';
+            }
+
+
+            document.getElementById('modal-substitute-btn').addEventListener('click', handleSubstitute);
+            document.getElementById('modal-make-captain-btn').addEventListener('click', handleMakeCaptain);
+            document.getElementById('modal-transfer-out-btn').addEventListener('click', handleTransfer);
+            document.getElementById('save-team-changes-btn').addEventListener('click', saveChangesToBackend);
+
+            function showSaveChangesButton() {
+                saveChangesButton.style.display = 'block';
+            }
+
+            function handleSubstitute() {
+                const now = new Date();
+                const dayOfWeek = now.getDay(); // 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
+                const allowedDays = [2, 3, 4]; // Martes, Miércoles, Jueves
+
+                if (!allowedDays.includes(dayOfWeek)) {
+                    alert("¡Mercado cerrado!\n\nLas sustituciones solo se pueden hacer los martes, miércoles y jueves antes de la fecha límite.");
+                    closePlayerModal();
+                    return; // Detiene la acción
+                }
+
+                // 2. Validar la hora límite del Jueves
+                if (dayOfWeek === 4 && (now.getHours() >= 23 && now.getMinutes() >= 59)) {
+                    alert("¡Mercado cerrado!\n\nLa fecha límite (jueves 11:59 PM) ya ha pasado.");
+                    closePlayerModal();
+                    return;
+                }
+                const player1_id = currentPlayerIdInModal;
+                const player1 = miPlantilla.find(p => p.id_jugador === currentPlayerIdInModal);
+                if (player1.puntos_ultima_jornada_equipo > 0) {
+                    alert('Los jugadores que ya hayan jugado su partido esta jornada no pueden ingresar de titulares.');
+                    closePlayerModal();
+                    return; // Detiene la acción
+                }
+                // Encuentra un jugador para intercambiar de la misma posición y estado opuesto
+                const player2 = miPlantilla.find(p => 
+                    p.posicion === player1.posicion && 
+                    p.es_titular !== player1.es_titular
+                );
+
+                if (!player2) {
+                    alert(`No hay espacio en la ${player1.es_titular ? 'banca' : 'cancha'} para un ${player1.posicion}.`);
+                    return;
+                }
+                if (player2.puntos_ultima_jornada_equipo > 0) {
+                    alert(`El jugador de la banca (${player2.nombre_jugador}) ya ha jugado.`);
+                    closePlayerModal();
+                    return;
+                }
+                
+                // Llama a la función de swap que ya tiene la validación de formación
+                handleSwap(player1.id_jugador, player2.id_jugador);
+                closePlayerModal();
+            }
+            
+            function handleMakeCaptain() {
+                const lastCaptainChange = localStorage.getItem('lastCaptainChange');
+                const now = new Date().getTime(); // Momento actual en milisegundos
+
+                if (lastCaptainChange) {
+                    const lastChangeTime = parseInt(lastCaptainChange);
+                    const hoursPassed = (now - lastChangeTime) / (1000 * 60 * 60); // Horas desde el último cambio
+
+                    if (hoursPassed < 24) {
+                        alert(`Puedes cambiar de capitán solo una vez cada 24 horas. Faltan ${ (24 - hoursPassed).toFixed(1) } horas.`);
+                        closePlayerModal();
+                        return;
+                    }
+                }
+                // --- 👆 FIN DE VALIDACIÓN 👆 ---
+
+                const newCaptainId = currentPlayerIdInModal;
+                const newCaptain = miPlantilla.find(p => p.id_jugador === newCaptainId);
+
+                // --- 👇 VALIDACIÓN REGLA 3 (Jugador ya ha jugado) 👇 ---
+                if (newCaptain.puntos_ultima_jornada_equipo > 0) {
+                    alert('No puedes hacer capitán a un jugador que ya ha jugado esta jornada.');
+                    closePlayerModal();
+                    return;
+                }
+                // --- 👆 FIN DE VALIDACIÓN 👆 ---
+
+
+                // 1. Quitar capitanazgo al capitán anterior (si existe)
+                const oldCaptain = miPlantilla.find(p => p.es_capitan === 1);
+                if (oldCaptain) {
+                    oldCaptain.es_capitan = 0;
+                }
+
+                // 2. Asignar capitanazgo al nuevo jugador
+                newCaptain.es_capitan = 1;
+
+                console.log(`Nuevo capitán: ${newCaptain.nombre_jugador}`);
+
+                // 3. Volver a dibujar todo y cerrar
+                renderPitchAndBench(miPlantilla);
+                closePlayerModal();
+                showSaveChangesButton(); // Mostrar botón de guardar
+
+                // --- 👇 GUARDAR EL MOMENTO DEL CAMBIO (Regla 2) 👇 ---
+                // Si todas las validaciones pasaron y el cambio se hizo, guardamos la fecha/hora actual
+                localStorage.setItem('lastCaptainChange', now.toString());
+            }
+            
+            function handleTransfer() {
+                const now = new Date();
+                const dayOfWeek = now.getDay(); // 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
+                const allowedDays = [2, 3, 4]; // Martes, Miércoles, Jueves
+
+                // 1. Validar que sea un día permitido
+                if (!allowedDays.includes(dayOfWeek)) {
+                    alert("¡Mercado de fichajes cerrado!\n\nSolo puedes realizar fichajes los martes, miércoles y jueves.");
+                    closePlayerModal();
+                    return; // Detiene la acción
+                }
+
+                // 2. Validar la hora límite del Jueves
+                if (dayOfWeek === 4 && (now.getHours() >= 23 && now.getMinutes() >= 59)) {
+                    alert("¡Mercado de fichajes cerrado!\n\nLa fecha límite (jueves 11:59 PM) ya ha pasado.");
+                    closePlayerModal();
+                    return;
+                }
+                const playerId = currentPlayerIdInModal;
+                playerToSell = miPlantilla.find(p => p.id_jugador === playerId); // Usa miPlantilla
+
+                if (!playerToSell) return;
+
+                // Lógica de fichajes (RQF3)
+                const fichajesRestantesElement = document.getElementById('transfers-remaining');
+                const fichajesRestantes = parseInt(fichajesRestantesElement.textContent);
+                if (fichajesRestantes <= 0) {
+                    if (!confirm(`Ya no te quedan fichajes. ¿Deseas hacer este fichaje con un costo de -5 puntos?`)) {
+                        return;
+                    }
+                }
+
+                // ✅ CORRECCIÓN: Lee el presupuesto desde el DOM
+                const budgetElement = document.getElementById('budget-remaining');
+                const currentBudget = parseFloat(budgetElement.textContent.replace(' M', ''));
+                const presupuestoDisponible = currentBudget + parseFloat(playerToSell.precio_compra); // Asumimos que playerToSell tiene valor_actual
+                console.log(playerToSell);
+                document.getElementById('transfer-sell-player-name').textContent = playerToSell.nombre_jugador;
+                document.getElementById('transfer-current-budget').textContent = `$${presupuestoDisponible.toFixed(1)}M`;
+                
+                closePlayerModal(); 
+                transferModal.style.display = 'flex';
+                
+                // Llama a la función que cargará los jugadores en el modal
+                initializeTransferModal(playerToSell.posicion, presupuestoDisponible);
+            }
+            
+            function applyTransferFilters() {
+                const positionToBuy = transferPosFilter.value;
+                const selectedTeamId = transferTeamFilter.value;
+                const searchTerm = transferSearchInput.value.toLowerCase().trim();
+                
+                // Calcula el presupuesto disponible DE NUEVO
+                const budgetElement = document.getElementById('budget-remaining');
+                const currentBudget = parseFloat(budgetElement.textContent.replace(' M', ''));
+                const maxBudget = currentBudget + parseFloat(playerToSell.precio_compra);
+
+                // Filtra la lista COMPLETA de jugadores
+                transferFilteredPlayers = allAvailablePlayers.filter(p =>
+                    p.posicion === positionToBuy && 
+                    p.valor_actual <= maxBudget && 
+                    !miPlantilla.find(mp => mp.id_jugador === p.id_jugador) &&
+                    (selectedTeamId === "ALL" || p.id_equipo == selectedTeamId) &&
+                    (searchTerm === "" || p.nombre_jugador.toLowerCase().includes(searchTerm))
+                );
+
+                displayTransferPage(1); // Muestra la página 1 de los nuevos resultados
+            }
+
+            // AÑADE ESTOS LISTENERS (puedes ponerlos al final del script)
+            transferTeamFilter.addEventListener('change', applyTransferFilters);
+            transferSearchInput.addEventListener('input', applyTransferFilters);
+
+            
+
+            async function saveChangesToBackend() {
+                console.log("Guardando cambios en el servidor...");
+                const plantillaActualizada = miPlantilla.map(p => ({
+                    id_jugador: p.id_jugador,
+                    es_titular: p.es_titular,
+                    es_capitan: p.es_capitan
+                }));
+                try {
+                    const response = await fetch('/api/fantasy/actualizar-plantilla', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ plantilla: plantillaActualizada })
+                    });
+                    if (!response.ok) throw new Error('Respuesta del servidor no fue OK');
+                    const result = await response.json();
+                    alert('¡Cambios guardados con éxito!');
+                    saveChangesButton.style.display = 'none';
+                } catch (error) {
+                    console.error("Error al guardar cambios:", error);
+                    alert("Error al guardar cambios. Inténtalo de nuevo.");
+                }
+            }
             // --- Inicializar la Carga de Datos ---
             loadTeamData();
 

@@ -1470,7 +1470,265 @@ export async function getPlantillaFantasy(id_usuario){
 }
 
 
+export async function getDesglosePuntosFantasyJugador(id_jugador){
+    const [rows] = await pool.query(`
+        -- CTE 1: Encuentra el EQUIPO ACTUAL del jugador (el más reciente)
+        -- Esto lo usaremos para saber quién es el "rival" en cada partido
+        WITH CurrentTeam AS (
+            SELECT
+                pe.jugador,
+                pe.equipo AS id_equipo_actual,
+                pe.temporada AS id_temporada_actual,
+                e.nombre AS nombre_equipo_actual,
+                e.url_imagen AS img_equipo_actual,
+                ROW_NUMBER() OVER(PARTITION BY pe.jugador ORDER BY pe.id_plantilla DESC) as rn
+            FROM
+                plantilla_equipos pe
+            JOIN
+                equipo e ON pe.equipo = e.id_equipo
+            WHERE
+                pe.jugador = ? 
+        )
+
+        -- Consulta Principal: Obtiene todos los partidos jugados y los datos del rival
+        SELECT
+            j.id_jugador,
+            j.nombre AS nombre_jugador,
+            j.posicion,
+            j.url_imagen AS url_imagen_jugador,
+            
+            -- Info estática (se repetirá en cada fila)
+            ct.id_equipo_actual,
+            ct.nombre_equipo_actual,
+            ct.img_equipo_actual,
+            vjf.valor_actual,
+            vjf.popularidad,
+            
+            -- Info del partido (cambiará en cada fila)
+            p.fecha,
+            pjj.jornada,
+            pjj.puntos_fantasy,
+            
+            -- Info del Rival (calculada con el CASE)
+            e_rival.id_equipo AS id_rival,
+            e_rival.nombre AS nombre_rival,
+            e_rival.url_imagen AS img_rival
+            
+        FROM
+            puntos_jugador_jornada pjj
+        -- Unimos con partido para obtener la fecha, jornada y los IDs de los equipos
+        JOIN
+            partido p ON pjj.id_partido = p.id_partido
+        -- Unimos con jugador para obtener sus datos
+        JOIN
+            jugador j ON pjj.id_jugador = j.id_jugador
+        -- Unimos con la CTE para saber cuál es el equipo "actual" del jugador
+        LEFT JOIN
+            CurrentTeam ct ON pjj.id_jugador = ct.jugador AND ct.rn = 1
+        -- Unimos con valor_fantasy (usando la temporada del partido)
+        LEFT JOIN
+            valor_jugador_fantasy vjf ON pjj.id_jugador = vjf.id_jugador 
+        -- Unimos la tabla equipo OTRA VEZ para obtener los datos del RIVAL
+        LEFT JOIN
+            equipo e_rival ON e_rival.id_equipo = (
+                -- Este CASE identifica al rival basándose en el equipo actual del jugador
+                CASE
+                    WHEN p.equipo_local = ct.id_equipo_actual THEN p.equipo_visitante
+                    ELSE p.equipo_local
+                END
+            )
+        WHERE
+            pjj.id_jugador = ? 
+        ORDER BY
+            p.fecha DESC;`,
+        [id_jugador, id_jugador]
+  );
+  return rows;
+
+}
 
 
+export async function getProximoPartido(id_equipo){
+    const [rows] = await pool.query(
+    `SELECT
+        p.id_partido,
+        p.jornada,
+        p.fecha,
+        
+        -- Traemos los datos del equipo local
+        e_local.id_equipo AS id_local,
+        e_local.nombre AS nombre_local,
+        e_local.url_imagen AS img_local,
+        
+        -- Traemos los datos del equipo visitante
+        e_visitante.id_equipo AS id_visitante,
+        e_visitante.nombre AS nombre_visitante,
+        e_visitante.url_imagen AS img_visitante
+    FROM
+        partido p
+    -- Unimos la tabla equipo para el equipo local
+    JOIN
+        equipo e_local ON p.equipo_local = e_local.id_equipo
+    -- Unimos la tabla equipo OTRA VEZ (con un alias) para el visitante
+    JOIN
+        equipo e_visitante ON p.equipo_visitante = e_visitante.id_equipo
+    WHERE
+        -- 1. Buscamos el ID de tu equipo tanto en la columna local COMO en la visitante
+        (p.equipo_local = ? OR p.equipo_visitante = ?)
+        
+        -- 2. Filtramos para que solo muestre partidos de hoy en adelante
+        AND p.fecha >= CURDATE()
+        
+    -- 3. Ordenamos por fecha para que el más cercano aparezca primero
+    ORDER BY
+        p.fecha ASC
+        
+    -- 4. Tomamos solo el primer resultado
+    LIMIT 1;`,
+    [id_equipo, id_equipo]
+  );
+  return rows[0];
+
+}
 
 
+export async function realizarFichaje(id_equipo_fantasy, jugadorSaleId, jugadorEntraId, fichajesRestantes, id_temporada) {
+    const conn = await pool.getConnection();
+    await conn.beginTransaction();
+
+    try {
+        console.log(jugadorEntraId)
+        // 1. Obtener precio y equipo del jugador que ENTRA
+        const [jugadorEntraData] = await conn.query(
+            `SELECT vj.valor_actual, lta.equipo AS id_equipo
+             FROM valor_jugador_fantasy vj
+             JOIN (
+                 SELECT pe.jugador, pe.equipo, ROW_NUMBER() OVER(PARTITION BY pe.jugador ORDER BY pe.id_plantilla DESC) as rn
+                 FROM plantilla_equipos pe WHERE pe.jugador = ?
+             ) lta ON vj.id_jugador = lta.jugador AND lta.rn = 1
+             WHERE vj.id_jugador = ? `,
+            [jugadorEntraId, jugadorEntraId]
+        );
+        
+        if (!jugadorEntraData.length) throw new Error("No se encontró el jugador a comprar.");
+        const jugadorEntra = jugadorEntraData[0];
+
+        // 2. Obtener precio del jugador que SALE
+        const [jugadorSaleData] = await conn.query(
+            `SELECT precio_compra, es_capitan FROM plantilla_fantasy 
+             WHERE id_equipo_fantasy = ? AND id_jugador = ?`,
+            [id_equipo_fantasy, jugadorSaleId]
+        );
+        if (!jugadorSaleData.length) throw new Error("No se encontró al jugador a vender en tu plantilla.");
+        const jugadorSale = jugadorSaleData[0];
+
+        // 3. Obtener presupuesto actual
+        const [equipoData] = await conn.query(
+            `SELECT presupuesto_restante FROM equipo_fantasy WHERE id_equipo_fantasy = ? FOR UPDATE`, // Bloquea la fila
+            [id_equipo_fantasy]
+        );
+        let presupuesto = parseFloat(equipoData[0].presupuesto_restante);
+        
+        // 4. Validar presupuesto
+        const nuevoPresupuesto = presupuesto + parseFloat(jugadorSale.precio_compra) - parseFloat(jugadorEntra.valor_actual);
+        if (nuevoPresupuesto < 0) {
+            throw new Error(`Presupuesto insuficiente. Necesitas ${nuevoPresupuesto * -1}M más.`);
+        }
+
+        // 5. Validar límite de equipo (2 jugadores)
+        const [conteoEquipo] = await conn.query(
+            `SELECT COUNT(pf.id_jugador) AS count
+             FROM plantilla_fantasy pf
+             JOIN (
+                 SELECT pe.jugador, pe.equipo, ROW_NUMBER() OVER(PARTITION BY pe.jugador, pe.temporada ORDER BY pe.id_plantilla DESC) as rn
+                 FROM plantilla_equipos pe WHERE pe.temporada = ?
+             ) lta ON pf.id_jugador = lta.jugador AND lta.rn = 1
+             WHERE pf.id_equipo_fantasy = ? 
+               AND lta.equipo = ?
+               AND pf.id_jugador != ?`, // No contar al jugador que sale
+            [id_temporada, id_equipo_fantasy, jugadorEntra.id_equipo, jugadorSaleId]
+        );
+        
+        if (conteoEquipo[0].count >= 2) {
+            throw new Error("Límite de 2 jugadores por equipo alcanzado.");
+        }
+
+        // 6. Calcular costo de puntos
+        let costoPuntos = 0;
+        let fichajesNuevos = fichajesRestantes;
+        if (fichajesRestantes > 0) {
+            fichajesNuevos -= 1;
+        } else {
+            costoPuntos = 5; // Penalización de 5 puntos
+            // (Aquí también restarías 5 puntos al 'puntos_totales' del equipo)
+        }
+
+        // 7. Ejecutar el UPDATE en la plantilla
+        await conn.query(
+            `UPDATE plantilla_fantasy 
+             SET id_jugador = ?, precio_compra = ?, es_capitan = 0
+             WHERE id_equipo_fantasy = ? AND id_jugador = ?`,
+            [jugadorEntraId, jugadorEntra.valor_actual, id_equipo_fantasy, jugadorSaleId]
+        );
+
+        // 8. Actualizar el presupuesto del equipo y fichajes restantes
+        await conn.query(
+            `UPDATE equipo_fantasy 
+             SET presupuesto_restante = ?, fichajes_jornada_restantes = ?
+             WHERE id_equipo_fantasy = ?`,
+            [nuevoPresupuesto, fichajesNuevos, id_equipo_fantasy]
+        );
+        
+        // 9. (Opcional pero recomendado) Guardar en tabla 'transferencia_fantasy'
+        const [jornadaActual] = await conn.query("SELECT MAX(jornada) FROM partido WHERE fecha <= CURDATE()");
+        await conn.query(
+             `INSERT INTO transferencia_fantasy (id_equipo_fantasy, jornada, jugador_sale_id, jugador_entra_id, costo_puntos)
+              VALUES (?, ?, ?, ?, ?)`,
+             [id_equipo_fantasy, jornadaActual[0]['MAX(jornada)'], jugadorSaleId, jugadorEntraId, costoPuntos]
+         );
+
+        // 10. Confirmar transacción
+        await conn.commit();
+
+    } catch (error) {
+        await conn.rollback();
+        console.error("Error en transacción de fichaje:", error);
+        throw error; // Lanza el error para que app.js lo atrape
+    } finally {
+        conn.release();
+    }
+}
+
+
+export async function actualizarPlantilla(id_equipo_fantasy, plantilla) {
+    const conn = await pool.getConnection(); // Obtén una conexión del pool
+    await conn.beginTransaction(); // Inicia la transacción
+
+    try {
+        // Preparamos todas las promesas de actualización
+        // (Promise.all ejecuta todas las consultas en paralelo, es más rápido)
+        const updatePromises = plantilla.map(player => {
+            return conn.query(
+                `UPDATE plantilla_fantasy 
+                 SET es_titular = ?, es_capitan = ?
+                 WHERE id_equipo_fantasy = ? AND id_jugador = ?`,
+                [player.es_titular, player.es_capitan, id_equipo_fantasy, player.id_jugador]
+            );
+        });
+
+        // Ejecutamos todas las promesas de actualización
+        await Promise.all(updatePromises);
+        
+        // Si todas tuvieron éxito, guardamos los cambios
+        await conn.commit();
+        console.log(`Plantilla ${id_equipo_fantasy} actualizada con éxito.`);
+
+    } catch (error) {
+        // Si una sola falla, deshacemos todo
+        await conn.rollback();
+        console.error("Error en la transacción de actualizar plantilla:", error);
+        throw error; // Lanza el error para que app.js lo atrape
+    } finally {
+        conn.release(); // Siempre libera la conexión de vuelta al pool
+    }
+}

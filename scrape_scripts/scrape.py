@@ -3,7 +3,6 @@ from sqlalchemy import create_engine, MetaData, Table
 from dotenv import load_dotenv
 from sqlalchemy.dialects.mysql import insert
 from scrape_sofa import get_sofascore_api_data, init_driver, get_all_urls_fbref
-from chat import  get_match_report_links_selenium
 from datetime import datetime, timedelta
 from funciones import liga_fbref_fixtures, ligas_ids, temporadas_ids, insert_tabla_posiciones, insert_update_partidos, insert_estadistica_partido, insert_update_plantilla_equipos, insert_mapa_de_calor, insert_mapa_de_disparos, insert_estadistica_jugador, update_standings_evolution_graph, ultimos_partidos, update_fecha_partidos, prematch_odds, postmatch_odss, pending_odds, insert_confirmed_lineups, prematch_ref, insert_predicted_lineups, extract_img_url, transfer_to_database, procesar_puntos_partido, actualizar_valor_mercado_fantasy
 import pandas as pd
@@ -27,7 +26,7 @@ future = today + timedelta(days=1)
 future = future.strftime('%Y-%m-%d')
 print(f"Obteniendo data de {yesterday}")
 #selecciona los partidos que se jugaron el dia de ayer
-df_partidos_ayer = pd.read_sql(f"SELECT * FROM partido WHERE fecha = '{yesterday}' and id_partido != 87", engine)
+df_partidos_ayer = pd.read_sql(f"SELECT * FROM partido WHERE fecha = '{yesterday}' ", engine)
 df_partidos_futuros = pd.read_sql(f"SELECT * FROM partido WHERE fecha = '{future}'", engine)
 df_partidos_pendientes = pd.read_sql(f"SELECT * FROM partido WHERE fecha < '{future}'", engine)
 print("Inicializando driver...")
@@ -49,12 +48,12 @@ ids_para_scrapear_temporada = df_partidos_ayer['temporada'].unique()
 
 
 
-if len(df_partidos_futuros) > 0:
-    print("Entrando...")
-    for i in range(len(df_partidos_futuros)):
-        prematch_ref(engine, df_partidos_futuros.iloc[i] )
-        prematch_odds(engine, df_partidos_futuros.iloc[i])
-        insert_predicted_lineups(engine, df_partidos_futuros.iloc[i])
+#if len(df_partidos_futuros) > 0:
+    #print("Entrando...")
+    #for i in range(len(df_partidos_futuros)):
+        #prematch_ref(engine, df_partidos_futuros.iloc[i] )
+        #prematch_odds(engine, df_partidos_futuros.iloc[i])
+        #insert_predicted_lineups(engine, df_partidos_futuros.iloc[i])
 
 
 
@@ -93,7 +92,7 @@ else:
     for i in range(len(ids_para_scrapear_temporada)):
         liga_a_scrapear = ids_para_scrapear_temporada[i]
         insert_tabla_posiciones(liga_a_scrapear, engine=engine,temporada=temporadas_ids
-        [liga_a_scrapear-1], liga=ligas_ids[liga_a_scrapear-1])   #actualiza la tabla de posiciones de todas las ligas
+        [liga_a_scrapear-1])   #actualiza la tabla de posiciones de todas las ligas
         update_standings_evolution_graph(liga_a_scrapear,engine=engine, temporada=temporadas_ids[liga_a_scrapear-1])
         print(f"Tabla {liga_a_scrapear} insertada correctamente")
     

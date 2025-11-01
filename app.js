@@ -4,7 +4,7 @@ import express from 'express'
 import bcrypt from 'bcrypt'; 
 import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
-import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail, getUsuarioData, getEquipoFantasyUsuario, getJugadoresFantasy, crearEquipoFantasyCompleto, getPlantillaFantasy} from './database.js'
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail, getUsuarioData, getEquipoFantasyUsuario, getJugadoresFantasy, crearEquipoFantasyCompleto, getPlantillaFantasy, getDesglosePuntosFantasyJugador, getProximoPartido, realizarFichaje, actualizarPlantilla} from './database.js'
  
 
 const app = express()  
@@ -37,6 +37,99 @@ function authenticateToken(req, res, next) {
     });
 }
 
+app.post("/api/fantasy/actualizar-plantilla", authenticateToken, async (req, res) => {
+    try {
+        const userId = req.userId; // Gracias al middleware
+        const { plantilla } = req.body; // El array de {id_jugador, es_titular, es_capitan}
+
+        // Validación simple
+        if (!plantilla || plantilla.length !== 15) {
+            return res.status(400).json({ error: "Datos de plantilla inválidos." });
+        }
+
+        // 1. Obtener el id_equipo_fantasy del usuario
+        // (getEquipoFantasyUsuario solo necesita el userId según tu schema)
+        const equipo = await getEquipoFantasyUsuario(userId); 
+
+        if (!equipo) {
+            return res.status(404).json({ error: "No se encontró el equipo fantasy del usuario." });
+        }
+        
+        // 2. Llamar a la función de la BD para actualizar
+        await actualizarPlantilla(equipo.id_equipo_fantasy, plantilla);
+
+        res.status(200).json({ message: "¡Plantilla actualizada con éxito!" });
+
+    } catch (error) {
+        console.error("Error al actualizar plantilla:", error);
+        res.status(500).json({ error: "Error interno del servidor." });
+    }
+});
+
+
+app.post("/api/fantasy/hacer-fichaje", authenticateToken, async (req, res) => {
+    try {
+        const userId = req.userId;
+        const { jugadorSaleId, jugadorEntraId } = req.body;
+
+        // 1. Obtener el equipo fantasy del usuario
+        const equipo = await getEquipoFantasyUsuario(userId);
+        if (!equipo) {
+            return res.status(404).json({ error: "No se encontró el equipo fantasy." });
+        }
+        
+        // 2. Llamar a la función de la BD que hace la transacción
+        await realizarFichaje(
+            equipo.id_equipo_fantasy, 
+            jugadorSaleId, 
+            jugadorEntraId,
+            equipo.fichajes_jornada_restantes,
+            equipo.id_temporada // Pasamos la temporada del equipo
+        );
+
+        res.status(200).json({ message: "Fichaje realizado con éxito." });
+
+    } catch (error) {
+        console.error("Error al hacer fichaje:", error);
+        // Devolver errores de validación al usuario
+        if (error.message.includes("Presupuesto") || error.message.includes("Límite")) {
+             return res.status(400).json({ error: error.message });
+        }
+        res.status(500).json({ error: "Error interno del servidor." });
+    }
+});
+
+app.get("/api/fantasy/proximo-partido/:id",  async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const info = await getProximoPartido(id);
+
+        if (info.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del jugador" });
+        }
+
+        res.json(info);   
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del jugador" });
+    }
+});
+
+app.get("/api/fantasy/player-details/:id",  async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const info = await getDesglosePuntosFantasyJugador(id);
+
+        if (info.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del jugador" });
+        }
+
+        res.json(info);   
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del jugador" });
+    }
+});
 
 app.get("/api/fantasy/mi-equipo", authenticateToken, async (req, res) => {
     // Gracias al middleware, ahora tenemos acceso a req.userId

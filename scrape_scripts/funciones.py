@@ -13,7 +13,6 @@ from sqlalchemy import create_engine, MetaData, Table, text
 from sqlalchemy.dialects.mysql import insert
 from scrape_sofa import get_sofascore_api_data, init_driver, get_all_teams_stats_fbref, get_all_urls_fbref, get_all_players_stats_fbref
 #from scrape import links_totales 
-from chat import  get_match_report_links_selenium
 from datetime import datetime, timedelta
 from rapidfuzz import process, fuzz
 
@@ -198,7 +197,7 @@ def upload_image_from_url(driver, image_url, public_id):
         print(f"Error procesando la imagen {image_url}: {e}")
         return None  
 
-def get_links_totales(engine, driver):
+def get_links_totales(engine):
     
     today = datetime.now()
     yesterday = today - timedelta(days=1)
@@ -209,11 +208,11 @@ def get_links_totales(engine, driver):
     for i in range(len(ids_para_scrapear_temporada)):
         iteracion = ids_para_scrapear_temporada[i]
         url = f"https://fbref.com/en/comps/{liga_fbref_fixtures[iteracion-1]}"
-        lista_links = get_all_urls_fbref(driver, liga_url=url)
+        lista_links = get_all_urls_fbref(liga_url=url)
         links_totales = links_totales + lista_links
     return links_totales
 
-def insert_tabla_posiciones(liga_a_scrapear, engine, temporada, liga):
+def insert_tabla_posiciones(liga_a_scrapear, engine, temporada):
     df_equipo = pd.read_sql('SELECT id_equipo, nombre FROM equipo', engine)
     df_temporada = pd.read_sql('SELECT id_temporada, nombre FROM temporada', engine)
     mapa_equipo = dict(zip(df_equipo['nombre'], df_equipo['id_equipo']))
@@ -242,7 +241,7 @@ def insert_tabla_posiciones(liga_a_scrapear, engine, temporada, liga):
             id_temporada = 5
             id_liga_fbref = liga_fbref[liga_a_scrapear - 1]
         print(f"Scrapeando {id_liga_fbref}...")
-        data_fbref = get_all_teams_stats_fbref(driver, id_liga_fbref)
+        data_fbref = get_all_teams_stats_fbref(id_liga_fbref)
         print("Scrapeo exitoso")
 
         for row in torneo['rows']:
@@ -340,6 +339,7 @@ def insert_tabla_posiciones(liga_a_scrapear, engine, temporada, liga):
             conn.execute(update_stmt)
     driver.quit()
     return
+
 
 def verificar_fecha_partido(driver, url_sofascore, jornada, temporada):
     match_id = url_sofascore.split(':')[-1]
@@ -442,7 +442,7 @@ def insert_update_partidos(engine, partido):
         slug = slug.replace(" ", "-")
         url_fbref = None
         print("Entrando a get_links_totales")
-        links_totales = get_links_totales(engine, driver) 
+        links_totales = get_links_totales(engine) 
         mejor_link, score, _ = process.extractOne(
             slug,                   
             links_totales,        
