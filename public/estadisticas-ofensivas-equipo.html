@@ -119,6 +119,43 @@
             body.light-mode .btn-estadisticas { background-color: #e9e9f3; color: #333; }
             body.light-mode .btn-estadisticas:hover { background-color: #007bff; color: white; }
             body.light-mode #tooltip { background: rgba(255, 255, 255, 0.95); color: #333; border-color: #d1d1d1; }
+            .sortable-header {
+                cursor: pointer;
+                transition: color 0.2s ease;
+            }
+            .sortable-header:hover {
+                color: #4a69ff; /* Un color de realce al pasar el mouse */
+            }
+            /* Estilos para las flechas que indican el ordenamiento */
+            .sortable-header::after {
+                content: '';
+                display: inline-block;
+                width: 10px;
+                height: 10px;
+                margin-left: 5px;
+                opacity: 0.4;
+            }
+            /* Flecha descendente (▼) */
+            .sortable-header.sort-desc::after {
+                content: ' ▼';
+                opacity: 1;
+                font-size: 0.7em;
+            }
+            /* Flecha ascendente (▲) */
+            .sortable-header.sort-asc::after {
+                content: ' ▲';
+                opacity: 1;
+                font-size: 0.7em;
+            }
+
+            /* Para el modo claro */
+            body.light-mode .sortable-header:hover {
+                color: #4a69ff;
+            }
+            body.light-mode .sortable-header.sort-desc::after,
+            body.light-mode .sortable-header.sort-asc::after {
+                color: #1a1a2e; /* Color oscuro para las flechas en modo claro */
+            }
         </style>
     </head>
     <body> 
@@ -145,14 +182,14 @@
                             <table id="estadisticas-ofensivas-equipo">
                                 <thead>
                                     <tr>
-                                        <th>Club</th>
-                                        <th>PJ</th>
-                                        <th>Goles</th>
-                                        <th>Disparos</th>
-                                        <th>Disp. Puerta</th>
-                                        <th>% Disp. Puerta</th>
-                                        <th>xG</th>
-                                        <th>Disp./PJ</th>
+                                        <th class="sortable-header" data-sort-key="nombre">Club</th>
+                                        <th class="sortable-header" data-sort-key="partidos_jugados">PJ</th>
+                                        <th class="sortable-header" data-sort-key="goles_anotados">Goles</th>
+                                        <th class="sortable-header" data-sort-key="disparos">Disparos</th>
+                                        <th class="sortable-header" data-sort-key="disparos_a_puerta">Disp. Puerta</th>
+                                        <th class="sortable-header" data-sort-key="porcentaje_disparos_a_puerta">% Disp. Puerta</th>
+                                        <th class="sortable-header" data-sort-key="xg">xG</th>
+                                        <th class="sortable-header" data-sort-key="disparos_por_90">Disp./PJ</th>
                                         <th>Acción</th>
                                     </tr>
                                 </thead>
@@ -180,7 +217,7 @@
 
             <div class="full-width-wrapper">
                 <div class="card">
-                    <h2 class="card-title">Mapa de Disparos (Campo Completo)</h2>
+                    <h2 class="card-title">Mapa de Disparos</h2>
                     <p id="label-equipo">Selecciona un equipo de la tabla para ver sus disparos</p>
                     <div class="pitch-container">
                         <canvas id="campoCanvas"></canvas>
@@ -195,6 +232,9 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', function() {
+                let allStatsData = []; // Guardará los datos de la tabla de estadísticas
+                let sortColumn = 'goles_anotados'; // Columna por defecto para ordenar
+                let sortDirection = 'desc';
                 // --- DECLARACIÓN DE VARIABLES ---
                 const ligaSelect = document.getElementById('liga');
                 const tipoDeStatBtn = document.getElementById('tipo-de-estadistica');
@@ -240,25 +280,88 @@
                 tipoDeStatBtn.addEventListener("click", function() {
                     window.location = "estadistica_ofensivas.html?liga=" + ligaSelect.value;
                 });
+
+                function sortStatsData() {
+                    allStatsData.sort((a, b) => {
+                        const valA = a[sortColumn];
+                        const valB = b[sortColumn];
+
+                        // Detectar si son números para un ordenamiento numérico
+                        const numA = parseFloat(valA);
+                        const numB = parseFloat(valB);
+
+                        let comparison = 0;
+                        
+                        if (!isNaN(numA) && !isNaN(numB)) {
+                            // Ordenamiento numérico
+                            comparison = numA - numB;
+                        } else {
+                            // Ordenamiento de texto (alfabético)
+                            comparison = valA.toString().localeCompare(valB.toString());
+                        }
+
+                        // Invertir el resultado si la dirección es descendente
+                        return (sortDirection === 'desc') ? (comparison * -1) : comparison;
+                    });
+                }
                 
+                function handleHeaderClick(event) {
+                    const clickedKey = event.currentTarget.dataset.sortKey;
+
+                    if (sortColumn === clickedKey) {
+                        sortDirection = (sortDirection === 'desc') ? 'asc' : 'desc';
+                    } else {
+                        sortColumn = clickedKey;
+                        sortDirection = 'desc';
+                    }
+                    
+                    sortStatsData(); // Ordena los datos
+                    renderTablaStats(); // Vuelve a dibujar la tabla
+                    updateHeaderArrows(); // Actualiza las flechas
+                }
+
+                function updateHeaderArrows() {
+                    document.querySelectorAll('#estadisticas-ofensivas-equipo th[data-sort-key]').forEach(th => {
+                        th.classList.remove('sort-asc', 'sort-desc');
+                        if (th.dataset.sortKey === sortColumn) {
+                            th.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+                        }
+                    });
+                }
+
+                function renderTablaStats() {
+                    const tbodyStatsOfensivas = document.querySelector("#estadisticas-ofensivas-equipo tbody");
+                    tbodyStatsOfensivas.innerHTML = "";
+                    
+                    allStatsData.forEach(stat => {
+                        const fila = document.createElement("tr");
+                        fila.innerHTML = `
+                            <td><img src="${stat.url_imagen}">${stat.nombre}</td>
+                            <td>${stat.partidos_jugados}</td> <td>${stat.goles_anotados}</td>
+                            <td>${stat.disparos}</td> <td>${stat.disparos_a_puerta}</td>
+                            <td>${stat.porcentaje_disparos_a_puerta}</td> <td>${stat.xg}</td>
+                            <td>${stat.disparos_por_90}</td>
+                            <td><button class="btn-estadisticas" data-equipo-id="${stat.id_equipo}" data-equipo-nombre="${stat.nombre}">🥅</button></td>
+                        `;
+                        tbodyStatsOfensivas.appendChild(fila);
+                    });
+                    // Es importante volver a añadir los listeners a los nuevos botones
+                    addEventListenersToButtons();
+                }
+
                 function cargarTablaStats(ligaSeleccionada){
                     let endpoints = { "premierleague": "1", "laliga": "2", "seriea": "3", "bundesliga": "4", "ligueone": "5" };
                     fetch(`/api/estadisticas-ofensivas-equipo/${endpoints[ligaSeleccionada]}`).then(r => r.json()).then(data => {
-                        const tbodyStatsOfensivas = document.querySelector("#estadisticas-ofensivas-equipo tbody");
-                        tbodyStatsOfensivas.innerHTML = "";
-                        data.forEach(stat => {
-                            const fila = document.createElement("tr");
-                            fila.innerHTML = `
-                                <td><img src="${stat.url_imagen}">${stat.nombre}</td>
-                                <td>${stat.partidos_jugados}</td> <td>${stat.goles_anotados}</td>
-                                <td>${stat.disparos}</td> <td>${stat.disparos_a_puerta}</td>
-                                <td>${stat.porcentaje_disparos_a_puerta}</td> <td>${stat.xg}</td>
-                                <td>${stat.disparos_por_90}</td>
-                                <td><button class="btn-estadisticas" data-equipo-id="${stat.id_equipo}" data-equipo-nombre="${stat.nombre}">🥅</button></td>
-                            `;
-                            tbodyStatsOfensivas.appendChild(fila);
-                        });
-                        addEventListenersToButtons();
+                        allStatsData = data; // Guarda los datos en la variable global
+
+                        // --- 👇 AÑADIR ORDENAMIENTO INICIAL AQUÍ 👇 ---
+                        sortColumn = 'goles_anotados'; // Resetea al orden por defecto
+                        sortDirection = 'desc';
+                        sortStatsData(); // Ordena los datos frescos
+                        updateHeaderArrows(); // Muestra la flecha en Goles
+                        // --- FIN DE LA MODIFICACIÓN ---
+
+                        renderTablaStats();
                     });
                     
 
@@ -423,6 +526,10 @@
                 cargarTablaStats(ligaSelect.value);
                 ligaSelect.addEventListener("change", function() {
                     cargarTablaStats(this.value);
+                });
+
+                document.querySelectorAll('#estadisticas-ofensivas-equipo th[data-sort-key]').forEach(header => {
+                    header.addEventListener('click', handleHeaderClick);
                 });
             });
             

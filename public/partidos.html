@@ -257,24 +257,39 @@
                      
                 }
             
-                async function cargarPartidos(ligaSeleccionada, jornadaSeleccionada){
+                async function cargarPartidos(ligaSeleccionada, jornadaSeleccionada) {
                     tbody.innerHTML = "";
-                    const endpoints = { "premierleague" : "1", "laliga" : "2", "seriea" : "3", "bundesliga" : "4", "ligueone" : "5" };
+                    const endpoints = { "premierleague": "1", "laliga": "2", "seriea": "3", "bundesliga": "4", "ligueone": "5" };
                     try {
                         const response = await fetch(`/api/ultimos-partidos/${endpoints[ligaSeleccionada]}/${jornadaSeleccionada}`);
                         const partidos = await response.json();
-                        const hoyNormalizada = new Date();
 
-                        hoyNormalizada.setHours(0, 0, 0, 0);
-                        const tomorrow = new Date(hoyNormalizada);
-                        tomorrow.setDate(hoyNormalizada.getDate() + 1);
+                        // --- 👇 LA CORRECCIÓN MÁGICA ESTÁ AQUÍ 👇 ---
+
+                        // 1. Obtener la fecha y hora actual en la zona horaria de México
+                        const hoyEnMexico = new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" });
+                        
+                        // 2. Crear un objeto Date a partir de esa hora (que ahora es "local" de México)
+                        const hoy = new Date(hoyEnMexico);
+
+                        // 3. Formatear "hoy" a una cadena "YYYY-MM-DD" para una comparación segura
+                        const yyyy = hoy.getFullYear();
+                        const mm = String(hoy.getMonth() + 1).padStart(2, '0'); // +1 porque los meses son 0-11
+                        const dd = String(hoy.getDate()).padStart(2, '0');
+                        const hoyString = `${yyyy}-${mm}-${dd}`;
+                        
+                        // --- 👆 FIN DE LA CORRECCIÓN 👆 ---
+
 
                         for (const partido of partidos) {
-                            const fechaPartidoNormalizada = new Date(partido.fecha);
-                            fechaPartidoNormalizada.setHours(0, 0, 0, 0);
+                            // 4. Obtenemos la fecha del partido (asumiendo que viene como "2025-11-03T...")
+                            const fechaPartido = partido.fecha.split('T')[0];
                             const fila = document.createElement("tr");
 
-                            if (hoyNormalizada > fechaPartidoNormalizada) {
+                            // 5. Comparamos las cadenas de texto (ej. "2025-11-04" > "2025-11-03")
+                            // Esta comparación no se ve afectada por zonas horarias.
+                            if (hoyString > fechaPartido) {
+                                // Partido PASADO
                                 const resResponse = await fetch(`/api/resultado-partido/${partido.id_partido}`); 
                                 const resultado = await resResponse.json();
                                 fila.innerHTML = `
@@ -286,12 +301,12 @@
                                     <td>Finalizado</td>`;
                                 fila.addEventListener("click", () => window.location = "informe-postpartido.html?partido=" + partido.id_partido);
                             } else {
-                                const fechaParaMostrar = new Date(partido.fecha).toISOString().split('T')[0];
+                                // Partido DE HOY O FUTURO
                                 fila.innerHTML = `
                                     <td class="match-cell">
                                         <img src="${partido.escudo_local}" alt="Escudo local"> vs <img src="${partido.escudo_visitante}" alt="Escudo visitante">
                                     </td>
-                                    <td>${fechaParaMostrar}</td>`;
+                                    <td>${fechaPartido}</td>`; // Mostramos la fecha
                                 fila.addEventListener("click", () => window.location = "informe-prepartido.html?partido=" + partido.id_partido);
                             }
                             tbody.appendChild(fila);
@@ -301,7 +316,7 @@
                         tbody.innerHTML = `<tr><td colspan="2">Error al cargar la información.</td></tr>`;
                     }
                 }
-
+                
                 const params = new URLSearchParams(window.location.search);
                 const ligaParam = params.get("liga");
 

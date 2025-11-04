@@ -213,7 +213,7 @@ export async function getStatsJugador(id_jugador) {
             sj.bloqueos,
             sj.despejes,
             sj.duelos_aereos_ganados
-        ORDER BY pe.id_plantilla DESC;
+        ORDER BY MAX(pe.id_plantilla) DESC;
 
         `, [id_jugador])
     return rows 
@@ -462,28 +462,28 @@ export async function getPosiblesAlineaciones(partido) {
         SELECT 
             formacion_local, 
             formacion_visitante,
-            j1.nombre as nombre1, j1.dorsal as dorsal1, j1.url_imagen as img1,
-            j2.nombre as nombre2, j2.dorsal as dorsal2 , j2.url_imagen as img2,
-            j3.nombre as nombre3, j3.dorsal as dorsal3, j3.url_imagen as img3,
-            j4.nombre as nombre4, j4.dorsal as dorsal4, j4.url_imagen as img4,
-            j5.nombre as nombre5, j5.dorsal as dorsal5, j5.url_imagen as img5,
-            j6.nombre as nombre6, j6.dorsal as dorsal6, j6.url_imagen as img6,
-            j7.nombre as nombre7, j7.dorsal as dorsal7, j7.url_imagen as img7,
-            j8.nombre as nombre8, j8.dorsal as dorsal8, j8.url_imagen as img8,
-            j9.nombre as nombre9, j9.dorsal as drosal9, j9.url_imagen as img9,
-            j10.nombre as nombre10, j10.dorsal as dorsal10, j10.url_imagen as img10,
-            j11.nombre as nombre11, j11.dorsal as dorsal11, j11.url_imagen as img11,
-            j12.nombre as nombre12, j12.dorsal as dorsal12, j12.url_imagen as img12,
-            j13.nombre as nombre13, j13.dorsal as dorsal13, j13.url_imagen as img13,
-            j14.nombre as nombre14, j14.dorsal as dorsal14, j14.url_imagen as img14,
-            j15.nombre as nombre15, j15.dorsal as dorsal15, j15.url_imagen as img15,
-            j16.nombre as nombre16, j16.dorsal as dorsal16, j16.url_imagen as img16,
-            j17.nombre as nombre17, j17.dorsal as dorsal17, j17.url_imagen as img17,
-            j18.nombre as nombre18, j18.dorsal as dorsal18, j18.url_imagen as img18,
-            j19.nombre as nombre19, j19.dorsal as dorsal19, j19.url_imagen as img19,
-            j20.nombre as nombre20, j20.dorsal as dorsal20, j20.url_imagen as img20,
-            j21.nombre as nombre21, j21.dorsal as dorsal21, j21.url_imagen as img21,
-            j22.nombre as nombre22, j22.dorsal as dorsal22, j22.url_imagen as img22
+            j1.id_jugador as id1, j1.nombre as nombre1, j1.dorsal as dorsal1, j1.url_imagen as img1,
+            j2.id_jugador as id2, j2.nombre as nombre2, j2.dorsal as dorsal2 , j2.url_imagen as img2,
+            j3.id_jugador as id3, j3.nombre as nombre3, j3.dorsal as dorsal3, j3.url_imagen as img3,
+            j4.id_jugador as id4, j4.nombre as nombre4, j4.dorsal as dorsal4, j4.url_imagen as img4,
+            j5.id_jugador as id5, j5.nombre as nombre5, j5.dorsal as dorsal5, j5.url_imagen as img5,
+            j6.id_jugador as id6, j6.nombre as nombre6, j6.dorsal as dorsal6, j6.url_imagen as img6,
+            j7.id_jugador as id7, j7.nombre as nombre7, j7.dorsal as dorsal7, j7.url_imagen as img7,
+            j8.id_jugador as id8, j8.nombre as nombre8, j8.dorsal as dorsal8, j8.url_imagen as img8,
+            j9.id_jugador as id9, j9.nombre as nombre9, j9.dorsal as drosal9, j9.url_imagen as img9,
+            j10.id_jugador as id10, j10.nombre as nombre10, j10.dorsal as dorsal10, j10.url_imagen as img10,
+            j11.id_jugador as id11, j11.nombre as nombre11, j11.dorsal as dorsal11, j11.url_imagen as img11,
+            j12.id_jugador as id12, j12.nombre as nombre12, j12.dorsal as dorsal12, j12.url_imagen as img12,
+            j13.id_jugador as id13, j13.nombre as nombre13, j13.dorsal as dorsal13, j13.url_imagen as img13,
+            j14.id_jugador as id14, j14.nombre as nombre14, j14.dorsal as dorsal14, j14.url_imagen as img14,
+            j15.id_jugador as id15, j15.nombre as nombre15, j15.dorsal as dorsal15, j15.url_imagen as img15,
+            j16.id_jugador as id16, j16.nombre as nombre16, j16.dorsal as dorsal16, j16.url_imagen as img16,
+            j17.id_jugador as id17, j17.nombre as nombre17, j17.dorsal as dorsal17, j17.url_imagen as img17,
+            j18.id_jugador as id18, j18.nombre as nombre18, j18.dorsal as dorsal18, j18.url_imagen as img18,
+            j19.id_jugador as id19, j19.nombre as nombre19, j19.dorsal as dorsal19, j19.url_imagen as img19,
+            j20.id_jugador as id20, j20.nombre as nombre20, j20.dorsal as dorsal20, j20.url_imagen as img20,
+            j21.id_jugador as id21, j21.nombre as nombre21, j21.dorsal as dorsal21, j21.url_imagen as img21,
+            j22.id_jugador as id22, j22.nombre as nombre22, j22.dorsal as dorsal22, j22.url_imagen as img22
             
         FROM alineaciones al
         JOIN jugador j1 on al.jugador1 = j1.id_jugador

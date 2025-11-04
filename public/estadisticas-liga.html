@@ -142,6 +142,38 @@
             body.light-mode .card-title { border-bottom-color: #e0e0e0; }
             body.light-mode thead tr { border-bottom-color: #d1d1d1; }
             body.light-mode tbody tr { border-bottom-color: #e0e0e0; }
+            .sortable-header {
+                cursor: pointer;
+                transition: color 0.2s ease;
+            }
+            .sortable-header:hover {
+                color: #4a69ff; /* Un color de realce al pasar el mouse */
+            }
+            .sortable-header::after {
+                content: '';
+                display: inline-block;
+                width: 10px;
+                height: 10px;
+                margin-left: 5px;
+                opacity: 0.4;
+            }
+            .sortable-header.sort-desc::after {
+                content: ' ▼';
+                opacity: 1;
+                font-size: 0.7em;
+            }
+            .sortable-header.sort-asc::after {
+                content: ' ▲';
+                opacity: 1;
+                font-size: 0.7em;
+            }
+            body.light-mode .sortable-header:hover {
+                color: #4a69ff;
+            }
+            body.light-mode .sortable-header.sort-desc::after,
+            body.light-mode .sortable-header.sort-asc::after {
+                color: #1a1a2e;
+            }
         </style>
     </head>
     <body> 
@@ -169,16 +201,15 @@
                         <table id="tabla-equipos">
                             <thead>
                                 <tr>
-                                    <th>#</th>
-                                    <th>Equipo</th>
-                                    <th>PJ</th>
-                                    <th>V</th>
-                                    <th>E</th>
-                                    <th>D</th>
-                                    <th>Pts</th>
-                                    <th>DG</th>
-                                    <th>GA</th>
-                                    <th>GC</th>
+                                    <th>#</th> <th class="sortable-header" data-sort-key="nombre_equipo">Equipo</th>
+                                    <th class="sortable-header" data-sort-key="partidos_jugados">PJ</th>
+                                    <th class="sortable-header" data-sort-key="victorias">V</th>
+                                    <th class="sortable-header" data-sort-key="empates">E</th>
+                                    <th class="sortable-header" data-sort-key="derrotas">D</th>
+                                    <th class="sortable-header" data-sort-key="puntos">Pts</th>
+                                    <th class="sortable-header" data-sort-key="diferencia_de_goles">DG</th>
+                                    <th class="sortable-header" data-sort-key="goles_anotados">GA</th>
+                                    <th class="sortable-header" data-sort-key="goles_recibidos">GC</th>
                                 </tr>
                             </thead>
                             <tbody id="tabla-equipos-clubes">
@@ -241,7 +272,9 @@
                 let barChartInstance = null;
                 const ligaSelect = document.getElementById('liga');
                 const tbody = document.querySelector("#tabla-equipos tbody");
-                
+                let allTeamData = []; // Guardará los datos de la tabla de la liga
+                let sortColumn = 'puntos'; // Columna por defecto (Pts)
+                let sortDirection = 'desc';
                 // --- LÓGICA DE TEMA ---
                 const themeToggleButton = document.getElementById('theme-toggle');
                 const body = document.body;
@@ -289,6 +322,98 @@
                 "bundesliga": "/api/liga/bundesliga",
                 "ligueone": "/api/liga/ligue-one"
             };
+
+            function sortData() {
+                // Lógica de desempate (Reglas de la liga)
+                const tieBreaker = (a, b) => {
+                    if (b.diferencia_de_goles !== a.diferencia_de_goles) return b.diferencia_de_goles - a.diferencia_de_goles;
+                    return b.goles_anotados - a.goles_anotados;
+                };
+                
+                allTeamData.sort((a, b) => {
+                    const valA = a[sortColumn];
+                    const valB = b[sortColumn];
+
+                    let comparison = 0;
+                    
+                    if (sortColumn === 'nombre_equipo') {
+                        // Ordenamiento de texto
+                        comparison = valA.localeCompare(valB);
+                        return (sortDirection === 'desc') ? (comparison * -1) : comparison;
+                    } else {
+                        // Ordenamiento numérico
+                        const numA = parseFloat(valA);
+                        const numB = parseFloat(valB);
+                        comparison = numA - numB;
+                        
+                        // Si la columna principal es la misma, aplicar desempate de Puntos/DG/GA
+                        if (comparison === 0) {
+                            // Si estamos ordenando por Puntos, el desempate es DG -> GA
+                            if (sortColumn === 'puntos') return tieBreaker(a, b);
+                            // Si ordenamos por DG, el desempate es Pts -> GA
+                            if (sortColumn === 'diferencia_de_goles') {
+                                if (b.puntos !== a.puntos) return b.puntos - a.puntos;
+                                return b.goles_anotados - a.goles_anotados;
+                            }
+                            // ... puedes añadir más reglas de desempate si quieres
+                        }
+                        
+                        return (sortDirection === 'desc') ? (comparison * -1) : comparison;
+                    }
+                });
+            }
+
+            function handleHeaderClick(event) {
+                const clickedKey = event.currentTarget.dataset.sortKey;
+
+                if (sortColumn === clickedKey) {
+                    // Si es la misma columna, invertir dirección
+                    sortDirection = (sortDirection === 'desc') ? 'asc' : 'desc';
+                } else {
+                    // Si es una nueva columna, resetear dirección
+                    sortColumn = clickedKey;
+                    // Por defecto, desc, excepto para nombre de equipo
+                    sortDirection = (clickedKey === 'nombre_equipo') ? 'asc' : 'desc';
+                }
+                
+                sortData(); // Ordena los datos
+                renderTabla(); // Vuelve a dibujar la tabla
+                updateHeaderArrows(); // Actualiza las flechas
+            }
+
+            /**
+             * Actualiza las flechas (▲/▼) en los encabezados de la tabla.
+             */
+            function updateHeaderArrows() {
+                document.querySelectorAll('#tabla-equipos th[data-sort-key]').forEach(th => {
+                    th.classList.remove('sort-asc', 'sort-desc');
+                    if (th.dataset.sortKey === sortColumn) {
+                        th.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+                    }
+                });
+            }
+
+            function renderTabla() {
+                tbody.innerHTML = ""; // Limpia la tabla
+                
+                allTeamData.forEach((equipo, index) => {
+                    const fila = document.createElement("tr");
+                    fila.dataset.idClub = equipo.id_equipo;
+                    fila.innerHTML = `
+                        <td>${index + 1}</td> 
+                        <td><img src="${equipo.url_imagen}" alt="Escudo">${equipo.nombre_equipo}</td>
+                        <td>${equipo.partidos_jugados}</td>
+                        <td>${equipo.victorias}</td>
+                        <td>${equipo.empates}</td>
+                        <td>${equipo.derrotas}</td>
+                        <td>${equipo.puntos}</td>
+                        <td>${equipo.diferencia_de_goles}</td>
+                        <td>${equipo.goles_anotados}</td>
+                        <td>${equipo.goles_recibidos}</td>
+                    `;
+                    tbody.appendChild(fila);
+                });
+            }
 
             function cargarGraficaEvo(equipoSeleccionado, nombreEquipo, color, slot){
                 console.log(equipoSeleccionado)
@@ -502,32 +627,14 @@
                         .then(response => response.json())
                         .then(data => { 
                             tbody.innerHTML = "";
-                            const equipos = data.tabla_liga;
-                            totalEquiposLiga = equipos.length;
-                            equipos.sort((a,b) => {
-                                if (b.puntos !== a.puntos) return b.puntos - a.puntos;
-                                if (b.diferencia_de_goles !== a.diferencia_de_goles) return b.diferencia_de_goles - a.diferencia_de_goles;
-                                return b.goles_anotados - a.goles_anotados;
-                            });
-                            equipos.forEach((equipo, index) => {
-                                
-                                const fila = document.createElement("tr");
-                                fila.dataset.idClub = equipo.id_equipo;
-                             
-                                fila.innerHTML = `
-                                    <td>${index +1}</td> 
-                                    <td><img src="${equipo.url_imagen}" alt="Escudo">${equipo.nombre_equipo}</td>
-                                    <td>${equipo.partidos_jugados}</td>
-                                    <td>${equipo.victorias}</td>
-                                    <td>${equipo.empates}</td>
-                                    <td>${equipo.derrotas}</td>
-                                    <td>${equipo.puntos}</td>
-                                    <td>${equipo.diferencia_de_goles}</td>
-                                    <td>${equipo.goles_anotados}</td>
-                                    <td>${equipo.goles_recibidos}</td>
-                                `;
-                                tbody.appendChild(fila);
-                            });
+                            allTeamData = data.tabla_liga;
+                            totalEquiposLiga = allTeamData.length;
+                            sortColumn = 'puntos'; 
+                            sortDirection = 'desc';
+                            sortData(); // Ordena los datos frescos
+                            updateHeaderArrows();
+                            
+                            renderTabla();
                         })
                 }
             }
@@ -589,15 +696,19 @@
             });
 
             document.getElementById("tabla-equipos-clubes").addEventListener("click", 
-                function(event) {
-                    const filaClickeada = event.target.closest('tr');
-                    if (filaClickeada) {
-                        const clubId = filaClickeada.dataset.idClub;
-                        if (clubId) {
-                            window.location.href = `club.html?id=${clubId}`;
-                        } 
-                    }
-                });
+            function(event) {
+                const filaClickeada = event.target.closest('tr');
+                if (filaClickeada) {
+                    const clubId = filaClickeada.dataset.idClub;
+                    if (clubId) {
+                        window.location.href = `club.html?id=${clubId}`;
+                    } 
+                }
+            });
+        
+            document.querySelectorAll('#tabla-equipos th[data-sort-key]').forEach(header => {
+                header.addEventListener('click', handleHeaderClick);
+            });
             
         </script>
     </body>
