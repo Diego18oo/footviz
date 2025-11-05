@@ -159,6 +159,12 @@
                 // --- DECLARACIÓN DE VARIABLES ---
                 const params = new URLSearchParams(window.location.search);
                 const partidoParam = params.get("partido");
+                let evolucionChartInstance = null;
+                let equiposEvolucion = {}; // Para guardar IDs y redibujar
+                
+                // --- 👇 NUEVO: Arrays para las "hitboxes" de los jugadores ---
+                let clickablePlayersLocal = [];
+                let clickablePlayersVisitante = [];
                 
                 // --- LÓGICA DE TEMA ---
                 const themeToggleButton = document.getElementById('theme-toggle');
@@ -302,17 +308,23 @@
                             window.location.href = `club.html?id=${data.id_visitante}`;
                         })
 
+                        equiposEvolucion = { local: data.id_local, visitante: data.id_visitante, total: data.total_equipos_liga };
+
 
                     })
                 }
-                function precargarImagenesYDibujar(ctx, jugadores, formacion) {
+                function precargarImagenesYDibujar(ctx, jugadores, formacion,clickablePlayersArray) {
                     // Creamos un array de promesas, una para cada imagen
                     const promesasDeImagenes = jugadores.map(jugador => {
-                        return new Promise((resolve, reject) => {
+                        return new Promise((resolve) => { // No usamos 'reject'
+                            if (!jugador.imgUrl) {
+                                resolve(null);
+                                return;
+                            }
                             const img = new Image();
-                            img.crossOrigin = "Anonymous"; // Necesario para cargar imágenes de otros dominios
+                            img.crossOrigin = "Anonymous";
                             img.onload = () => resolve(img);
-                            img.onerror = () => reject(new Error(`No se pudo cargar: ${jugador.imgUrl}`));
+                            img.onerror = () => resolve(null); // Resuelve null en lugar de rechazar
                             img.src = jugador.imgUrl;
                         });
                     });
@@ -320,25 +332,20 @@
                     // Promise.all espera a que todas las promesas se resuelvan
                     Promise.all(promesasDeImagenes)
                         .then(imagenesCargadas => {
-                            // Una vez cargadas, añadimos el objeto de imagen a cada jugador
                             jugadores.forEach((jugador, index) => {
                                 jugador.imagenCargada = imagenesCargadas[index];
                             });
                             
-                            // ¡Ahora sí! Dibujamos todo en el canvas
-                            dibujarAlineacion(ctx, jugadores, formacion);
-                        })
-                        .catch(error => {
-                            console.error("Error al cargar las imágenes de los jugadores:", error);
-                            // Opcional: Aquí podrías dibujar los círculos azules como fallback
+                            // ¡Ahora sí! Dibujamos todo
+                            dibujarAlineacion(ctx, jugadores, formacion, clickablePlayersArray);
                         });
                 }
 
-                function dibujarAlineacion(ctx, jugadores, formacion) {
+                function dibujarAlineacion(ctx, jugadores, formacion, clickablePlayersArray) {
                     const canvas = ctx.canvas;
                     const width = canvas.width, height = canvas.height;
                     const isLight = body.classList.contains('light-mode');
-
+                    clickablePlayersArray.length = 0;
                     ctx.fillStyle = isLight ? '#d4e9d4' : '#2a5f2a';
                     ctx.fillRect(0, 0, width, height);
                     ctx.strokeStyle = isLight ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.3)';
@@ -351,19 +358,37 @@
                         if (formacion[index]) {
                             const x = formacion[index][0] * width;
                             const y = formacion[index][1] * height;
-                            dibujarJugador(ctx, x, y, jugador);
+                            const radio = 22; // Radio estándar
+
+                            // 👇 Guardamos la "hitbox" del jugador
+                            clickablePlayersArray.push({
+                                id: jugador.id,
+                                nombre: jugador.nombre, // Guardamos el nombre para el log
+                                x: x,
+                                y: y,
+                                radio: radio + 5 // Un radio de clic un poco más grande
+                            });
+                            
+                            dibujarJugador(ctx, x, y, jugador, radio); // Pasamos el radio
                         }
                     });
                 }
 
-                function dibujarJugador(ctx, x, y, jugador) {
-                    const radio = 22;
+                function dibujarJugador(ctx, x, y, jugador, radio) {
                     const isLight = body.classList.contains('light-mode');
                     
                     ctx.save();
                     ctx.beginPath(); ctx.arc(x, y, radio, 0, 2 * Math.PI); ctx.clip();
                     if (jugador.imagenCargada) {
                         ctx.drawImage(jugador.imagenCargada, x - radio, y - radio, radio * 2, radio * 2);
+                    }
+
+                    if (jugador.imagenCargada) {
+                        ctx.drawImage(jugador.imagenCargada, x - radio, y - radio, radio * 2, radio * 2);
+                    } else {
+                        // Dibuja un círculo de color si no hay imagen
+                        ctx.fillStyle = isLight ? '#cce' : '#3a3a5a';
+                        ctx.fill();
                     }
                     ctx.restore();
                     ctx.beginPath(); ctx.arc(x, y, radio, 0, 2 * Math.PI);
@@ -401,6 +426,7 @@
                         for (let i = 1; i <= 11; i++) {
                             const dorsal = data[`dorsal${i}`] || data[`drosal${i}`];
                             jugadores.push({
+                                id: data[`id${i}`],
                                 nombre: data[`nombre${i}`],
                                 imgUrl: data[`img${i}`]
                             });
@@ -416,7 +442,7 @@
                         // 3. Seleccionar las coordenadas del diccionario. Si no existe, usar "4-4-2".
                         const formacionCoordenadas = FORMACIONES[formacionKey] || FORMACIONES["4-4-2"];
 
-                        precargarImagenesYDibujar(ctx, jugadores, formacionCoordenadas);
+                        precargarImagenesYDibujar(ctx, jugadores, formacionCoordenadas, clickablePlayersLocal);
                     })
                     .catch(error => console.error('Error al cargar las alineaciones:', error));
                 }
@@ -445,6 +471,7 @@
                         for (let i = 12; i <= 22; i++) {
                             const dorsal = data[`dorsal${i}`] || data[`drosal${i}`];
                             jugadores.push({
+                                id: data[`id${i}`],
                                 nombre: data[`nombre${i}`],
                                 imgUrl: data[`img${i}`]
                             });
@@ -459,7 +486,7 @@
 
                         // 3. Seleccionar las coordenadas del diccionario. Si no existe, usar "4-4-2".
                         const formacionCoordenadas = FORMACIONES[formacionKey] || FORMACIONES["4-4-2"];
-                        precargarImagenesYDibujar(ctx, jugadores, formacionCoordenadas);
+                        precargarImagenesYDibujar(ctx, jugadores, formacionCoordenadas, clickablePlayersVisitante);
                     })
                     .catch(error => console.error('Error al cargar las alineaciones:', error));
                 }
@@ -673,11 +700,48 @@
                     });
                 }
 
+
+
                 cargarInfoPartido(partidoParam);
                 cargarAlineacionLocal(partidoParam);
                 cargarAlineacionVisitante(partidoParam);
                 cargarComparacionStats(partidoParam);
                 cargarMapaDeDisparos(partidoParam);
+
+                const canvasLocal = document.getElementById('campo-local');
+                const canvasVisitante = document.getElementById('campo-visitante');
+
+                function handleCanvasClick(event, clickablePlayers) {
+                    const canvas = event.currentTarget;
+                    const rect = canvas.getBoundingClientRect();
+                    
+                    const scaleX = canvas.width / rect.width;
+                    const scaleY = canvas.height / rect.height;
+                    const mouseX = (event.clientX - rect.left) * scaleX;
+                    const mouseY = (event.clientY - rect.top) * scaleY;
+
+                    for (const player of clickablePlayers) {
+                        const distanceSquared = Math.pow(mouseX - player.x, 2) + Math.pow(mouseY - player.y, 2);
+                        
+                        if (distanceSquared < Math.pow(player.radio, 2)) {
+                            if (!player.id) {
+                                console.warn("Este jugador no tiene ID:", player.nombre);
+                                return;
+                            }
+                            
+                            console.log(`Clic en jugador ID: ${player.id}`);
+                            window.location.href = `jugador.html?id=${player.id}`;
+                            return; // Salir del bucle
+                        }
+                    }
+                }
+                canvasLocal.addEventListener('click', (event) => {
+                    handleCanvasClick(event, clickablePlayersLocal);
+                });
+
+                canvasVisitante.addEventListener('click', (event) => {
+                    handleCanvasClick(event, clickablePlayersVisitante);
+                });
             })
             
 

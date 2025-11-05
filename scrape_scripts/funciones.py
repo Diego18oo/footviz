@@ -2235,4 +2235,201 @@ def actualizar_valor_mercado_fantasy(engine):
         print("Fallo mi loco: No hubo datos para insertar.")
     
     return
+
+
+def actualizar_porcentaje_popularidad(engine):
     
+    # 1. Traer SOLO la columna que necesitamos
+    df_plantillas_fantasy = pd.read_sql("SELECT id_jugador FROM plantilla_fantasy", engine)
+
+    if df_plantillas_fantasy.empty:
+        print("No hay datos en plantilla_fantasy.")
+        return
+
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    tabla_valor_fantasy = meta.tables['valor_jugador_fantasy']
+
+    # 2. Calcular total de equipos (tu lógica)
+    # Usamos 15.0 para forzar división decimal
+    total_equipos = len(df_plantillas_fantasy) / 15.0
+
+    if total_equipos == 0:
+        print("No se detectaron equipos, división por cero.")
+        return
+
+    # 3. Contar repeticiones de forma eficiente
+    # value_counts() crea una Serie (id_jugador, conteo)
+    # Ejemplo: 
+    # 101    50  (jugador 101 aparece 50 veces)
+    # 202    30  (jugador 202 aparece 30 veces)
+    conteo_jugadores = df_plantillas_fantasy['id_jugador'].value_counts()
+
+    # 4. Calcular popularidad
+    # Esto divide cada conteo por el total y multiplica por 100
+    df_popularidad = (conteo_jugadores / total_equipos) * 100
+    
+    # 5. Preparar datos para el BATCH UPDATE
+    data_para_actualizar = []
+    
+    # Iteramos sobre la Serie (id_jugador es 'index', popularidad es 'valor')
+    for id_jugador, popularidad in df_popularidad.items():
+        data_para_actualizar.append({
+            'id_jugador': int(id_jugador),
+            'valor_actual': 0.0, # Valor "dummy" para que el INSERT no falle
+            'popularidad': round(float(popularidad), 2) # Redondeamos
+        })
+
+    # 6. Ejecutar la actualización en lote
+    if data_para_actualizar:
+        with engine.begin() as conn:
+            
+            # Reseteamos a todos primero
+            conn.execute(text("UPDATE valor_jugador_fantasy SET popularidad = 0.00"))
+            
+            # Preparamos el INSERT... ON DUPLICATE
+            stmt = insert(tabla_valor_fantasy)
+            
+            # IMPORTANTE: Solo actualizamos 'popularidad'.
+            # 'valor_actual' no se toca, se queda con el valor que ya tenía.
+            update_stmt = stmt.on_duplicate_key_update(
+                popularidad = stmt.inserted.popularidad
+            )
+
+            conn.execute(update_stmt, data_para_actualizar)
+            
+        print(f"Popularidad actualizada para {len(data_para_actualizar)} jugadores.")
+    else:
+        print("No se calcularon datos de popularidad.")
+        
+    return
+
+
+def update_fantasy_team_points(engine):
+    """
+    Calcula los puntos de la última jornada para CADA equipo fantasy y 
+    actualiza (suma) sus 'puntos_totales' en la base de datos.
+
+    Esta función asume que 'puntos_totales' es un acumulado histórico, 
+    por lo que los puntos de la jornada calculados se AÑADIRÁN al total.
+    """
+    
+    print("🚀 Iniciando cálculo de puntos de la jornada fantasy...")
+
+    # Esta consulta SQL es la clave. 
+    # Expande tu lógica para calcular los puntos de TODOS los equipos a la vez.
+    sql_gameweek_points = """
+    WITH 
+    -- CTE 1: Equipo real más reciente de cada jugador
+    LatestPlayerTeam AS (
+        SELECT
+            pe.jugador,
+            pe.equipo,
+            pe.temporada,
+            ROW_NUMBER() OVER(PARTITION BY pe.jugador ORDER BY pe.id_plantilla DESC) as rn
+        FROM
+            plantilla_equipos pe
+    ),
+    -- CTE 2: Último partido completado de cada equipo real
+    LatestTeamMatch AS (
+        SELECT
+            team_id,
+            temporada_id,
+            match_id,
+            ROW_NUMBER() OVER(PARTITION BY team_id, temporada_id ORDER BY match_fecha DESC, match_id DESC) as rn
+        FROM (
+            -- Partidos como local
+            SELECT p.equipo_local as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha
+            FROM partido p
+            WHERE p.fecha <= CURDATE()
+            UNION ALL
+            -- Partidos como visitante
+            SELECT p.equipo_visitante as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha
+            FROM partido p
+            WHERE p.fecha <= CURDATE()
+        ) AS all_team_matches
+    ),
+    -- CTE 3: Puntos de la última jornada para CADA jugador en CADA plantilla fantasy
+    FantasyPlayerPoints AS (
+        SELECT
+            pf.id_equipo_fantasy,
+            -- Lógica de puntos: 
+            -- 1. Solo cuentan si 'es_titular' = 1
+            -- 2. Si 'es_capitan' = 1, los puntos se multiplican x2 (1 + 1)
+            -- 3. Si no es capitán ('es_capitan' = 0), se multiplican x1 (1 + 0)
+            CASE
+                WHEN pf.es_titular = 1 THEN COALESCE(pjj.puntos_fantasy, 0) * (1 + pf.es_capitan)
+                ELSE 0
+            END AS calculated_points
+        FROM
+            plantilla_fantasy pf
+        JOIN
+            jugador j ON pf.id_jugador = j.id_jugador
+        -- Encontrar el equipo/temporada real más reciente del jugador
+        LEFT JOIN
+            LatestPlayerTeam lpt ON j.id_jugador = lpt.jugador AND lpt.rn = 1
+        -- Encontrar el último partido de ese equipo real
+        LEFT JOIN
+            LatestTeamMatch ltm ON lpt.equipo = ltm.team_id AND lpt.temporada = ltm.temporada_id AND ltm.rn = 1
+        -- Encontrar los puntos del jugador para ESE partido específico
+        LEFT JOIN
+            puntos_jugador_jornada pjj ON pf.id_jugador = pjj.id_jugador AND ltm.match_id = pjj.id_partido
+    )
+    -- Consulta final: Sumar todos los puntos de los jugadores por cada equipo fantasy
+    SELECT
+        id_equipo_fantasy,
+        SUM(calculated_points) AS total_jornada_points
+    FROM
+        FantasyPlayerPoints
+    GROUP BY
+        id_equipo_fantasy;
+    """
+    
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    tabla_equipo_fantasy = meta.tables['equipo_fantasy']
+    
+    count_updated = 0
+    
+    # Usamos una transacción para asegurar que todas las actualizaciones
+    # se completen con éxito.
+    with engine.begin() as conn:
+        # 1. Ejecutar la consulta masiva para obtener los puntos de la jornada de todos
+        try:
+            df_puntos_jornada = pd.read_sql(text(sql_gameweek_points), conn)
+        except Exception as e:
+            print(f"Error al calcular los puntos de la jornada: {e}")
+            return # Salir de la función si la consulta falla
+
+        if df_puntos_jornada.empty:
+            print("No se encontraron puntos de jornada para actualizar.")
+            return
+
+        print(f"Se calcularon puntos para {len(df_puntos_jornada)} equipos.")
+
+        # 2. Preparar los datos para una actualización masiva (bulk update)
+        # Esto es mucho más eficiente que un bucle 'for' con N consultas
+        update_data = [
+            {
+                'id_val': int(row.id_equipo_fantasy), 
+                'puntos_val': int(row.total_jornada_points)
+            }
+            for row in df_puntos_jornada.itertuples()
+            if row.total_jornada_points > 0 # Solo actualizar si hay puntos que sumar
+        ]
+
+        if not update_data:
+            print("No hay equipos con nuevos puntos para actualizar.")
+            return
+
+        # 3. Construir y ejecutar la actualización masiva
+        # Sumamos los nuevos puntos a los puntos totales existentes
+        update_stmt = tabla_equipo_fantasy.update(). \
+            where(tabla_equipo_fantasy.c.id_equipo_fantasy == text(':id_val')). \
+            values(puntos_totales = tabla_equipo_fantasy.c.puntos_totales + text(':puntos_val'))
+
+        conn.execute(update_stmt, update_data)
+        count_updated = len(update_data)
+
+    print(f"✅ Actualización completada. Se sumaron puntos a {count_updated} equipos fantasy.")
+    return
