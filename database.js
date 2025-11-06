@@ -1732,3 +1732,75 @@ export async function actualizarPlantilla(id_equipo_fantasy, plantilla) {
         conn.release(); // Siempre libera la conexión de vuelta al pool
     }
 }
+
+
+export async function getProximosPartidosDeEquipos(){
+    const [rows] = await pool.query(
+    `select p.* , el.nombre as nombre_local, ev.nombre as nombre_visitante, el.url_imagen as escudo_local, ev.url_imagen as escudo_visitante
+    from partido p 
+    join equipo el on p.equipo_local = el.id_equipo
+    join equipo ev on p.equipo_visitante= ev.id_equipo
+
+    where momio_ganador is null and fecha > '2025-11-02' order by fecha asc limit 5; `
+  );
+  return rows;
+
+}
+
+export async function getMVPdeLaSemana(){
+    const [rows] = await pool.query(
+    `-- CTE 1: Encuentra la última jornada completada (que ya pasó) para la temporada_id dada
+    WITH LatestCompletedGameweek AS (
+        SELECT 
+            MAX(p.jornada) AS max_jornada
+        FROM 
+            partido p
+        WHERE 
+            p.fecha <= CURDATE() -- CURDATE() obtiene la fecha de hoy
+    ),
+    -- CTE 2: Encuentra el equipo más reciente para cada jugador en esa temporada
+    LatestPlayerTeam AS (
+        SELECT
+            pe.jugador,
+            pe.equipo,
+            ROW_NUMBER() OVER(
+                PARTITION BY pe.jugador 
+                ORDER BY pe.id_plantilla DESC
+            ) as rn
+        FROM
+            plantilla_equipos pe
+
+    )
+    -- Consulta Principal: Obtiene los 5 mejores jugadores de esa jornada
+    SELECT
+        j.id_jugador,
+        j.nombre AS nombre_jugador,
+        j.url_imagen AS url_imagen_jugador,
+        e.nombre AS nombre_equipo,
+        e.url_imagen AS img_equipo,
+        pjj.puntos_fantasy
+    FROM
+        puntos_jugador_jornada pjj
+    -- Unir con partido para filtrar por jornada y temporada
+    JOIN
+        partido p ON pjj.id_partido = p.id_partido
+    -- Unir con la CTE 1 para asegurarse de que es la última jornada
+    JOIN
+        LatestCompletedGameweek lcg ON p.jornada = lcg.max_jornada
+    -- Unir con jugador para obtener sus detalles
+    JOIN
+        jugador j ON pjj.id_jugador = j.id_jugador
+    -- Unir con la CTE 2 para obtener el equipo más reciente del jugador
+    LEFT JOIN
+        LatestPlayerTeam lpt ON j.id_jugador = lpt.jugador AND lpt.rn = 1
+    -- Unir con equipo para obtener los detalles del equipo
+    LEFT JOIN
+        equipo e ON lpt.equipo = e.id_equipo
+
+    ORDER BY
+        pjj.puntos_fantasy DESC
+    LIMIT 5;`
+  );
+  return rows;
+
+}

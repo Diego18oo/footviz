@@ -58,7 +58,7 @@ ids_para_scrapear_temporada = df_partidos_ayer['temporada'].unique()
 
 #actualizar_porcentaje_popularidad(engine)
 #actualizar_valor_mercado_fantasy(engine)
-update_fantasy_team_points(engine)
+#update_fantasy_team_points(engine)
 #verifica que si haya partidos el dia de ayer
 if len(df_partidos_ayer) == 0:
     print("Hoy no hay nada que hacer mi loco")
@@ -98,11 +98,11 @@ else:
     
 #ultimos_partidos(engine, temporada = 4)
 #ultimos_partidos(engine, temporada = 5)
-#update_fecha_partidos(engine, temporada=1, jornada = 10)
-#update_fecha_partidos(engine, temporada=2, jornada = 11)
-#update_fecha_partidos(engine, temporada=3, jornada = 9)
-#update_fecha_partidos(engine, temporada=4, jornada = 9)
-#update_fecha_partidos(engine, temporada=5, jornada = 11)
+update_fecha_partidos(engine, temporada=1, jornada = 11)
+update_fecha_partidos(engine, temporada=2, jornada = 12)
+update_fecha_partidos(engine, temporada=3, jornada = 11)
+update_fecha_partidos(engine, temporada=4, jornada = 10)
+update_fecha_partidos(engine, temporada=5, jornada = 12)
 #pending_odds(engine, df_partidos_pendientes)
 
 

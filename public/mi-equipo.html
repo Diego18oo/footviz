@@ -512,7 +512,14 @@
             }
 
             function createPlayerSlotHTML(player) {
-                const currentGameweekPoints = player.puntos_ultima_jornada_equipo || 0;
+                const now = new Date();
+                const dayOfWeek = now.getDay(); // 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
+                const allowedDays = [2, 3, 4];
+                let currentGameweekPoints = player.puntos_ultima_jornada_equipo || 0;
+                if (allowedDays.includes(dayOfWeek)) {
+                    currentGameweekPoints = 0;
+                }
+                
                 let captainBadge = '';
                 if (player.es_capitan) {
                     captainBadge = '<span class="captain-badge">C</span>';
@@ -694,21 +701,10 @@
                     return;
                 }
 
-                // --- 👇 VALIDACIÓN CORREGIDA (RQF1) 👇 ---
-                // Solo revisamos al jugador que está EN LA BANCA.
-                // Si el jugador de la banca (es_titular === 0) ya jugó (puntos > 0), bloqueamos.
-                
-                // Caso 1: Se está arrastrando al jugador de la banca (player1)
-                if (player1.es_titular === 0 && player1.puntos_ultima_jornada_equipo > 0) {
-                    alert(`¡Movimiento no permitido! ${player1.nombre_jugador} (Banca) ya ha jugado y no puede entrar de titular.`);
-                    return; 
-                }
-                // Caso 2: Se está soltando sobre el jugador de la banca (player2)
-                if (player2.es_titular === 0 && player2.puntos_ultima_jornada_equipo > 0) {
-                    alert(`¡Movimiento no permitido! ${player2.nombre_jugador} (Banca) ya ha jugado y no puede entrar de titular.`);
-                    return;
-                }
-                // --- 👆 FIN DE VALIDACIÓN 👆 ---
+                // --- 👇 BLOQUE DE CÓDIGO ELIMINADO 👇 ---
+                // (Aquí había un 'if (jugadorEntrante.puntos_ultima_jornada_equipo > 0)'... ¡se fue!)
+                // --- 👆 FIN DE LA ELIMINACIÓN 👆 ---
+
 
                 // 1. Crea una copia temporal de la plantilla para probar el cambio
                 const tempPlantilla = JSON.parse(JSON.stringify(miPlantilla)); 
@@ -752,6 +748,7 @@
             }
 
             function handleSubstitute() {
+                // --- VALIDACIÓN DE DÍA Y HORA (Esta se queda) ---
                 const now = new Date();
                 const dayOfWeek = now.getDay(); // 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
                 const allowedDays = [2, 3, 4]; // Martes, Miércoles, Jueves
@@ -762,20 +759,18 @@
                     return; // Detiene la acción
                 }
 
-                // 2. Validar la hora límite del Jueves
                 if (dayOfWeek === 4 && (now.getHours() >= 23 && now.getMinutes() >= 59)) {
                     alert("¡Mercado cerrado!\n\nLa fecha límite (jueves 11:59 PM) ya ha pasado.");
                     closePlayerModal();
                     return;
                 }
+                // --- FIN DE VALIDACIÓN DE DÍA Y HORA ---
+                
+
                 const player1_id = currentPlayerIdInModal;
                 const player1 = miPlantilla.find(p => p.id_jugador === currentPlayerIdInModal);
-                if (player1.puntos_ultima_jornada_equipo > 0) {
-                    alert('Los jugadores que ya hayan jugado su partido esta jornada no pueden ingresar de titulares.');
-                    closePlayerModal();
-                    return; // Detiene la acción
-                }
-                // Encuentra un jugador para intercambiar de la misma posición y estado opuesto
+
+                // Encuentra un jugador para intercambiar
                 const player2 = miPlantilla.find(p => 
                     p.posicion === player1.posicion && 
                     p.es_titular !== player1.es_titular
@@ -785,16 +780,13 @@
                     alert(`No hay espacio en la ${player1.es_titular ? 'banca' : 'cancha'} para un ${player1.posicion}.`);
                     return;
                 }
-                if (player2.puntos_ultima_jornada_equipo > 0) {
-                    alert(`El jugador de la banca (${player2.nombre_jugador}) ya ha jugado.`);
-                    closePlayerModal();
-                    return;
-                }
                 
-                // Llama a la función de swap que ya tiene la validación de formación
+                // Llama a la función de swap que tiene la validación de formación
                 handleSwap(player1.id_jugador, player2.id_jugador);
                 closePlayerModal();
             }
+            
+            
             
             function handleMakeCaptain() {
                 const lastCaptainChange = localStorage.getItem('lastCaptainChange');

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>FootViz - Predicciones</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+        <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+        <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+        <style>
+            /* --- Estilos Base y Layout --- */
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Poppins', sans-serif;
+                background-color: #1a1a2e;
+                color: #e0e0e0;
+                padding: 20px;
+                transition: background-color 0.3s, color 0.3s;
+            }
+            .container { 
+                max-width: 800px; /* Ancho máximo para una sola columna */
+                margin: 0 auto; 
+            }
+            h2, h3 { color: #ffffff; margin-bottom: 15px; }
+
+            /* --- Cabecera --- */
+            .header {
+                display: flex; justify-content: space-between; align-items: center;
+                margin-bottom: 30px; padding-bottom: 20px;
+                border-bottom: 1px solid #2a2a4a;
+            }
+            .header h1 { font-size: 2rem; color: #ffffff; font-weight: 700; }
+            .theme-toggle-button {
+                background: #2a2a4a; border: 1px solid #4a4a6a; color: #fff; width: 42px; height: 42px;
+                padding: 10px; border-radius: 50%; cursor: pointer; font-size: 1.2rem;
+                display: flex; align-items: center; justify-content: center;
+            }
+
+            /* --- Estilo de Tarjeta --- */
+            .card {
+                background-color: #1e1e3f;
+                border-radius: 12px;
+                padding: 20px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                width: 100%;
+                margin-bottom: 20px; /* Espacio entre tarjetas */
+            }
+
+            /* --- Contenedor de Predicciones --- */
+            .prediction-header { text-align: center; }
+            .deadline-timer { font-size: 1.1rem; color: #f59e0b; font-weight: 600; }
+
+            .prediction-card {
+                border: 1px solid #2a2a4a;
+                transition: box-shadow 0.3s;
+            }
+            .prediction-card:hover {
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            }
+            
+            .match-header {
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+                text-align: center;
+                font-size: 1.1rem;
+                font-weight: 600;
+                margin-bottom: 15px;
+            }
+            .match-header img {
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+            }
+
+            .team-form { /* RQF5 */
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 0.8rem;
+                color: #a0a0c0;
+                margin-bottom: 20px;
+            }
+            .form-streaks { display: flex; gap: 4px; }
+            .form-streaks span {
+                width: 20px; height: 20px; border-radius: 50%; display: inline-block;
+                line-height: 20px; text-align: center; font-weight: 700;
+            }
+            .form-W { background-color: #16a34a; color: white; } /* Victoria */
+            .form-D { background-color: #6b7280; color: white; } /* Empate */
+            .form-L { background-color: #dc2626; color: white; } /* Derrota */
+
+            .prediction-group { /* RQF1 */
+                margin-bottom: 15px;
+            }
+            .prediction-group label {
+                display: block;
+                margin-bottom: 8px;
+                font-weight: 600;
+                color: #a0a0c0;
+            }
+            .prediction-group select, .prediction-group input {
+                width: 100%;
+                background-color: #2a2a4a;
+                color: #e0e0e0;
+                border: 1px solid #4a4a6a;
+                border-radius: 8px;
+                padding: 10px 15px;
+                font-family: 'Poppins', sans-serif;
+                font-size: 0.9rem;
+            }
+            .result-buttons { display: flex; gap: 10px; }
+            .result-buttons button {
+                flex: 1;
+                padding: 10px;
+                border: 1px solid #4a4a6a;
+                background-color: #2a2a4a;
+                color: #e0e0e0;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: background-color 0.2s;
+            }
+            .result-buttons button:hover { background-color: #3a3a5a; }
+            .result-buttons button.selected {
+                background-color: #4a69ff; /* Color de selección */
+                border-color: #4a69ff;
+                color: white;
+                font-weight: 600;
+            }
+
+            .popular-picks { /* RQF6 */
+                margin-top: 15px;
+            }
+            .popular-picks-bar {
+                display: flex;
+                height: 10px;
+                border-radius: 5px;
+                overflow: hidden;
+                background-color: #1a1a2e;
+            }
+            .popular-picks-bar div {
+                height: 100%;
+                transition: width 0.5s;
+            }
+            .popular-local { background-color: #007bff; }
+            .popular-empate { background-color: #6b7280; }
+            .popular-visitante { background-color: #ff4d4d; }
+
+            .save-prediction-btn {
+                width: 100%;
+                background-color: #059669; /* Verde */
+                color: white;
+                border: none;
+                padding: 12px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 1rem;
+                font-weight: 600;
+                margin-top: 15px;
+            }
+            .save-prediction-btn:disabled {
+                background-color: #475569;
+                cursor: not-allowed;
+            }
+            .prediction-status {
+                display: none; 
+                text-align: center; 
+                color: #059669; 
+                margin-top: 10px;
+                font-weight: 600;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+
+            <header class="header">
+                <h1>Mis Predicciones</h1>
+            </header>
+
+            <main class="predictions-container">
+                <div class="card prediction-header">
+                    <h2>Jornada <span id="jornada-numero">X</span></h2>
+                    <p>Mercado de predicciones cierra: <strong id="deadline-timer" class="deadline-timer">Jueves 11:59 PM</strong></p>
+                </div>
+                
+                <div id="prediction-matches-container">
+                    
+                    <div class="card prediction-card" data-match-id="1">
+                        <div class="match-header">
+                            <img src="placeholder-team-1.png" alt="Equipo Local" id="local-team-img-1">
+                            <span><span id="local-team-name-1">Equipo A</span> vs <span id="visitante-team-name-1">Equipo B</span></span>
+                            <img src="placeholder-team-2.png" alt="Equipo Visitante" id="visitante-team-img-1">
+                        </div>
+                        <div class="team-form">
+                            <div class="form-streaks" id="local-form-1"></div>
+                            <span>Forma (Últ. 5)</span>
+                            <div class="form-streaks" id="visitante-form-1"></div>
+                        </div>
+                        <div class="popular-picks">
+                            <label>Predicciones Populares</label>
+                            <div class="popular-picks-bar">
+                                <div class="popular-local" id="pop-local-1" title="Local"></div>
+                                <div class="popular-empate" id="pop-empate-1" title="Empate"></div>
+                                <div class="popular-visitante" id="pop-visitante-1" title="Visitante"></div>
+                            </div>
+                        </div>
+                        <hr style="border-color: #2a2a4a; margin: 20px 0;">
+                        <div class="prediction-group">
+                            <label>Resultado Final</label>
+                            <div class="result-buttons">
+                                <button data-prediction="L">Local</button>
+                                <button data-prediction="E">Empate</button>
+                                <button data-prediction="V">Visitante</button>
+                            </div>
+                        </div>
+                        <div class="prediction-group">
+                            <label for="first-to-score-1">Primer Equipo en Anotar</label>
+                            <select id="first-to-score-1">
+                                <option value="">Seleccionar...</option>
+                            </select>
+                        </div>
+                        <div class="prediction-group">
+                            <label for="first-player-to-score-1">Primer Jugador en Anotar</label>
+                            <select id="first-player-to-score-1">
+                                <option value="">Seleccionar Jugador...</option>
+                            </select>
+                        </div>
+                        <button class="save-prediction-btn" data-match-id="1">Guardar Predicción</button>
+                        <p class="prediction-status">¡Predicción Guardada!</p>
+                    </div>
+                    
+                    <div class="card prediction-card" data-match-id="2">
+                        </div>
+                    
+                    <div class="card prediction-card" data-match-id="3">
+                        </div>
+                    
+                    <div class="card prediction-card" data-match-id="4">
+                        </div>
+
+                    <div class="card prediction-card" data-match-id="5">
+                        </div>
+
+                </div>
+            </main>
+        </div>
+        <script>
+            async function cargarPagina() {
+                // 1. Obtener los 5 partidos de la jornada
+                // const response = await fetch('/api/fantasy/partidos-prediccion');
+                // const partidos = await response.json();
+                
+                // 2. Renderizar las tarjetas
+                // renderPredictionCards(partidos);
+                
+                // 3. Añadir listeners a los botones de guardar
+                // addSaveButtonListeners();
+            }
+            
+            // --- FUNCIONES DE RENDERIZADO (ESQUELETOS) ---
+            
+            function renderPredictionCards(partidos) {
+                const container = document.getElementById('prediction-matches-container');
+                container.innerHTML = ''; // Limpiar los placeholders
+                
+                partidos.forEach(partido => {
+                    // --- Aquí va la lógica para crear el HTML de cada tarjeta ---
+                    // (Esta parte es compleja y requiere crear cada elemento)
+                    
+                    // const card = document.createElement('div');
+                    // card.className = 'card prediction-card';
+                    // card.dataset.matchId = partido.id_partido;
+                    
+                    // ... (construir todo el innerHTML con los datos de 'partido') ...
+                    
+                    // ... (hacer fetch a /api/plantillas-partido/partido.id_partido para llenar los <select>) ...
+                    
+                    // ... (hacer fetch a /api/estado-forma/partido.id_partido para llenar el RQF5) ...
+                    
+                    // ... (hacer fetch a /api/predicciones-populares/partido.id_partido para llenar el RQF6) ...
+                    
+                    // container.appendChild(card);
+                });
+            }
+            
+            function addSaveButtonListeners() {
+                document.querySelectorAll('.save-prediction-btn').forEach(button => {
+                    button.addEventListener('click', handleSavePrediction);
+                });
+            }
+            
+            async function handleSavePrediction(event) {
+                // RQF2: Validar la fecha límite
+                // ... (tu lógica de validación de fecha) ...
+                
+                // 1. Recolectar datos
+                const card = event.target.closest('.prediction-card');
+                const matchId = card.dataset.matchId;
+                const result = card.querySelector('.result-buttons button.selected')?.dataset.prediction;
+                // ... (recolectar los otros select) ...
+                
+                // 2. Enviar datos al backend (POST a /api/fantasy/guardar-prediccion)
+                
+                // 3. Mostrar confirmación
+                const status = card.querySelector('.prediction-status');
+                status.style.display = 'block';
+                setTimeout(() => { status.style.display = 'none'; }, 2000);
+            }
+            
+            // Lógica para botones de resultado (L/E/V)
+            document.getElementById('prediction-matches-container').addEventListener('click', e => {
+                if (e.target.tagName === 'BUTTON' && e.target.closest('.result-buttons')) {
+                    const buttons = e.target.closest('.result-buttons').querySelectorAll('button');
+                    buttons.forEach(btn => btn.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                }
+            });
+
+            // Carga inicial (descomentar cuando tengas los endpoints)
+            // cargarPagina();
+        </script>
+
+    </body>
+</html>

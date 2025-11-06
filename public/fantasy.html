@@ -19,59 +19,179 @@
         }
         .dashboard-container {
             display: grid;
-            /* Definimos las áreas de la cuadrícula */
             grid-template-areas:
                 "header header header"
                 "main-left main-right main-right"
                 "main-left mvp graph";
-            grid-template-columns: 1fr 1fr 1fr; /* Tres columnas flexibles */
-            grid-template-rows: auto 1fr auto; /* Filas: header auto, contenido flexible, pie auto */
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: auto 1fr auto;
             gap: 20px;
-            max-width: 1400px; /* O el ancho que prefieras */
+            max-width: 1400px;
             margin: 0 auto;
             min-height: calc(100vh - 40px);
         }
 
-        /* --- Ubicación de cada sección en la cuadrícula --- */
+        /* --- Ubicación de secciones --- */
         .fantasy-header { grid-area: header; }
         .main-left-column { grid-area: main-left; display: flex; flex-direction: column; gap: 20px; }
         .main-right-column { grid-area: main-right; display: flex; flex-direction: column; gap: 20px; }
         #mvp-section { grid-area: mvp; }
         #graph-section { grid-area: graph; }
 
-        /* --- Estilos básicos para las "Tarjetas" --- */
+        /* --- Estilos de Tarjetas --- */
         .card {
-            background-color: #1e1e3f; /* Azul un poco más claro */
+            background-color: #1e1e3f;
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
         h2, h3 { color: #ffffff; margin-bottom: 15px; }
 
-        /* --- Estilos específicos del Header --- */
+        /* --- Estilos de Header --- */
         .fantasy-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: #1e1e3f;
             padding: 15px 25px;
-            border-radius: 12px;
-            margin-bottom: 20px; /* Separación extra */
+            margin-bottom: 20px;
         }
         .user-profile-summary { display: flex; align-items: center; gap: 15px; }
         .user-level-xp { text-align: right; }
         .user-icons { display: flex; gap: 10px; font-size: 1.5rem; }
-        .user-icons ion-icon { cursor: pointer; } /* Para indicar que son clickables */
+        .user-icons ion-icon { cursor: pointer; }
 
-        /* --- Otros estilos placeholder --- */
+        /* --- Estilos de Secciones --- */
         #stadium-banner img { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; }
-        #team-display-visual { height: 200px; background-color: #2a2a4a; border-radius: 8px; display: flex; justify-content: center; align-items: center; }
-        #mvp-section img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin: 0 auto 10px auto; display: block; }
         #points-chart { max-width: 100%; background-color: #2a2a4a; border-radius: 8px; }
-        .league-table table { width: 100%; text-align: center; } /* Tablas de liga */
+        .league-table table { width: 100%; text-align: center; }
         .league-table th, .league-table td { padding: 5px; }
         #fixtures-list button { background-color: #4a69ff; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; }
         #fixtures-list li { list-style: none; margin-bottom: 5px; }
+
+        /* --- Estilos para la lista de MVPs --- */
+        #mvp-list {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .mvp-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #2a2a4a;
+            font-size: 0.9rem;
+        }
+        .mvp-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .mvp-rank {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #ffffff;
+            width: 25px;
+            text-align: center;
+        }
+        .mvp-player-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .mvp-player-info {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .mvp-club-img {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .mvp-points {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #4a69ff;
+        }
+
+        /* --- 👇 NUEVOS ESTILOS PARA EL CAMPO DE FÚTBOL 👇 --- */
+        #team-display-visual {
+            position: relative; /* Para posicionar a los jugadores */
+            height: 400px; /* Altura del campo */
+            background-color: #132972; /* Verde campo */
+            
+            background-size: 50px 50px; /* Tamaño de las rayas */
+            border-radius: 8px;
+            overflow: hidden; /* Asegura que los jugadores no se salgan */
+            padding: 10px; /* Un pequeño padding interior */
+
+            /* Organiza las 4 filas (POR, DEF, MED, DEL) verticalmente */
+            display: flex;
+            flex-direction: column; 
+            justify-content: space-around;
+        }   
+        .pitch-row {
+            display: flex;
+            /* Centra y espacia a los jugadores horizontalmente */
+            justify-content: space-around; 
+            align-items: center;
+        }
+        
+
+        /* Jugador individual en el campo */
+        .player-on-field {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            color: #ffffff;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+            padding: 5px;
+            width: 60px; /* Damos un ancho fijo para que no se peguen */
+        }
+
+        .player-on-field img {
+            width: 50px; /* Tamaño de la imagen del jugador */
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #4a69ff; /* Borde de color para destacar */
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+            margin-bottom: 3px;
+        }
+
+        .player-on-field.captain img {
+            border-color: gold; /* Borde dorado para el capitán */
+            box-shadow: 0 0 10px rgba(255,215,0,0.8);
+        }
+        /* Posicionamiento para las diferentes líneas */
+        /* Portero */
+        .player-on-field.pos-G { top: 85%; left: 50%; transform: translateX(-50%); }
+        /* Defensas */
+        .player-on-field.pos-D.slot-1 { top: 65%; left: 15%; }
+        .player-on-field.pos-D.slot-2 { top: 65%; left: 35%; }
+        .player-on-field.pos-D.slot-3 { top: 65%; left: 65%; }
+        .player-on-field.pos-D.slot-4 { top: 65%; left: 85%; }
+        /* Mediocampistas */
+        .player-on-field.pos-M.slot-1 { top: 40%; left: 15%; }
+        .player-on-field.pos-M.slot-2 { top: 40%; left: 35%; }
+        .player-on-field.pos-M.slot-3 { top: 40%; left: 65%; }
+        .player-on-field.pos-M.slot-4 { top: 40%; left: 85%; }
+        /* Delanteros */
+        .player-on-field.pos-F.slot-1 { top: 15%; left: 30%; }
+        .player-on-field.pos-F.slot-2 { top: 15%; left: 70%; }
+        /* Fallback para más de 4 defensas/mediocampistas o 2 delanteros */
+        .player-on-field.pos-D:nth-child(5) { top: 70%; left: 50%; transform: translateX(-50%); }
+        .player-on-field.pos-M:nth-child(5) { top: 45%; left: 50%; transform: translateX(-50%); }
+        .player-on-field.pos-F:nth-child(3) { top: 20%; left: 50%; transform: translateX(-50%); }
+
 
         /* --- Responsividad Básica --- */
         @media (max-width: 900px) {
@@ -82,16 +202,19 @@
                     "main-right"
                     "mvp"
                     "graph";
-                grid-template-columns: 1fr; /* Una sola columna */
+                grid-template-columns: 1fr;
                 grid-template-rows: auto;
             }
-            .main-right-column { flex-direction: row; flex-wrap: wrap; } /* Ligas una al lado de la otra */
+            .main-right-column { flex-direction: row; flex-wrap: wrap; }
             .league-table { flex-basis: calc(50% - 10px); }
         }
          @media (max-width: 600px) {
-             .main-right-column { flex-direction: column; } /* Ligas una debajo de otra */
-             .league-table { flex-basis: 100%; }
-             .fantasy-header { flex-direction: column; gap: 10px; }
+            .main-right-column { flex-direction: column; }
+            .league-table { flex-basis: 100%; }
+            .fantasy-header { flex-direction: column; gap: 10px; }
+            #team-display-visual { height: 300px; } /* Ajustar altura en móviles */
+            .player-on-field img { width: 40px; height: 40px; }
+            .player-on-field { font-size: 0.6rem; }
          }
         </style>
     </head>
@@ -123,13 +246,14 @@
                 </section>
 
                 <section id="my-team-section" class="card">
-                    <h3>Mi Equipo</h3> <div id="team-display-visual">
+                    <h3>Mi Equipo</h3> 
+                    <div id="team-display-visual">
                         <p id="verificar-equipo-text">Aqui aparecera el equipo</p>
                     </div>
                     <div id="team-controls" style="margin-top: 15px; text-align: center;">
                         <span>Presupuesto: <strong id="budget-remaining">-- M</strong></span> |
-                        <span>Fichajes: <strong id="transfers-remaining">--</strong></span>
-                        <p>Deadline: <strong id="deadline-timer">En X hr Y min</strong></p> 
+                        <span>Fichajes Restantes: <strong id="transfers-remaining">--</strong></span>
+                        <p>Deadline: <strong id="deadline-timer">Jueves 23:59 (hora centro de Mexico)</strong></p> 
                         <button onclick="window.location.href='mi-equipo.html'" id="manage-team-button">Gestionar Equipo</button>
                     </div>
                 </section>
@@ -137,8 +261,8 @@
 
             <div class="main-right-column">
                 <section id="fixtures-section" class="card">
-                    <button id="view-all-fixtures-btn">Ver próximos partidos</button>
-                    <h3>Partidos Jornada <span id="current-gameweek-fixtures">X</span></h3> 
+                    <button id="view-all-fixtures-btn" onclick="window.location.href='predicciones.html'">Predicciones</button>
+                    <h3>Proximos Partidos</h3> 
                     <ul id="fixtures-list">
                         <li>Barcelona vs Osasuna</li>
                         <li>Real Madrid vs Cadiz</li>
@@ -186,11 +310,14 @@
             </div>
 
             <section id="mvp-section" class="card">
-                <h2>MVP de la Jornada <span id="mvp-gameweek">X</span></h2> <img id="mvp-image" src="placeholder-player.jpg" alt="MVP Jugador">
-                <p><strong id="mvp-name">Nombre Jugador</strong> (<span id="mvp-club">Club</span>)</p>
-                <p><span id="mvp-points">X</span> Puntos</p>
+                <h2>MVPs de la Jornada <span id="mvp-gameweek"></span></h2>
+                <ol id="mvp-list"></ol>
             </section>
-
+            <section id="graph-section" class="card">
+                <h2>Puntuación en las últimas jornadas</h2> 
+                <canvas id="points-chart"></canvas>
+                <p id="points-graph-placeholder" style="display: none;">(Gráfica aparecerá aquí)</p>
+            </section>
             <section id="graph-section" class="card">
                 <h2>Puntuación en las últimas jornadas</h2> 
                 <canvas id="points-chart"></canvas>
@@ -200,7 +327,9 @@
         </div>
 
         <script>
-            async function cargarDatosDashboard() {
+            presupuestoRestante = document.getElementById('budget-remaining');
+            fichajesRestantes = document.getElementById('transfers-remaining');
+            async function cargarDatosDashboard() { 
                 try {
                     const response = await fetch('/api/fantasy-dashboard'); // El navegador envía la cookie
 
@@ -227,28 +356,213 @@
                     equipoData = data.equipoData;
                     textoVerifiacion = document.getElementById('verificar-equipo-text');
                     botonManejador = document.getElementById('manage-team-button');
+                    const teamDisplayVisual = document.getElementById('team-display-visual'); // Referencia al campo
                     if (equipoData) {
-                        textoVerifiacion.innerHTML = "Aqui aparecera el equipo del usuario";
+                        textoVerifiacion.style.display = 'none'; // Ocultar el texto
                         botonManejador.innerHTML = "Gestionar Equipo";
+                        botonManejador.onclick = function() { window.location.href='mi-equipo.html' };
+                        presupuestoRestante.innerHTML=`$${equipoData.presupuesto_restante}M`;
+                        fichajesRestantes.innerHTML=`${equipoData.fichajes_jornada_restantes}`;
 
-                    }else{
-                        textoVerifiacion.innerHTML = "Accede a Crear Equipo";
+                        // --- 👇 NUEVO: Renderizar plantilla en el campo 👇 ---
+                        if (data.plantillaConDetalles && data.plantillaConDetalles.length > 0) {
+                            renderizarPlantillaEnCampo(data.plantillaConDetalles, teamDisplayVisual);
+                        } else {
+                            teamDisplayVisual.innerHTML = "<p style='color:#fff; text-align:center;'>No hay jugadores en tu plantilla titular.</p>";
+                        }
+                        // --- 👆 FIN NUEVO ---
+
+                    } else {
+                        textoVerifiacion.style.display = 'block'; // Mostrar el texto
+                        textoVerifiacion.innerHTML = "Aún no has creado un equipo.";
                         botonManejador.innerHTML = "Crear Equipo";
-                        botonManejador.onclick = function() {
-                            window.location.href='crear-equipo.html'
-                        };
-
+                        botonManejador.onclick = function() { window.location.href='crear-equipo.html' };
+                        presupuestoRestante.innerHTML = "N/A";
+                        fichajesRestantes.innerHTML = "N/A";
+                        teamDisplayVisual.innerHTML = "<p style='color:#fff; text-align:center;'>Accede a Crear Equipo</p>"; // Mensaje si no hay equipo
                     }
+                    
+
+                    
 
 
                 } catch (error) {
                     console.error("Error:", error);
                 }
+
+                
+                
             } 
 
+            function renderizarPlantillaEnCampo(plantilla, container) {
+                container.innerHTML = ''; // Limpia el <p> "Cargando equipo..."
+
+                const titulares = plantilla.filter(p => p.es_titular === 1);
+
+                if (titulares.length === 0) {
+                    container.innerHTML = "<p style='color:#fff; text-align:center;'>No hay jugadores titulares en tu plantilla.</p>";
+                    return;
+                }
+
+                // 1. Crear las 4 filas de la cancha
+                const rowG = document.createElement('div');
+                rowG.className = 'pitch-row';
+                rowG.id = 'pitch-row-G'; // Para Porteros
+
+                const rowD = document.createElement('div');
+                rowD.className = 'pitch-row';
+                rowD.id = 'pitch-row-D'; // Para Defensas
+
+                const rowM = document.createElement('div');
+                rowM.className = 'pitch-row';
+                rowM.id = 'pitch-row-M'; // Para Medios
+
+                const rowF = document.createElement('div');
+                rowF.className = 'pitch-row';
+                rowF.id = 'pitch-row-F'; // Para Delanteros
+                
+                // 2. Añadir las filas al contenedor del campo en el orden visual
+                container.appendChild(rowF); // Delanteros arriba
+                container.appendChild(rowM);
+                container.appendChild(rowD);
+                container.appendChild(rowG); // Portero abajo
+
+                // 3. Iterar sobre los 11 titulares y añadir cada uno a su fila
+                titulares.forEach(player => {
+                    let targetRow;
+                    
+                    // Asigna el jugador a la fila correcta
+                    switch(player.posicion) {
+                        case 'G': targetRow = rowG; break;
+                        case 'D': targetRow = rowD; break;
+                        case 'M': targetRow = rowM; break;
+                        case 'F': targetRow = rowF; break;
+                        default:  targetRow = rowM; // Fallback por si acaso
+                    }
+
+                    const playerDiv = document.createElement('div');
+                    playerDiv.classList.add('player-on-field'); // Ya no necesita 'pos-X' o 'slot-X'
+                    
+                    if (player.es_capitan === 1) {
+                        playerDiv.classList.add('captain');
+                    }
+
+                    // Usamos un fallback por si la imagen del jugador es null
+                    const playerImgSrc = player.url_imagen_jugador || 'placeholder-player-face.png';
+                    
+                    // Mostramos solo el primer nombre para que quepa
+                    const firstName = player.nombre_jugador; 
+
+                    playerDiv.innerHTML = `
+                        <img src="${playerImgSrc}" alt="${player.nombre_jugador}">
+                        <span>${firstName}</span> 
+                    `;
+                    targetRow.appendChild(playerDiv);
+                });
+            }
+
+            function cargarProximosPartidos() {
+                const fixturesList = document.getElementById('fixtures-list');
+    
+                fetch(`/api/fantasy/proximos-partidos`)
+                    .then(res => {
+                        if (!res.ok) throw new Error('Error al cargar próximos partidos');
+                        return res.json();
+                    })
+                    .then(data => {
+                        fixturesList.innerHTML = ""; // Limpiar la lista de placeholders
+
+                        if (data.length === 0) {
+                            fixturesList.innerHTML = "<li>No hay partidos programados.</li>";
+                            return;
+                        }
+
+                        
+                        
+
+                        // Creamos un <li> para cada partido
+                        data.forEach(partido => {
+                            const li = document.createElement('li');
+                            
+                            // Añadimos estilos para que se vea bien, como en tu maqueta
+                            li.style.display = 'flex';
+                            li.style.alignItems = 'center';
+                            li.style.justifyContent = 'center';
+                            li.style.gap = '10px';
+                            li.style.padding = '5px 0';
+
+                            // Usamos 'data-partido-id' para poder hacerlos clicables en el futuro
+                            li.dataset.partidoId = partido.id_partido; 
+                            
+                            li.innerHTML = `
+                                <span style="display: flex; align-items: center; gap: 8px;">
+                                    <img src="${partido.escudo_local}" alt="${partido.nombre_local}" style="width: 24px; height: 24px; border-radius: 50%;">
+                                    ${partido.nombre_local}
+                                </span>
+                                <span style="font-weight: 600;">vs</span>
+                                <span style="display: flex; align-items: center; gap: 8px;">
+                                    ${partido.nombre_visitante}
+                                    <img src="${partido.escudo_visitante}" alt="${partido.nombre_visitante}" style="width: 24px; height: 24px; border-radius: 50%;">
+                                </span>
+                            `;
+                            fixturesList.appendChild(li);
+                        });
+                    })
+                    .catch(err => {
+                        console.error("Error cargando próximos partidos:", err);
+                        fixturesList.innerHTML = "<li>Error al cargar partidos.</li>";
+                    });
+            }
+
+            function cargarMVP() {
+                const mvpList = document.getElementById('mvp-list'); // 1. Obtener el contenedor de la lista
+
+                fetch(`/api/fantasy/mvp-de-la-jornada`)
+                .then(res => {
+                    if (!res.ok) throw new Error('Error al cargar MVP');
+                    return res.json();
+                })
+                .then(data => {
+                    mvpList.innerHTML = ""; // Limpiar lista
+
+                    if (data.length === 0) {
+                        mvpList.innerHTML = "<p>Aún no disponible.</p>"; // Mensaje si está vacío
+                        return; 
+                    }
+                    
+                    // 2. Iterar sobre los jugadores (hasta 5)
+                    data.forEach((player, index) => {
+                        const li = document.createElement('li');
+                        li.classList.add('mvp-item'); // Añadir clase para el estilo
+
+                        // 3. Construir el HTML para cada jugador
+                        li.innerHTML = `
+                            <span class="mvp-rank">${index + 1}</span>
+                            <img src="${player.url_imagen_jugador || 'placeholder-player-face.png'}" alt="${player.nombre_jugador}" class="mvp-player-img">
+                            <div class="mvp-player-info">
+                                <span class="mvp-player-name">${player.nombre_jugador}</span>
+                                <img src="${player.img_equipo}" alt="${player.nombre_equipo}" class="mvp-club-img" title="${player.nombre_equipo}">
+                            </div>
+                            <span class="mvp-points">${player.puntos_fantasy} Pts</span>
+                        `;
+                        mvpList.appendChild(li);
+                    });
+
+                    // 4. Lógica de la jornada
+                    const nextGameweekEl = document.getElementById('current-gameweek-fixtures');
+                    
+                })
+                .catch(err => {
+                    console.error("Error cargando MVP:", err);
+                    mvpList.innerHTML = "<li>Error al cargar.</li>";
+                });
+            }
 
             
             cargarDatosDashboard();
+            cargarMVP();
+            cargarProximosPartidos();
+            
         </script>
 
     </body>

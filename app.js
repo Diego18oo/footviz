@@ -4,7 +4,7 @@ import express from 'express'
 import bcrypt from 'bcrypt'; 
 import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
-import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail, getUsuarioData, getEquipoFantasyUsuario, getJugadoresFantasy, crearEquipoFantasyCompleto, getPlantillaFantasy, getDesglosePuntosFantasyJugador, getProximoPartido, realizarFichaje, actualizarPlantilla} from './database.js'
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail, getUsuarioData, getEquipoFantasyUsuario, getJugadoresFantasy, crearEquipoFantasyCompleto, getPlantillaFantasy, getDesglosePuntosFantasyJugador, getProximoPartido, realizarFichaje, actualizarPlantilla, getProximosPartidosDeEquipos, getMVPdeLaSemana} from './database.js'
  
 
 const app = express()  
@@ -36,6 +36,38 @@ function authenticateToken(req, res, next) {
         next(); // Permite que la petición continúe a la ruta solicitada
     });
 }
+
+app.get("/api/fantasy/mvp-de-la-jornada",  async (req, res) => {
+    try {
+        
+        const info = await getMVPdeLaSemana();
+
+        if (info.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del partido" });
+        }
+
+        res.json(info);   
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del jugador" });
+    }
+});
+
+app.get("/api/fantasy/proximos-partidos",  async (req, res) => {
+    try {
+        
+        const info = await getProximosPartidosDeEquipos();
+
+        if (info.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del partido" });
+        }
+
+        res.json(info);   
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del jugador" });
+    }
+});
 
 app.post("/api/fantasy/actualizar-plantilla", authenticateToken, async (req, res) => {
     try {
@@ -210,11 +242,12 @@ app.get("/api/fantasy-dashboard", authenticateToken, async (req, res) => {
         // Llama a funciones de database.js pasándoles el userId
         const userData = await getUsuarioData(userId);
         const equipoData = await getEquipoFantasyUsuario(userId);
+        const plantillaConDetalles = await getPlantillaFantasy(userId);
         //const ligasData = await getLigasUsuario(userId);
         // ... obtener el resto de los datos (partidos, etc.)
 
         // Devuelve los datos específicos de ESE usuario
-        res.status(200).json({userData, equipoData});
+        res.status(200).json({userData, equipoData, plantillaConDetalles});
     } catch (error) {
         console.error(`Error al obtener dashboard para usuario ${userId}:`, error);
         res.status(500).json({ error: "Error interno al obtener datos del dashboard" });
