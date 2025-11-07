@@ -2239,7 +2239,6 @@ def actualizar_valor_mercado_fantasy(engine):
 
 def actualizar_porcentaje_popularidad(engine):
     
-    # 1. Traer SOLO la columna que necesitamos
     df_plantillas_fantasy = pd.read_sql("SELECT id_jugador FROM plantilla_fantasy", engine)
 
     if df_plantillas_fantasy.empty:
@@ -2250,48 +2249,35 @@ def actualizar_porcentaje_popularidad(engine):
     meta.reflect(bind=engine)
     tabla_valor_fantasy = meta.tables['valor_jugador_fantasy']
 
-    # 2. Calcular total de equipos (tu lógica)
-    # Usamos 15.0 para forzar división decimal
     total_equipos = len(df_plantillas_fantasy) / 15.0
 
     if total_equipos == 0:
         print("No se detectaron equipos, división por cero.")
         return
 
-    # 3. Contar repeticiones de forma eficiente
-    # value_counts() crea una Serie (id_jugador, conteo)
-    # Ejemplo: 
-    # 101    50  (jugador 101 aparece 50 veces)
-    # 202    30  (jugador 202 aparece 30 veces)
+    
     conteo_jugadores = df_plantillas_fantasy['id_jugador'].value_counts()
 
-    # 4. Calcular popularidad
-    # Esto divide cada conteo por el total y multiplica por 100
+    
     df_popularidad = (conteo_jugadores / total_equipos) * 100
     
-    # 5. Preparar datos para el BATCH UPDATE
     data_para_actualizar = []
     
     # Iteramos sobre la Serie (id_jugador es 'index', popularidad es 'valor')
     for id_jugador, popularidad in df_popularidad.items():
         data_para_actualizar.append({
             'id_jugador': int(id_jugador),
-            'valor_actual': 0.0, # Valor "dummy" para que el INSERT no falle
-            'popularidad': round(float(popularidad), 2) # Redondeamos
+            'valor_actual': 0.0, 
+            'popularidad': round(float(popularidad), 2) 
         })
 
-    # 6. Ejecutar la actualización en lote
     if data_para_actualizar:
         with engine.begin() as conn:
             
-            # Reseteamos a todos primero
             conn.execute(text("UPDATE valor_jugador_fantasy SET popularidad = 0.00"))
             
-            # Preparamos el INSERT... ON DUPLICATE
             stmt = insert(tabla_valor_fantasy)
             
-            # IMPORTANTE: Solo actualizamos 'popularidad'.
-            # 'valor_actual' no se toca, se queda con el valor que ya tenía.
             update_stmt = stmt.on_duplicate_key_update(
                 popularidad = stmt.inserted.popularidad
             )
@@ -2314,10 +2300,8 @@ def update_fantasy_team_points(engine):
     por lo que los puntos de la jornada calculados se AÑADIRÁN al total.
     """
     
-    print("🚀 Iniciando cálculo de puntos de la jornada fantasy...")
+    print(" Iniciando cálculo de puntos de la jornada fantasy...")
 
-    # Esta consulta SQL es la clave. 
-    # Expande tu lógica para calcular los puntos de TODOS los equipos a la vez.
     sql_gameweek_points = """
     WITH 
     -- CTE 1: Equipo real más reciente de cada jugador

@@ -376,20 +376,17 @@
             const applyTheme = (theme) => {
                 if (theme === 'light') {
                     body.classList.add('light-mode');
-                    themeToggleButton.textContent = '🌙'; // Luna para modo claro
+                    themeToggleButton.textContent = '🌙'; 
                 } else {
                     body.classList.remove('light-mode');
-                    themeToggleButton.textContent = '☀️'; // Sol para modo oscuro
+                    themeToggleButton.textContent = '☀️'; 
                 }
             };
 
-            // Cargar el tema guardado al iniciar la página
             const savedTheme = localStorage.getItem('theme') || 'dark'; // 'dark' es el default
             applyTheme(savedTheme);
 
-            // Event listener para el botón
             themeToggleButton.addEventListener('click', () => {
-                // Comprobar si el modo claro está activo para decidir a qué cambiar
                 const isLightMode = body.classList.contains('light-mode');
                 if (isLightMode) {
                     localStorage.setItem('theme', 'dark');
@@ -428,7 +425,6 @@
                             
                             
                             const fila = document.createElement("tr");
-                            // --- PASO 1: GUARDAR EL ID EN EL ATRIBUTO DATA-* ---
                             fila.dataset.clubId = equipo.id_equipo; 
                             fila.innerHTML = `
                                 <td>${index + 1}</td> 
@@ -461,7 +457,6 @@
                             const encodedUrl = encodeURIComponent(goleador.imagen_jugador);
                             const proxyUrl = `/api/image-proxy?url=${encodedUrl}`;
                             const fila = document.createElement("tr");
-                            // 1. AÑADIMOS EL ID DEL JUGADOR A LA FILA
                             fila.dataset.idJugador = goleador.id_jugador;
                             fila.innerHTML = `
                                 <td><img src="${goleador.imagen_jugador}" alt="Jugador">${goleador.nombre_jugador}</td>
@@ -499,14 +494,11 @@
             }
         });
         
-        // --- LISTENERS PARA NAVEGACIÓN ---
-
-        // 2. LISTENER ANTIGUO (MEJORADO): Redirige al hacer clic en la cabecera de la tabla de goleadores
+       
         document.querySelector("#maximos-goleadores thead").addEventListener("click", function() {
             window.location.href = "estadistica_ofensivas.html?liga=" + ligaSelect.value;
         });
 
-        // 3. LISTENER NUEVO: Redirige al hacer clic en una fila específica de un jugador
         document.getElementById("maximos-goleadores-jugadores").addEventListener("click", function(event) {
             const filaClickeada = event.target.closest('tr');
             if (filaClickeada) {
@@ -545,7 +537,6 @@
             window.location.href = "partidos.html?liga=" + ligaSelect.value;
         });
         
-        // --- LÓGICA DE CARGA ---
         ligaSelect.addEventListener("change", function(){
             cargarTabla(this.value);
         });
