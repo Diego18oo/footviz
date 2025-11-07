@@ -1756,7 +1756,7 @@ export async function getMVPdeLaSemana(){
         FROM 
             partido p
         WHERE 
-            p.fecha <= CURDATE() -- CURDATE() obtiene la fecha de hoy
+            p.fecha <= '2025-11-06'() -- CURDATE() obtiene la fecha de hoy
     ),
     -- CTE 2: Encuentra el equipo más reciente para cada jugador en esa temporada
     LatestPlayerTeam AS (
