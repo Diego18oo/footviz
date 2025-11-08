@@ -3,8 +3,9 @@
 import express from 'express'
 import bcrypt from 'bcrypt'; 
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import cookieParser from 'cookie-parser';
-import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail, getUsuarioData, getEquipoFantasyUsuario, getJugadoresFantasy, crearEquipoFantasyCompleto, getPlantillaFantasy, getDesglosePuntosFantasyJugador, getProximoPartido, realizarFichaje, actualizarPlantilla, getProximosPartidosDeEquipos, getMVPdeLaSemana, getPartidosRandom, getPlantillasDePredicciones, getEstadoDeForma, getPronosticoResultado, getPronosticoPrimerEquipoEnAnotar, getPronosticoPrimerJugadorEnAnotar, guardarPrediccionUsuario, getJornadaFromPartido, getMisPredicciones, getHistorialPredicciones} from './database.js'
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail, getUsuarioData, getEquipoFantasyUsuario, getJugadoresFantasy, crearEquipoFantasyCompleto, getPlantillaFantasy, getDesglosePuntosFantasyJugador, getProximoPartido, realizarFichaje, actualizarPlantilla, getProximosPartidosDeEquipos, getMVPdeLaSemana, getPartidosRandom, getPlantillasDePredicciones, getEstadoDeForma, getPronosticoResultado, getPronosticoPrimerEquipoEnAnotar, getPronosticoPrimerJugadorEnAnotar, guardarPrediccionUsuario, getJornadaFromPartido, getMisPredicciones, getHistorialPredicciones, unirseLigaPorCodigo, crearLiga, getLeagueRanking, getMisLigas, getPublicLeagueIDs, getLeagueRankingTop10} from './database.js'
  
 
 const app = express()  
@@ -36,6 +37,133 @@ function authenticateToken(req, res, next) {
         next(); // Permite que la petición continúe a la ruta solicitada
     });
 }
+
+
+
+app.post("/api/fantasy/crear-liga", authenticateToken, async (req, res) => {
+    try {
+        const userId = req.userId;
+        const { nombre } = req.body;
+
+        // 1. Validar RQF3 (Nivel 5)
+        const user = await getUsuarioData(userId);
+        if (user.nivel < 5) {
+            return res.status(403).json({ error: "Debes ser nivel 5 o superior para crear una liga." });
+        }
+
+        // 2. Obtener el equipo fantasy del usuario (para auto-unirlo)
+        const equipo = await getEquipoFantasyUsuario(userId);
+        if (!equipo) {
+            return res.status(400).json({ error: "Debes tener un equipo para crear una liga." });
+        }
+
+        // 3. Generar un código único (RQNF3)
+        let codigoUnico = null;
+        let intentos = 0;
+        while (codigoUnico === null && intentos < 5) {
+            const nuevoCodigo = crypto.randomBytes(4).toString('hex').toUpperCase(); // 8 caracteres
+            try {
+                // Intentar crear la liga. Esto fallará si el código ya existe.
+                const nuevaLiga = await crearLiga(nombre, userId, nuevoCodigo, equipo.id_equipo_fantasy);
+                codigoUnico = nuevoCodigo; // Éxito
+                res.status(201).json({ message: "¡Liga creada con éxito!", codigo: nuevoCodigo });
+            } catch (error) {
+                if (error.code === 'ER_DUP_ENTRY') { // El código de 8 dígitos ya existe
+                    console.warn("Colisión de código de invitación, generando uno nuevo...");
+                    intentos++;
+                } else {
+                    throw error; // Lanzar otro tipo de error
+                }
+            }
+        }
+
+        if (!codigoUnico) {
+            throw new Error("No se pudo generar un código de liga único.");
+        }
+
+    } catch (error) {
+        console.error("Error al crear la liga:", error);
+        res.status(500).json({ error: "Error interno del servidor." });
+    }
+});
+
+app.post("/api/fantasy/unirse-liga", authenticateToken, async (req, res) => {
+    try {
+        const { codigo } = req.body;
+        const userId = req.userId;
+
+        if (!codigo || codigo.length !== 8) {
+            return res.status(400).json({ error: "El código debe tener 8 caracteres." });
+        }
+
+        // 1. Obtener el equipo fantasy del usuario
+        const equipo = await getEquipoFantasyUsuario(userId);
+        if (!equipo) {
+            return res.status(400).json({ error: "Debes tener un equipo para unirte a una liga." });
+        }
+
+        // 2. Llamar a la función de la BD (valida código, límite, etc.)
+        await unirseLigaPorCodigo(codigo, equipo.id_equipo_fantasy);
+        
+        res.status(200).json({ message: "¡Te has unido a la liga con éxito!" });
+
+    } catch (error) {
+        console.error("Error al unirse a liga:", error);
+        // Devolver errores específicos de la BD (RQNF4, RQNF2)
+        if (error.message.includes("Código no válido") || error.message.includes("La liga está llena") || error.code === 'ER_DUP_ENTRY') {
+            const userMessage = error.code === 'ER_DUP_ENTRY' ? "Ya eres miembro de esta liga." : error.message;
+            return res.status(400).json({ error: userMessage });
+        }
+        res.status(500).json({ error: "Error interno del servidor." });
+    }
+});
+
+app.get("/api/fantasy/liga/:id/ranking", authenticateToken, async (req, res) => {
+    try {
+        const idLiga = req.params.id;
+        const ranking = await getLeagueRanking(idLiga);
+        res.status(200).json(ranking);
+    } catch (error) {
+        console.error("Error al obtener ranking de liga:", error);
+        res.status(500).json({ error: "Error interno del servidor." });
+    }
+});
+
+app.get("/api/fantasy/mis-ligas", authenticateToken, async (req, res) => {
+    try {
+        // 1. Obtener los datos del usuario y su equipo
+        const userData = await getUsuarioData(req.userId);
+        const equipoData = await getEquipoFantasyUsuario(req.userId);
+
+        if (!equipoData) {
+            return res.status(404).json({ error: "El usuario no ha creado un equipo fantasy." });
+        }
+
+        // 2. Buscar las ligas
+        const ligas = await getMisLigas(userData.id_usuario, userData.pais_id, equipoData.id_equipo_fantasy);
+        res.status(200).json(ligas);
+        
+    } catch (error) {
+        console.error("Error al obtener mis ligas:", error);
+        res.status(500).json({ error: "Error interno del servidor." });
+    }
+});
+
+app.get("/api/fantasy/user-info", authenticateToken, async (req, res) => {
+    // Gracias al middleware, ahora tenemos acceso a req.userId
+    const userId = req.userId;
+
+    try {
+        // Llama a funciones de database.js pasándoles el userId
+        const userInfo = await getUsuarioData(userId);
+
+        // Devuelve los datos específicos de ESE usuario
+        res.status(200).json(userInfo);
+    } catch (error) {
+        console.error(`Error al obtener dashboard para usuario ${userId}:`, error);
+        res.status(500).json({ error: "Error interno al obtener datos del dashboard" });
+    }
+});
 
 app.get("/api/fantasy/historial-predicciones", authenticateToken, async (req, res) => {
     try {
@@ -320,7 +448,11 @@ app.post("/api/fantasy/crear-equipo", authenticateToken, async (req, res) => {
     try {
         // 1. Obtenemos el ID del usuario desde el token verificado
         const userId = req.userId;
-
+        const userData = await getUsuarioData(userId);
+        if (!userData || !userData.pais_id) {
+            return res.status(400).json({ error: "No se pudo encontrar el país del usuario." });
+        }
+        const paisId = userData.pais_id;
         // 2. Obtenemos los datos enviados desde el frontend
         const { nombreEquipo, presupuestoRestante, plantilla } = req.body;
 
@@ -337,7 +469,7 @@ app.post("/api/fantasy/crear-equipo", authenticateToken, async (req, res) => {
         
         // 4. Llamamos a la nueva función en database.js para que haga la magia
         // Le pasamos los datos y el ID del usuario
-        const nuevoEquipo = await crearEquipoFantasyCompleto(userId, nombreEquipo, presupuestoRestante, plantilla);
+        const nuevoEquipo = await crearEquipoFantasyCompleto(userId, nombreEquipo, presupuestoRestante, plantilla, paisId);
 
         res.status(201).json({ message: "Equipo creado con éxito", equipoId: nuevoEquipo.id_equipo_fantasy });
 
@@ -378,9 +510,14 @@ app.get("/api/fantasy-dashboard", authenticateToken, async (req, res) => {
         const plantillaConDetalles = await getPlantillaFantasy(userId);
         //const ligasData = await getLigasUsuario(userId);
         // ... obtener el resto de los datos (partidos, etc.)
+        const { globalLeagueId, localLeagueId, localLeagueName } = await getPublicLeagueIDs(userData.pais_id);
 
+        const [globalRanking, localRanking] = await Promise.all([
+            getLeagueRankingTop10(globalLeagueId),
+            getLeagueRankingTop10(localLeagueId)
+        ]);
         // Devuelve los datos específicos de ESE usuario
-        res.status(200).json({userData, equipoData, plantillaConDetalles});
+        res.status(200).json({userData, equipoData, plantillaConDetalles, globalRanking,localRanking, localLeagueName});
     } catch (error) {
         console.error(`Error al obtener dashboard para usuario ${userId}:`, error);
         res.status(500).json({ error: "Error interno al obtener datos del dashboard" });

@@ -172,7 +172,7 @@
                         <h3>Estado del Equipo</h3>
                         <span>Presupuesto: <strong id="budget-remaining">-- M</strong></span>
                         <span>Fichajes Restantes: <strong id="transfers-remaining">--</strong></span>
-                        <p>Deadline Jornada <span id="current-gameweek">X</span>: <strong id="deadline-timer">--</strong></p>
+                        <p>Deadline Jornada: <span id="current-gameweek">Jueves 11:59 pm (hora centro de Mexico)</span></p>
                         
                     </div>
 
@@ -514,7 +514,7 @@
             function createPlayerSlotHTML(player) {
                 const now = new Date();
                 const dayOfWeek = now.getDay(); // 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
-                const allowedDays = [2, 3, 4];
+                const allowedDays = [2, 3, 4, 5];
                 let currentGameweekPoints = player.puntos_ultima_jornada_equipo || 0;
                 if (allowedDays.includes(dayOfWeek)) {
                     currentGameweekPoints = 0;
@@ -692,7 +692,7 @@
                 return positions['G'] == 1 && positions['D'] >= 3 && positions['M'] >= 2 && positions['F'] >= 1;
             }
 
-            function handleSwap(player1_id, player2_id) {
+            function  handleSwap(player1_id, player2_id) {
                 const player1 = miPlantilla.find(p => p.id_jugador === player1_id);
                 const player2 = miPlantilla.find(p => p.id_jugador === player2_id);
 
@@ -718,6 +718,11 @@
                 if (isFormationValid(tempPlantilla)) {
                     // ¡Válido! Aplica el cambio
                     [player1.es_titular, player2.es_titular] = [player2.es_titular, player1.es_titular];
+
+                    if(player1.puntos_ultima_jornada_equipo > 0 || player2.puntos_ultima_jornada_equipo > 0 ){
+                        alert("Cambio invalido, solo pueden entrar jugadores que no han jugado");
+                        return;
+                    }
                     
                     if (player1.es_capitan && player1.es_titular === 0) player1.es_capitan = 0;
                     if (player2.es_capitan && player2.es_titular === 0) player2.es_capitan = 0;

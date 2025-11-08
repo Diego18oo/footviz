@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>FootViz - Mis Ligas</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+        <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+        <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+        <style>
+            /* --- Estilos Base (Consistentes con tus otras páginas) --- */
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Poppins', sans-serif;
+                background-color: #1a1a2e;
+                color: #e0e0e0;
+                padding: 20px;
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+            }
+            .container { 
+                max-width: 1400px; 
+                margin: 0 auto; 
+                width: 100%;
+                flex-grow: 1;
+                display: flex;
+                flex-direction: column;
+            }
+            
+            /* --- Header --- */
+            .header {
+                display: flex; justify-content: space-between; align-items: center;
+                margin-bottom: 25px; padding-bottom: 15px;
+                border-bottom: 1px solid #2a2a4a;
+            }
+            .header h1 { font-size: 1.8rem; color: #ffffff; font-weight: 700; }
+            .return-btn {
+                background: none; border: none; color: #a0a0c0; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: color 0.2s;
+            }
+            .return-btn:hover { color: #4a69ff; }
+
+            /* --- Layout Principal --- */
+            .leagues-layout {
+                display: flex;
+                gap: 25px;
+                flex-grow: 1;
+                height: calc(100vh - 150px); /* Altura fija para permitir scroll interno */
+            }
+            .leagues-sidebar {
+                flex: 1;
+                max-width: 350px;
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                overflow-y: auto; /* Scroll si hay muchas ligas */
+            }
+            .leagues-main {
+                flex: 3;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden; /* El scroll estará en la tabla */
+            }
+
+            /* --- Tarjetas Generales --- */
+            .card {
+                background-color: #1e1e3f;
+                border-radius: 12px;
+                padding: 20px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            }
+            h2, h3 { color: #ffffff; margin-bottom: 15px; font-size: 1.2rem; }
+
+            /* --- Sidebar: Acciones --- */
+            .join-league-form {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 15px;
+            }
+            .join-league-form input {
+                flex: 1;
+                padding: 10px;
+                background-color: #2a2a4a;
+                border: 1px solid #4a4a6a;
+                border-radius: 8px;
+                color: #e0e0e0;
+                font-family: 'Poppins', sans-serif;
+            }
+            .btn-action {
+                padding: 10px 15px;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: 600;
+                font-family: 'Poppins', sans-serif;
+                transition: background-color 0.2s;
+            }
+            .btn-join { background-color: #4a69ff; color: white; }
+            .btn-join:hover { background-color: #3a58cc; }
+            .btn-create { 
+                width: 100%; 
+                background-color: #059669; 
+                color: white; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                gap: 8px;
+            }
+            .btn-create:hover:not(:disabled) { background-color: #047857; }
+            .btn-create:disabled { background-color: #475569; cursor: not-allowed; opacity: 0.7; }
+
+            /* --- Sidebar: Listas de Ligas --- */
+            .leagues-list {
+                list-style: none;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .league-item {
+                padding: 12px 15px;
+                background-color: #2a2a4a;
+                border-radius: 8px;
+                cursor: pointer;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                transition: background-color 0.2s, transform 0.1s;
+            }
+            .league-item:hover { background-color: #334155; }
+            .league-item.active { background-color: #4a69ff; color: white; }
+            .league-item-name { font-weight: 600; }
+            .league-item-rank { font-size: 0.9rem; opacity: 0.8; }
+
+            /* --- Main: Cabecera de Liga --- */
+            .active-league-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 20px;
+                padding-bottom: 15px;
+                border-bottom: 1px solid #2a2a4a;
+            }
+            .league-title-group h2 { font-size: 2rem; margin-bottom: 5px; }
+            .league-meta { color: #a0a0c0; font-size: 0.9rem; display: flex; gap: 15px; }
+            .league-code-box {
+                background-color: #334155;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-family: monospace;
+                font-size: 1.1rem;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                cursor: pointer;
+            }
+            .league-code-box:active { transform: scale(0.98); }
+
+            /* --- Main: Tabla de Clasificación --- */
+            .leaderboard-container {
+                flex-grow: 1;
+                overflow-y: auto; /* Scroll para la tabla */
+            }
+            .leaderboard-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            .leaderboard-table th {
+                position: sticky;
+                top: 0;
+                background-color: #1e1e3f; /* Mismo color que la card para que tape al hacer scroll */
+                z-index: 1;
+                text-align: left;
+                padding: 15px;
+                color: #a0a0c0;
+                font-weight: 400;
+                border-bottom: 2px solid #2a2a4a;
+            }
+            .leaderboard-table td {
+                padding: 15px;
+                border-bottom: 1px solid #2a2a4a;
+            }
+            .rank-cell { font-weight: 700; font-size: 1.1rem; width: 60px; text-align: center; }
+            .rank-1 { color: gold; }
+            .rank-2 { color: silver; }
+            .rank-3 { color: #cd7f32; } /* Bronce */
+            .user-cell { font-weight: 600; }
+            .points-cell { font-weight: 700; color: #4a69ff; text-align: right; }
+            .user-highlight { background-color: rgba(74, 105, 255, 0.1); } /* Resaltar al usuario actual */
+
+            /* --- Modal para Crear Liga --- */
+            .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
+            .modal-content { background-color: #1e1e3f; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; }
+            .modal-content input { width: 100%; padding: 12px; margin: 20px 0; background-color: #2a2a4a; border: 1px solid #4a4a6a; border-radius: 8px; color: #e0e0e0; }
+            .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+            /* --- Responsividad --- */
+            @media (max-width: 900px) {
+                .leagues-layout { flex-direction: column; height: auto; }
+                .leagues-sidebar { max-width: 100%; height: auto; max-height: 400px; }
+                .leagues-main { height: 600px; } /* Altura fija en móvil para la tabla */
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <header class="header">
+                <button class="return-btn" onclick="window.location.href='fantasy.html'">
+                    <ion-icon name="arrow-back-outline"></ion-icon> Volver
+                </button>
+                <h1>Ligas y Clasificaciones</h1>
+                <div style="width: 42px;"></div> <!-- Espaciador para equilibrar el header -->
+            </header>
+
+            <main class="leagues-layout">
+                <!-- COLUMNA IZQUIERDA: NAVEGACIÓN -->
+                <aside class="leagues-sidebar">
+                    <!-- RQF6: Unirse a Liga -->
+                    <div class="card">
+                        <h3>Unirse a Liga Privada</h3>
+                        <div class="join-league-form">
+                            <input type="text" id="league-code-input" placeholder="Código (8 dígitos)" maxlength="8">
+                            <button class="btn-action btn-join" id="join-league-btn">Unirse</button>
+                        </div>
+                        <!-- RQF3: Crear Liga (con validación de nivel) -->
+                        <button class="btn-action btn-create" id="create-league-btn" disabled>
+                            <ion-icon name="add-circle-outline"></ion-icon> Crear Nueva Liga
+                            <span id="level-requirement-text" style="font-size: 0.8rem; opacity: 0.8;">(Req. Nivel 5)</span>
+                        </button>
+                    </div>
+
+                    <!-- RQF1: Ligas Públicas -->
+                    <div class="card">
+                        <h3>Ligas Públicas</h3>
+                        <ul class="leagues-list" id="public-leagues-list">
+                            <!-- Se llena con JS -->
+                            <li class="league-item">Cargando...</li>
+                        </ul>
+                    </div>
+
+                    <!-- RQF1: Ligas Privadas -->
+                    <div class="card">
+                        <h3>Mis Ligas Privadas</h3>
+                        <ul class="leagues-list" id="private-leagues-list">
+                            <!-- Se llena con JS -->
+                            <li style="opacity: 0.6; font-size: 0.9rem;">No te has unido a ninguna liga privada.</li>
+                        </ul>
+                    </div>
+                </aside>
+
+                <!-- COLUMNA DERECHA: DETALLE DE LIGA SELECCIONADA -->
+                <section class="card leagues-main">
+                    <div class="active-league-header">
+                        <div class="league-title-group">
+                            <h2 id="active-league-name">Selecciona una liga</h2>
+                            <div class="league-meta">
+                                <span id="active-league-members">-- miembros</span>
+                                <span id="active-league-type">--</span>
+                            </div>
+                        </div>
+                        <!-- RQF5: Código de invitación (solo visible si es admin) -->
+                        <div id="league-code-display" class="league-code-box" style="display: none;" title="Clic para copiar">
+                            <span id="league-code-text">--------</span>
+                            <ion-icon name="copy-outline"></ion-icon>
+                        </div>
+                    </div>
+
+                    <!-- RQF4: Tabla de Clasificación -->
+                    <div class="leaderboard-container">
+                        <table class="leaderboard-table">
+                            <thead>
+                                <tr>
+                                    <th class="rank-cell">#</th>
+                                    <th>Equipo / Usuario</th>
+                                    <th style="text-align: right;">Puntos Totales</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboard-body">
+                                <!-- Se llena con JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- Modal Crear Liga -->
+        <div id="create-league-modal" class="modal">
+            <div class="modal-content">
+                <h3>Crear Nueva Liga Privada</h3>
+                <input type="text" id="new-league-name" placeholder="Nombre de la liga (ej. Los Cracks)">
+                <div class="modal-actions">
+                    <button class="btn-action" onclick="closeCreateModal()" style="background-color: transparent; border: 1px solid #4a4a6a; color: #e0e0e0;">Cancelar</button>
+                    <button class="btn-action btn-join" id="confirm-create-league">Crear</button>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            // --- ESTADO GLOBAL ---
+            let userLevel = 1; // Se actualizará desde el backend
+            let currentUserId = 7; // Se actualizará desde el backend (para resaltar en la tabla)
+            let allUserLeagues = []; // Guardará todas las ligas del usuario
+
+            // --- ELEMENTOS DOM ---
+            const publicListEl = document.getElementById('public-leagues-list');
+            const privateListEl = document.getElementById('private-leagues-list');
+            const leagueNameEl = document.getElementById('active-league-name');
+            const leagueMembersEl = document.getElementById('active-league-members');
+            const leagueTypeEl = document.getElementById('active-league-type');
+            const leagueCodeBoxEl = document.getElementById('league-code-display');
+            const leagueCodeTextEl = document.getElementById('league-code-text');
+            const leaderboardBodyEl = document.getElementById('leaderboard-body');
+            const createBtnEl = document.getElementById('create-league-btn');
+            const levelReqTextEl = document.getElementById('level-requirement-text');
+            const createModal = document.getElementById('create-league-modal');
+
+            // --- INICIALIZACIÓN ---
+            document.addEventListener('DOMContentLoaded', async () => {
+                await loadUserData(); // Para obtener nivel y ID
+                await loadLeagues();  // Para obtener la lista de ligas
+            });
+
+            // --- 1. CARGAR DATOS DEL USUARIO (Nivel para RQF3) ---
+            async function loadUserData() {
+                // Simulación de fetch al backend
+                const res = await fetch('/api/fantasy/user-info');
+                const data = await res.json();
+                userLevel = data.nivel;
+                currentUserId = data.id_usuario;
+                
+                
+
+                // RQF3: Validar nivel para habilitar botón de crear
+                if (userLevel >= 5) {
+                    createBtnEl.disabled = false;
+                    levelReqTextEl.style.display = 'none';
+                }
+            }
+
+            // --- 2. CARGAR LISTA DE LIGAS (RQF1, RQF2) ---
+            async function loadLeagues() {
+                // Simulación de fetch a '/api/fantasy/mis-ligas'
+                const res = await fetch('/api/fantasy/mis-ligas');
+                allUserLeagues = await res.json();
+
+                
+
+                renderLeaguesList();
+
+                // Cargar automáticamente la primera liga (Global)
+                if (allUserLeagues.length > 0) {
+                    console.log(allUserLeagues[0].id_liga_fantasy);
+                    loadLeagueDetails(allUserLeagues[0].id_liga_fantasy);
+                }
+            }
+
+            function renderLeaguesList() {
+                publicListEl.innerHTML = '';
+                privateListEl.innerHTML = '';
+
+                allUserLeagues.forEach(liga => {
+                    const li = document.createElement('li');
+                    li.className = 'league-item';
+                    li.dataset.id = liga.id_liga_fantasy;
+                    li.innerHTML = `
+                        <span class="league-item-name">${liga.nombre}</span>
+                        <!-- Podrías añadir tu ranking actual aquí si lo tienes en el objeto liga -->
+                        <!-- <span class="league-item-rank">#132</span> -->
+                    `;
+                    li.onclick = () => loadLeagueDetails(liga.id_liga_fantasy);
+
+                    if (liga.tipo === 'publica') {
+                        publicListEl.appendChild(li);
+                    } else {
+                        privateListEl.appendChild(li);
+                    }
+                });
+            }
+
+            // --- 3. CARGAR DETALLES Y RANKING DE UNA LIGA (RQF4, RQF5) ---
+            async function loadLeagueDetails(leagueId) {
+                // 1. Actualizar UI de selección
+                document.querySelectorAll('.league-item').forEach(item => item.classList.remove('active'));
+                const activeItem = document.querySelector(`.league-item[data-id="${leagueId}"]`);
+                if (activeItem) activeItem.classList.add('active');
+
+                // 2. Encontrar datos básicos de la liga seleccionada
+                const league = allUserLeagues.find(l => l.id_liga_fantasy === leagueId);
+                if (!league) return;
+
+                // 3. Actualizar cabecera
+                leagueNameEl.textContent = league.nombre;
+                leagueTypeEl.textContent = league.tipo === 'publica' ? 'Liga Pública' : 'Liga Privada';
+                
+                // RQF5: Mostrar código si es admin de liga privada
+                if (league.tipo === 'privada' && league.es_admin) {
+                    leagueCodeBoxEl.style.display = 'flex';
+                    leagueCodeTextEl.textContent = league.codigo;
+                } else {
+                    leagueCodeBoxEl.style.display = 'none';
+                }
+
+                // 4. Fetch del Leaderboard (RQF4)
+                leaderboardBodyEl.innerHTML = '<tr><td colspan="3" style="text-align:center; opacity: 0.6;">Cargando clasificación...</td></tr>';
+                
+                try {
+                    // Simulación de fetch: `/api/fantasy/liga/${leagueId}/ranking`
+                    const res = await fetch(`/api/fantasy/liga/${leagueId}/ranking`);
+                    const leaderboard = await res.json();
+
+                    if(leaderboard.length == 0){
+                        console.log("No hay miembros");
+                    }
+
+                    // DATOS SIMULADOS (espera 500ms para realismo)
+                    await new Promise(r => setTimeout(r, 300));
+
+                    // 5. Renderizar la tabla
+                    leagueMembersEl.textContent = `${leaderboard.length} miembros`;
+                    renderLeaderboard(leaderboard);
+
+                } catch (error) {
+                    console.error("Error cargando ranking:", error);
+                    leaderboardBodyEl.innerHTML = '<tr><td colspan="3" style="color: #dc2626; text-align:center;">Error al cargar la clasificación.</td></tr>';
+                }
+            }
+
+            function renderLeaderboard(leaderboard) {
+                leaderboardBodyEl.innerHTML = '';
+                leaderboard.forEach((entry, index) => {
+                    const rank = index + 1;
+                    const isCurrentUser = entry.id_usuario === currentUserId;
+                    
+                    const tr = document.createElement('tr');
+                    if (isCurrentUser) tr.classList.add('user-highlight');
+                    
+                    tr.innerHTML = `
+                        <td class="rank-cell rank-${rank}">${rank}</td>
+                        <td class="user-cell">
+                            <div>${entry.nombre_equipo}</div>
+                            <div style="font-size: 0.8rem; color: #a0a0c0; font-weight: 400;">${entry.username}</div>
+                        </td>
+                        <td class="points-cell">${entry.puntos_totales}</td>
+                    `;
+                    leaderboardBodyEl.appendChild(tr);
+                });
+            }
+
+            // --- 4. FUNCIONALIDAD UNIRSE A LIGA (RQF6) ---
+            document.getElementById('join-league-btn').addEventListener('click', async () => {
+                const codeInput = document.getElementById('league-code-input');
+                const code = codeInput.value.trim().toUpperCase();
+
+                // RQNF4 (Validación básica frontend)
+                if (code.length !== 8) {
+                    alert("Código no válido. Debe tener 8 caracteres.");
+                    return;
+                }
+
+                try {
+                    // Simulación POST a /api/fantasy/unirse-liga
+                    console.log(`Uniéndose a liga con código: ${code}`);
+                    // await fetch(...)
+                    
+                    alert(`¡Te has unido correctamente a la liga!`);
+                    codeInput.value = '';
+                    loadLeagues(); // Recargar la lista para mostrar la nueva liga
+
+                } catch (error) {
+                    alert("Error al unirse: Código no válido o ya estás en la liga.");
+                }
+            });
+
+            // --- 5. FUNCIONALIDAD CREAR LIGA (RQF3, RQNF3) ---
+            createBtnEl.addEventListener('click', () => createModal.style.display = 'flex');
+            function closeCreateModal() { createModal.style.display = 'none'; }
+
+            document.getElementById('confirm-create-league').addEventListener('click', async () => {
+                const nameInput = document.getElementById('new-league-name');
+                const name = nameInput.value.trim();
+                if (name.length < 3) { alert("El nombre debe tener al menos 3 caracteres."); return; }
+
+                try {
+                    const response = await fetch('/api/fantasy/crear-liga', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nombre: name })
+                    });
+
+                    if (!response.ok) {
+                        const err = await response.json();
+                        throw new Error(err.error || 'Error desconocido');
+                    }
+                    
+                    const result = await response.json();
+                    
+                    alert(`¡Liga creada con éxito! Tu código es: ${result.codigo}`);
+                    closeCreateModal();
+                    nameInput.value = '';
+                    loadLeagues(); // Recargar para ver la nueva liga
+
+                } catch (error) {
+                    alert(`Error al crear la liga: ${error.message}`);
+                }
+            });
+
+            // --- Helper: Copiar Código ---
+            leagueCodeBoxEl.addEventListener('click', () => {
+                const code = leagueCodeTextEl.textContent;
+                navigator.clipboard.writeText(code).then(() => alert("Código copiado al portapapeles: " + code));
+            });
+
+            
+        </script>
+
+    </body>
+</html>

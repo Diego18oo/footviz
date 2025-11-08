@@ -1310,10 +1310,10 @@ export async function getJugadoresFantasy(){
   );
   return rows;
 
-}
+} 
 
 
-export async function crearEquipoFantasyCompleto(id_usuario, nombreEquipo, presupuestoRestante, plantillaJugadores) {
+export async function crearEquipoFantasyCompleto(id_usuario, nombreEquipo, presupuestoRestante, plantillaJugadores, paisId) {
     const conn = await pool.getConnection(); // Obtenemos una conexión del pool
     await conn.beginTransaction(); // Iniciamos la transacción
 
@@ -1337,6 +1337,8 @@ export async function crearEquipoFantasyCompleto(id_usuario, nombreEquipo, presu
              WHERE id_jugador IN (${placeholders})`,
             [...plantillaJugadores]
         );
+
+        
 
         if (jugadoresConPrecio.length !== 15) {
             throw new Error("No se encontraron los datos de precio para todos los jugadores.");
@@ -1368,6 +1370,52 @@ export async function crearEquipoFantasyCompleto(id_usuario, nombreEquipo, presu
             [plantillaValues] // [ [1, 101, 8.5, 1], [1, 102, 5.5, 1], ... ]
         );
 
+        const [ligaGlobal] = await conn.query(
+            `SELECT id_liga_fantasy FROM liga_fantasy WHERE es_publica = 1 AND pais IS NULL LIMIT 1`
+        );
+        if (ligaGlobal.length > 0) {
+            await conn.query(
+                `INSERT INTO liga_fantasy_miembros (id_liga_fantasy, id_equipo_fantasy) VALUES (?, ?)`,
+                [ligaGlobal[0].id_liga_fantasy, newTeamId]
+            );
+        } else {
+            console.warn("ADVERTENCIA: No se encontró una Liga Global pública.");
+        }
+
+        // 5.2. Buscar o Crear la Liga Local
+        let idLigaLocal;
+        const [ligaLocalExistente] = await conn.query(
+            `SELECT id_liga_fantasy FROM liga_fantasy WHERE es_publica = 1 AND pais = ? LIMIT 1`,
+            [paisId]
+        );
+
+        if (ligaLocalExistente.length > 0) {
+            // La liga ya existe, solo obtenemos su ID
+            idLigaLocal = ligaLocalExistente[0].id_liga_fantasy;
+        } else {
+            // ¡La liga no existe! La creamos.
+            console.log(`No se encontró liga para el país ${paisId}. Creando una nueva...`);
+            
+            // (Asumo que tienes una tabla 'pais' con 'id_pais' y 'nombre')
+            const nombrePais = await getNombrePais(conn, paisId);
+            const nombreNuevaLiga = `Liga ${nombrePais}`; // Ej: "Liga México"
+
+            const [nuevaLigaResult] = await conn.query(
+                `INSERT INTO liga_fantasy (nombre, es_publica, pais) VALUES (?, 1, ?)`,
+                [nombreNuevaLiga, paisId]
+            );
+            idLigaLocal = nuevaLigaResult.insertId; // Usamos el ID de la liga que acabamos de crear
+        }
+
+        // 5.3. Unir al usuario a la Liga Local (ya sea la existente o la nueva)
+        if (idLigaLocal) {
+            await conn.query(
+                `INSERT INTO liga_fantasy_miembros (id_liga_fantasy, id_equipo_fantasy) VALUES (?, ?)`,
+                [idLigaLocal, newTeamId]
+            );
+        }
+
+
         // 5. ¡Éxito! Confirmamos todos los cambios
         await conn.commit();
         conn.release(); // Devolvemos la conexión al pool
@@ -1383,7 +1431,16 @@ export async function crearEquipoFantasyCompleto(id_usuario, nombreEquipo, presu
     }
 }
 
-
+async function getNombrePais(conn, paisId) {
+    // Necesitamos el nombre del país para crear la "Liga [País]"
+    // Asumo que tu tabla 'pais' tiene columnas 'id_pais' y 'nombre'
+    const [paisData] = await conn.query(
+        `SELECT nombre FROM pais WHERE id_pais = ?`,
+        [paisId]
+    );
+    if (!paisData.length) throw new Error(`País con ID ${paisId} no encontrado.`);
+    return paisData[0].nombre;
+}
 
 export async function getPlantillaFantasy(id_usuario){
     const [rows] = await pool.query(`
@@ -1410,12 +1467,12 @@ export async function getPlantillaFantasy(id_usuario){
                 -- Partidos como local
                 SELECT p.equipo_local as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha
                 FROM partido p
-                WHERE p.fecha <= CURDATE() -- Solo partidos completados
+                WHERE p.fecha <= CURDATE() + 4 -- Solo partidos completados
                 UNION ALL
                 -- Partidos como visitante
                 SELECT p.equipo_visitante as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha
                 FROM partido p
-                WHERE p.fecha <= CURDATE()
+                WHERE p.fecha <= CURDATE() + 4
             ) AS all_team_matches
         )
         -- Consulta Principal
@@ -2094,5 +2151,192 @@ export async function getHistorialPredicciones(id_usuario) {
         [id_usuario]
     );
     // Devuelve ej: [{jornada: 1, puntos: 10}, {jornada: 2, puntos: 25}, ...]
+    return rows;
+}
+
+
+export async function getMisLigas(id_usuario, pais_id, id_equipo_fantasy) {
+    // Esta consulta combina 3 búsquedas en 1
+    const sql = `
+        -- 1. Liga Global (pública, sin país)
+        (SELECT 
+            lf.id_liga_fantasy, lf.nombre, 'publica' as tipo, 
+            (lf.id_creador = ?) AS es_admin, lf.codigo_invitacion
+         FROM liga_fantasy lf
+         WHERE lf.es_publica = 1 AND lf.pais IS NULL)
+        
+        UNION
+        
+        -- 2. Liga Local/País (pública, con país)
+        (SELECT 
+            lf.id_liga_fantasy, lf.nombre, 'publica' as tipo, 
+            (lf.id_creador = ?) AS es_admin, lf.codigo_invitacion
+         FROM liga_fantasy lf
+         WHERE lf.es_publica = 1 AND lf.pais = ?)
+        
+        UNION
+        
+        -- 3. Ligas Privadas donde el usuario es miembro
+        (SELECT 
+            lf.id_liga_fantasy, lf.nombre, 'privada' as tipo, 
+            (lf.id_creador = ?) AS es_admin, lf.codigo_invitacion
+         FROM liga_fantasy lf
+         JOIN liga_fantasy_miembros lfm ON lf.id_liga_fantasy = lfm.id_liga_fantasy
+         WHERE lfm.id_equipo_fantasy = ? AND lf.es_publica = 0)
+    `;
+    
+    // Los parámetros deben coincidir con los 5 '?' en orden
+    const [rows] = await pool.query(sql, [id_usuario, id_usuario, pais_id, id_usuario, id_equipo_fantasy]);
+    return rows;
+}
+
+export async function getLeagueRanking(id_liga_fantasy) {
+    const [rows] = await pool.query(
+        `SELECT
+            u.id_usuario,
+            u.username,
+            ef.nombre_equipo,
+            ef.puntos_totales
+         FROM
+            liga_fantasy_miembros lfm
+         JOIN
+            equipo_fantasy ef ON lfm.id_equipo_fantasy = ef.id_equipo_fantasy
+         JOIN
+            usuario u ON ef.id_usuario = u.id_usuario
+         WHERE
+            lfm.id_liga_fantasy = ?
+         ORDER BY
+            ef.puntos_totales DESC, ef.nombre_equipo ASC`,
+        [id_liga_fantasy]
+    );
+    return rows;
+}
+
+
+export async function crearLiga(nombre, id_creador, codigo_invitacion, id_equipo_fantasy) {
+    const conn = await pool.getConnection();
+    await conn.beginTransaction();
+    
+    try {
+        // Paso 1: Crear la liga
+        const [resultLiga] = await conn.query(
+            `INSERT INTO liga_fantasy (nombre, id_creador, es_publica, codigo_invitacion) 
+             VALUES (?, ?, 0, ?)`,
+            [nombre, id_creador, codigo_invitacion]
+        );
+        
+        const newLeagueId = resultLiga.insertId;
+
+        // Paso 2: Unir al creador a su propia liga
+        await conn.query(
+            `INSERT INTO liga_fantasy_miembros (id_liga_fantasy, id_equipo_fantasy) 
+             VALUES (?, ?)`,
+            [newLeagueId, id_equipo_fantasy]
+        );
+        
+        await conn.commit();
+        return resultLiga; // Devuelve el resultado del primer INSERT
+
+    } catch (error) {
+        await conn.rollback();
+        console.error("Error en la transacción de crearLiga:", error);
+        throw error; // Lanza el error para que app.js lo atrape
+    } finally {
+        conn.release();
+    }
+}
+
+export async function unirseLigaPorCodigo(codigo, id_equipo_fantasy) {
+    const conn = await pool.getConnection();
+    await conn.beginTransaction();
+
+    try {
+        // Paso 1: Encontrar la liga y bloquearla para la transacción
+        const [ligas] = await conn.query(
+            `SELECT id_liga_fantasy FROM liga_fantasy 
+             WHERE codigo_invitacion = ? AND es_publica = 0 FOR UPDATE`,
+            [codigo]
+        );
+
+        // Validación RQF4: Código no válido
+        if (ligas.length === 0) {
+            throw new Error("Código no válido");
+        }
+        const idLiga = ligas[0].id_liga_fantasy;
+
+        // Paso 2: Contar los miembros actuales de esa liga
+        const [conteo] = await conn.query(
+            `SELECT COUNT(*) as memberCount FROM liga_fantasy_miembros 
+             WHERE id_liga_fantasy = ? FOR UPDATE`,
+            [idLiga]
+        );
+
+        // Validación RQNF2: Límite de 100 usuarios
+        if (conteo[0].memberCount >= 100) {
+            throw new Error("La liga está llena. No se pueden unir más miembros.");
+        }
+
+        // Paso 3: Insertar al nuevo miembro
+        // La BD fallará automáticamente si ya existe (PK duplicada),
+        // lo cual será atrapado por el catch.
+        await conn.query(
+            `INSERT INTO liga_fantasy_miembros (id_liga_fantasy, id_equipo_fantasy) 
+             VALUES (?, ?)`,
+            [idLiga, id_equipo_fantasy]
+        );
+        
+        await conn.commit();
+
+    } catch (error) {
+        await conn.rollback();
+        console.error("Error en la transacción de unirseLigaPorCodigo:", error);
+        throw error; // Lanza el error para que app.js lo atrape
+    } finally {
+        conn.release();
+    }
+}
+
+export async function getPublicLeagueIDs(paisId) {
+    const [leagues] = await pool.query(
+        `SELECT id_liga_fantasy, nombre, pais
+         FROM liga_fantasy
+         WHERE es_publica = 1 AND (pais IS NULL OR pais = ?)`,
+        [paisId]
+    );
+    
+    const globalLeague = leagues.find(l => l.pais === null);
+    const localLeague = leagues.find(l => l.pais == paisId); // Usar '==' para comparar null/undefined
+    
+    return {
+        globalLeagueId: globalLeague?.id_liga_fantasy,
+        localLeagueId: localLeague?.id_liga_fantasy,
+        localLeagueName: localLeague?.nombre || 'Liga Local' // Nombre de fallback
+    };
+}
+
+export async function getLeagueRankingTop10(id_liga_fantasy) {
+    if (!id_liga_fantasy) {
+        return []; // Si no hay liga (ej. no hay liga local), devuelve array vacío
+    }
+    
+    const [rows] = await pool.query(
+        `SELECT
+            u.id_usuario,
+            u.username,
+            ef.nombre_equipo,
+            ef.puntos_totales
+         FROM
+            liga_fantasy_miembros lfm
+         JOIN
+            equipo_fantasy ef ON lfm.id_equipo_fantasy = ef.id_equipo_fantasy
+         JOIN
+            usuario u ON ef.id_usuario = u.id_usuario
+         WHERE
+            lfm.id_liga_fantasy = ?
+         ORDER BY
+            ef.puntos_totales DESC, ef.nombre_equipo ASC
+         LIMIT 5`, // <-- Solo traemos los primeros 10
+        [id_liga_fantasy]
+    );
     return rows;
 }

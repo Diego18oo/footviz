@@ -34,11 +34,20 @@
         /* --- Ubicación de secciones --- */
         .fantasy-header { grid-area: header; }
         .main-left-column { grid-area: main-left; display: flex; flex-direction: column; gap: 20px; }
-        .main-right-column { grid-area: main-right; display: flex; flex-direction: column; gap: 20px; }
+        
+        /* --- 👇 MODIFICACIÓN 1: Ligas en Paralelo --- */
+        .main-right-column { 
+            grid-area: main-right; 
+            display: flex; 
+            flex-direction: row; /* Cambiado de 'column' a 'row' */
+            gap: 20px; 
+        }
+        /* --- 👆 FIN DE MODIFICACIÓN 1 👆 --- */
+
         #mvp-section { grid-area: mvp; }
         #graph-section { grid-area: graph; }
 
-        /* --- Estilos de Tarjetas --- */
+        /* --- Estilos básicos para las "Tarjetas" --- */
         .card {
             background-color: #1e1e3f;
             padding: 20px;
@@ -47,7 +56,7 @@
         }
         h2, h3 { color: #ffffff; margin-bottom: 15px; }
 
-        /* --- Estilos de Header --- */
+        /* --- Estilos específicos del Header --- */
         .fantasy-header {
             display: flex;
             justify-content: space-between;
@@ -62,88 +71,22 @@
 
         /* --- Estilos de Secciones --- */
         #stadium-banner img { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; }
-        #points-chart { max-width: 100%; background-color: #2a2a4a; border-radius: 8px; }
-        .league-table table { width: 100%; text-align: center; }
-        .league-table th, .league-table td { padding: 5px; }
-        #fixtures-list button { background-color: #4a69ff; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; }
-        #fixtures-list li { list-style: none; margin-bottom: 5px; }
-
-        /* --- Estilos para la lista de MVPs --- */
-        #mvp-list {
-            list-style: none;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        .mvp-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #2a2a4a;
-            font-size: 0.9rem;
-        }
-        .mvp-item:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-        .mvp-rank {
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: #ffffff;
-            width: 25px;
-            text-align: center;
-        }
-        .mvp-player-img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-        .mvp-player-info {
-            flex-grow: 1;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .mvp-club-img {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-        .mvp-points {
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: #4a69ff;
-        }
-
-        /* --- 👇 NUEVOS ESTILOS PARA EL CAMPO DE FÚTBOL 👇 --- */
         #team-display-visual {
-            position: relative; /* Para posicionar a los jugadores */
-            height: 400px; /* Altura del campo */
-            background-color: #132972; /* Verde campo */
+            position: relative; 
+            height: 400px; 
+            background-color: #002050; /* Verde campo */
             
-            background-size: 50px 50px; /* Tamaño de las rayas */
-            border-radius: 8px;
-            overflow: hidden; /* Asegura que los jugadores no se salgan */
-            padding: 10px; /* Un pequeño padding interior */
-
-            /* Organiza las 4 filas (POR, DEF, MED, DEL) verticalmente */
+            overflow: hidden;
+            padding: 10px;
             display: flex;
             flex-direction: column; 
             justify-content: space-around;
-        }   
+        } 
         .pitch-row {
             display: flex;
-            /* Centra y espacia a los jugadores horizontalmente */
             justify-content: space-around; 
             align-items: center;
         }
-        
-
-        /* Jugador individual en el campo */
         .player-on-field {
             display: flex;
             flex-direction: column;
@@ -154,46 +97,68 @@
             font-weight: 600;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
             padding: 5px;
-            width: 60px; /* Damos un ancho fijo para que no se peguen */
+            width: 60px;
         }
-
         .player-on-field img {
-            width: 50px; /* Tamaño de la imagen del jugador */
+            width: 50px;
             height: 50px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid #4a69ff; /* Borde de color para destacar */
+            border: 2px solid #4a69ff;
             box-shadow: 0 0 5px rgba(0,0,0,0.5);
             margin-bottom: 3px;
         }
-
         .player-on-field.captain img {
-            border-color: gold; /* Borde dorado para el capitán */
+            border-color: gold;
             box-shadow: 0 0 10px rgba(255,215,0,0.8);
         }
-        /* Posicionamiento para las diferentes líneas */
-        /* Portero */
-        .player-on-field.pos-G { top: 85%; left: 50%; transform: translateX(-50%); }
-        /* Defensas */
-        .player-on-field.pos-D.slot-1 { top: 65%; left: 15%; }
-        .player-on-field.pos-D.slot-2 { top: 65%; left: 35%; }
-        .player-on-field.pos-D.slot-3 { top: 65%; left: 65%; }
-        .player-on-field.pos-D.slot-4 { top: 65%; left: 85%; }
-        /* Mediocampistas */
-        .player-on-field.pos-M.slot-1 { top: 40%; left: 15%; }
-        .player-on-field.pos-M.slot-2 { top: 40%; left: 35%; }
-        .player-on-field.pos-M.slot-3 { top: 40%; left: 65%; }
-        .player-on-field.pos-M.slot-4 { top: 40%; left: 85%; }
-        /* Delanteros */
-        .player-on-field.pos-F.slot-1 { top: 15%; left: 30%; }
-        .player-on-field.pos-F.slot-2 { top: 15%; left: 70%; }
-        /* Fallback para más de 4 defensas/mediocampistas o 2 delanteros */
-        .player-on-field.pos-D:nth-child(5) { top: 70%; left: 50%; transform: translateX(-50%); }
-        .player-on-field.pos-M:nth-child(5) { top: 45%; left: 50%; transform: translateX(-50%); }
-        .player-on-field.pos-F:nth-child(3) { top: 20%; left: 50%; transform: translateX(-50%); }
+        
+        #points-chart { max-width: 100%; background-color: #2a2a4a; border-radius: 8px; }
+        .league-table table { width: 100%; text-align: center; }
+        .league-table th, .league-table td { padding: 5px; }
+        
+        /* --- 👇 MODIFICACIÓN 1.2: Ligas en Paralelo --- */
+        .league-table.card {
+            flex: 1; /* Hace que ambas tarjetas de liga compartan el espacio */
+        }
+        /* --- 👆 FIN DE MODIFICACIÓN 1.2 👆 --- */
 
+        #fixtures-list li { list-style: none; margin-bottom: 5px; }
 
-        /* --- Responsividad Básica --- */
+        /* --- 👇 MODIFICACIÓN 2: Estilos para botones de acción 👇 --- */
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .card-actions button {
+            flex: 1;
+            background-color: #4a69ff;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .card-actions button:hover {
+            background-color: #3a58cc;
+        }
+        /* --- 👆 FIN DE MODIFICACIÓN 2 👆 --- */
+
+        /* --- Estilos para la lista de MVPs --- */
+        #mvp-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 15px; }
+        .mvp-item { display: flex; align-items: center; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid #2a2a4a; font-size: 0.9rem; }
+        .mvp-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .mvp-rank { font-weight: 700; font-size: 1.1rem; color: #ffffff; width: 25px; text-align: center; }
+        .mvp-player-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+        .mvp-player-info { flex-grow: 1; display: flex; align-items: center; gap: 8px; }
+        .mvp-club-img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
+        .mvp-points { font-weight: 700; font-size: 1.1rem; color: #4a69ff; }
+
+        /* --- Responsividad --- */
         @media (max-width: 900px) {
             .dashboard-container {
                 grid-template-areas:
@@ -205,17 +170,16 @@
                 grid-template-columns: 1fr;
                 grid-template-rows: auto;
             }
-            .main-right-column { flex-direction: row; flex-wrap: wrap; }
-            .league-table { flex-basis: calc(50% - 10px); }
+            /* En modo tablet, las ligas vuelven a apilarse */
+            .main-right-column { flex-direction: column; } 
         }
-         @media (max-width: 600px) {
-            .main-right-column { flex-direction: column; }
-            .league-table { flex-basis: 100%; }
+        @media (max-width: 600px) {
             .fantasy-header { flex-direction: column; gap: 10px; }
-            #team-display-visual { height: 300px; } /* Ajustar altura en móviles */
+            #team-display-visual { height: 300px; } 
             .player-on-field img { width: 40px; height: 40px; }
             .player-on-field { font-size: 0.6rem; }
-         }
+            .card-actions { flex-direction: column; } /* Botones uno encima de otro en móvil */
+        }
         </style>
     </head>
     <body>
@@ -225,14 +189,10 @@
                 <div class="user-profile-summary">
                     <ion-icon name="extension-puzzle-outline" title="Mis Piezas"></ion-icon>
                     <div class="user-level-xp"> 
-                        <div>
-                            Nivel <strong id="user-level">7</strong>
-                        </div>
-                        <div>
-                            <span id="user-xp">179</span>
-                        </div>
+                        <div>Nivel <strong id="user-level">--</strong></div>
+                        <div><span id="user-xp">--</span> XP</div>
                     </div>
-                    <h2 id="username-display">Nombre</h2>
+                    <h2 id="username-display">Cargando...</h2>
                 </div>
                 <div class="user-icons">
                     <ion-icon name="trophy-outline" title="Mis Logros"></ion-icon>
@@ -244,12 +204,11 @@
                 <section id="stadium-banner" class="card">
                     <img src="placeholder-stadium.jpg" alt="Banner Estadio">
                 </section>
-
                 <section id="my-team-section" class="card">
                     <h3>Mi Equipo</h3> 
                     <div id="team-display-visual">
-                        <p id="verificar-equipo-text">Aqui aparecera el equipo</p>
-                    </div>
+                        <p id="verificar-equipo-text">Cargando equipo...</p>
+                        </div>
                     <div id="team-controls" style="margin-top: 15px; text-align: center;">
                         <span>Presupuesto: <strong id="budget-remaining">-- M</strong></span> |
                         <span>Fichajes Restantes: <strong id="transfers-remaining">--</strong></span>
@@ -260,15 +219,17 @@
             </div>
 
             <div class="main-right-column">
+                
                 <section id="fixtures-section" class="card">
-                    <button id="view-all-fixtures-btn" onclick="window.location.href='predicciones.html'">Predicciones</button>
+                    <div class="card-actions">
+                        <button id="view-predictions-btn" onclick="window.location.href='predicciones.html'">Predicciones</button>
+                        <button id="view-leagues-btn" onclick="window.location.href='ligas.html'">Mis Ligas</button>
+                    </div>
                     <h3>Proximos Partidos</h3> 
                     <ul id="fixtures-list">
-                        <li>Barcelona vs Osasuna</li>
-                        <li>Real Madrid vs Cadiz</li>
+                        <li>Cargando partidos...</li>
                     </ul>
                 </section>
-
                 <div class="league-table card" id="global-league">
                     <h3>Liga Global</h3> 
                     <table>
@@ -280,17 +241,13 @@
                             </tr>
                         </thead>
                         <tbody id="global-league-ranking">
-                            <tr>
-                                <td>132</td>
-                                <td>Usuario Pepito</td>
-                                <td>82</td>
-                            </tr>
-                        </tbody>
+                            </tbody>
                     </table>
                 </div>
 
                 <div class="league-table card" id="local-league">
-                    <h3>Liga Local (<span id="local-league-country">País</span>)</h3> <table>
+                    <h3>Liga Local </h3> 
+                    <table>
                         <thead>
                             <tr>
                                 <th>#</th>
@@ -299,12 +256,7 @@
                             </tr>
                         </thead>
                         <tbody id="local-league-ranking">
-                            <tr>
-                                <td>12</td>
-                                <td>Uusario Pepito</td>
-                                <td>82</td>
-                            </tr>
-                        </tbody>
+                            </tbody>
                     </table>
                 </div>
             </div>
@@ -318,17 +270,45 @@
                 <canvas id="points-chart"></canvas>
                 <p id="points-graph-placeholder" style="display: none;">(Gráfica aparecerá aquí)</p>
             </section>
-            <section id="graph-section" class="card">
-                <h2>Puntuación en las últimas jornadas</h2> 
-                <canvas id="points-chart"></canvas>
-                <p id="points-graph-placeholder" style="display: none;">(Gráfica aparecerá aquí)</p>
-            </section>
 
         </div>
 
         <script>
             presupuestoRestante = document.getElementById('budget-remaining');
             fichajesRestantes = document.getElementById('transfers-remaining');
+
+            function renderLeagueTable(tbodyId, rankingData, currentUserId) {
+                console.log(rankingData, currentUserId);
+                const tbody = document.getElementById(tbodyId);
+                if (!tbody) return;
+                
+                tbody.innerHTML = ""; // Limpiar cualquier placeholder
+
+                if (!rankingData || rankingData.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="3" style="opacity: 0.6;">No hay datos.</td></tr>`;
+                    return;
+                }
+
+                rankingData.forEach((entry, index) => {
+                    const rank = index + 1;
+                    // Resaltar al usuario actual
+                    const isCurrentUser = entry.id_usuario === currentUserId;
+                    
+                    const tr = document.createElement('tr');
+                    if (isCurrentUser) {
+                        tr.style.backgroundColor = "rgba(74, 105, 255, 0.2)";
+                        tr.style.fontWeight = "bold";
+                    }
+                    
+                    tr.innerHTML = `
+                        <td>${rank}</td>
+                        <td>${entry.username}</td>
+                        <td>${entry.puntos_totales}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
             async function cargarDatosDashboard() { 
                 try {
                     const response = await fetch('/api/fantasy-dashboard'); 
@@ -378,6 +358,12 @@
                         fichajesRestantes.innerHTML = "N/A";
                         teamDisplayVisual.innerHTML = "<p style='color:#fff; text-align:center;'>Accede a Crear Equipo</p>";
                     }
+
+                    
+
+                    const currentUserId = userData ? userData.id_usuario : null;
+                    renderLeagueTable('global-league-ranking', data.globalRanking, currentUserId);
+                    renderLeagueTable('local-league-ranking', data.localRanking, currentUserId);
                     
 
                     
