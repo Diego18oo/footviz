@@ -1804,3 +1804,295 @@ export async function getMVPdeLaSemana(){
   return rows;
 
 }
+
+export async function getPartidosRandom(){
+    const [rows] = await pool.query(
+    `WITH NextJornadas AS (
+    SELECT
+        p.temporada,
+        MIN(p.jornada) AS jornada
+    FROM 
+        partido p
+    WHERE 
+        -- Asume que tus 5 ligas principales tienen id_temporada del 1 al 5
+        -- ¡AJUSTA ESTO a los IDs de temporada correctos!
+        p.temporada IN (1, 2, 3, 4, 5) 
+        AND p.fecha >= CURDATE() -- Solo partidos de hoy en adelante
+    GROUP BY 
+        p.temporada
+),
+
+-- CTE 2: Obtiene todos los partidos de esas jornadas y los "baraja" de forma predecible
+RankedMatches AS (
+    SELECT
+        p.id_partido,
+        p.temporada,
+        p.jornada,
+        p.fecha,
+        p.equipo_local,
+        p.equipo_visitante,
+        
+        -- Aquí está la magia:
+        -- 1. Particionamos por liga (temporada)
+        -- 2. Ordenamos usando RAND() con una semilla (seed)
+        -- 3. La semilla es el día del año + la jornada. Esto es "aleatorio",
+        --    pero será IDÉNTICO para todos los usuarios el mismo día.
+        ROW_NUMBER() OVER (
+            PARTITION BY p.temporada 
+            ORDER BY RAND(DAYOFYEAR(CURDATE()) + p.jornada)
+        ) as rn
+    FROM 
+        partido p
+    JOIN 
+        NextJornadas nj ON p.temporada = nj.temporada AND p.jornada = nj.jornada
+)
+
+-- Consulta Final: Selecciona solo el partido clasificado como #1 de cada liga
+SELECT
+    rm.id_partido,
+    rm.jornada,
+    rm.fecha,
+    rm.temporada,
+    el.id_equipo as id_local,
+    el.nombre AS nombre_local,
+    el.url_imagen AS escudo_local,
+    ev.id_equipo as id_visitante,
+    ev.nombre AS nombre_visitante,
+    ev.url_imagen AS escudo_visitante
+FROM 
+    RankedMatches rm
+-- Unimos con la tabla 'equipo' DOS VECES para obtener los nombres/escudos
+JOIN 
+    equipo el ON rm.equipo_local = el.id_equipo
+JOIN 
+    equipo ev ON rm.equipo_visitante = ev.id_equipo
+WHERE 
+    rm.rn = 1;`
+  );
+  return rows;
+
+}
+
+
+export async function getPlantillasDePredicciones(idPartido){
+    const [rows] = await pool.query(
+        `SELECT
+    j.id_jugador,
+    j.nombre AS nombre_jugador,
+    j.posicion,
+    j.url_imagen AS img_jugador,
+    e.id_equipo,
+    e.nombre AS nombre_equipo,
+    e.url_imagen AS img_equipo,
+    
+    -- Columna extra para saber si el jugador es local o visitante
+    CASE 
+        WHEN pe.equipo = p.equipo_local THEN 'local'
+        ELSE 'visitante'
+    END AS tipo_equipo 
+FROM
+    partido p
+-- 1. Unimos con plantilla_equipos usando la TEMPORADA del partido
+JOIN
+    plantilla_equipos pe ON p.temporada = pe.temporada 
+    -- 2. Y nos aseguramos de que el equipo del jugador sea el LOCAL O el VISITANTE
+    AND (pe.equipo = p.equipo_local OR pe.equipo = p.equipo_visitante)
+-- 3. Unimos con jugador para obtener los datos del jugador
+JOIN
+    jugador j ON pe.jugador = j.id_jugador
+-- 4. Unimos con equipo para obtener los datos del equipo
+JOIN
+    equipo e ON pe.equipo = e.id_equipo
+WHERE
+    -- 5. Filtramos por el ID del partido que te interesa
+    p.id_partido = ? -- Reemplaza ? con el ID de tu partido
+ORDER BY
+    -- Opcional: agrupa a los locales primero, luego por posición
+    tipo_equipo,
+    FIELD(j.posicion, 'G', 'D', 'M', 'F');`,[idPartido]
+    );
+  return rows;
+
+}
+
+export async function getEstadoDeForma(idEquipo){
+    const [rows] = await pool.query(
+        `(
+        -- Parte 1: Partidos jugados como LOCAL
+        SELECT
+            p.fecha,
+            -- Compara los goles para determinar el resultado
+            (CASE
+                WHEN ep.goles_local > ep.goles_visitante THEN 'V' -- Victoria
+                WHEN ep.goles_local = ep.goles_visitante THEN 'E' -- Empate
+                ELSE 'D' -- Derrota
+            END) AS resultado
+        FROM
+            partido p
+        JOIN
+            -- Unimos con las estadísticas para saber el marcador
+            estadisticas_partido ep ON p.id_partido = ep.partido
+        WHERE
+            p.equipo_local = ? 
+            AND p.fecha < CURDATE() 
+    )
+    UNION ALL
+    (
+        SELECT
+            p.fecha,
+            (CASE
+                WHEN ep.goles_visitante > ep.goles_local THEN 'V' 
+                WHEN ep.goles_local = ep.goles_visitante THEN 'E' 
+                ELSE 'D' 
+            END) AS resultado
+        FROM
+            partido p
+        JOIN
+            estadisticas_partido ep ON p.id_partido = ep.partido
+        WHERE
+            p.equipo_visitante = ? 
+            AND p.fecha < CURDATE() 
+    )
+    ORDER BY
+        fecha DESC
+    LIMIT 5;`,[idEquipo, idEquipo]
+    );
+  return rows;
+
+}
+
+export async function getPronosticoResultado(idPartido){
+    const [rows] = await pool.query(
+        `SELECT
+    resultado_predicho,
+    COUNT(*) AS total_votos
+FROM
+    prediccion_usuario
+WHERE
+    id_partido = ? AND resultado_predicho IS NOT NULL
+GROUP BY
+    resultado_predicho
+ORDER BY
+    total_votos DESC;`,[idPartido]
+    );
+  return rows;
+
+}
+
+export async function getPronosticoPrimerEquipoEnAnotar(idPartido){
+    const [rows] = await pool.query(
+        `SELECT
+            e.nombre AS nombre_equipo,
+            e.url_imagen AS img_equipo,
+            COUNT(*) AS total_votos
+        FROM
+            prediccion_usuario pu
+        JOIN
+            equipo e ON pu.primer_equipo_anotar_id = e.id_equipo
+        WHERE
+            pu.id_partido = ? AND pu.primer_equipo_anotar_id IS NOT NULL
+        GROUP BY
+            e.id_equipo, e.nombre, e.url_imagen
+        ORDER BY
+            total_votos DESC
+        LIMIT 1; -- Tomamos solo el más popular`,[idPartido]
+    );
+  return rows;
+
+}
+
+export async function getPronosticoPrimerJugadorEnAnotar(idPartido){
+    const [rows] = await pool.query(
+        `SELECT
+            j.nombre AS nombre_jugador,
+            j.url_imagen AS img_jugador,
+            COUNT(*) AS total_votos
+        FROM
+            prediccion_usuario pu
+        JOIN
+            jugador j ON pu.primer_jugador_anotar_id = j.id_jugador
+        WHERE
+            pu.id_partido = ? AND pu.primer_jugador_anotar_id IS NOT NULL
+        GROUP BY
+            j.id_jugador, j.nombre, j.url_imagen
+        ORDER BY
+            total_votos DESC
+        LIMIT 1; -- Tomamos solo el más popular`,[idPartido]
+    );
+  return rows;
+
+}
+
+export async function getJornadaFromPartido(id_partido) {
+    const [rows] = await pool.query(
+        `SELECT jornada FROM partido WHERE id_partido = ?`,
+        [id_partido]
+    );
+    return rows[0];
+}
+
+export async function guardarPrediccionUsuario(prediccion) {
+    const { 
+        id_usuario, 
+        id_partido, 
+        jornada, 
+        resultado_predicho, 
+        primer_equipo_anotar_id, 
+        primer_jugador_anotar_id 
+    } = prediccion;
+
+    const sql = `
+        INSERT INTO prediccion_usuario 
+            (id_usuario, id_partido, jornada, resultado_predicho, primer_equipo_anotar_id, primer_jugador_anotar_id)
+        VALUES 
+            (?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+            resultado_predicho = VALUES(resultado_predicho),
+            primer_equipo_anotar_id = VALUES(primer_equipo_anotar_id),
+            primer_jugador_anotar_id = VALUES(primer_jugador_anotar_id)
+    `;
+
+    await pool.query(sql, [
+        id_usuario, 
+        id_partido, 
+        jornada, 
+        resultado_predicho, 
+        primer_equipo_anotar_id, 
+        primer_jugador_anotar_id
+    ]);
+}
+
+export async function getMisPredicciones(id_usuario, jornada) {
+    const [rows] = await pool.query(
+        `SELECT
+            id_partido,
+            resultado_predicho,
+            primer_equipo_anotar_id,
+            primer_jugador_anotar_id
+         FROM 
+            prediccion_usuario
+         WHERE 
+            id_usuario = ? AND jornada = ?`,
+        [id_usuario, jornada]
+    );
+    return rows; // Devuelve un array de predicciones
+}
+
+export async function getHistorialPredicciones(id_usuario) {
+    const [rows] = await pool.query(
+        `SELECT 
+            jornada, 
+            SUM(puntos_obtenidos) as puntos_jornada
+         FROM 
+            prediccion_usuario
+         WHERE 
+            id_usuario = ? AND puntos_obtenidos IS NOT NULL
+         GROUP BY 
+            jornada
+         ORDER BY 
+            jornada ASC`, // Ordenar por jornada es crucial
+        [id_usuario]
+    );
+    // Devuelve ej: [{jornada: 1, puntos: 10}, {jornada: 2, puntos: 25}, ...]
+    return rows;
+}

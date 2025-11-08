@@ -4,7 +4,7 @@ import express from 'express'
 import bcrypt from 'bcrypt'; 
 import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
-import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail, getUsuarioData, getEquipoFantasyUsuario, getJugadoresFantasy, crearEquipoFantasyCompleto, getPlantillaFantasy, getDesglosePuntosFantasyJugador, getProximoPartido, realizarFichaje, actualizarPlantilla, getProximosPartidosDeEquipos, getMVPdeLaSemana} from './database.js'
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail, getUsuarioData, getEquipoFantasyUsuario, getJugadoresFantasy, crearEquipoFantasyCompleto, getPlantillaFantasy, getDesglosePuntosFantasyJugador, getProximoPartido, realizarFichaje, actualizarPlantilla, getProximosPartidosDeEquipos, getMVPdeLaSemana, getPartidosRandom, getPlantillasDePredicciones, getEstadoDeForma, getPronosticoResultado, getPronosticoPrimerEquipoEnAnotar, getPronosticoPrimerJugadorEnAnotar, guardarPrediccionUsuario, getJornadaFromPartido, getMisPredicciones, getHistorialPredicciones} from './database.js'
  
 
 const app = express()  
@@ -36,6 +36,139 @@ function authenticateToken(req, res, next) {
         next(); // Permite que la petición continúe a la ruta solicitada
     });
 }
+
+app.get("/api/fantasy/historial-predicciones", authenticateToken, async (req, res) => {
+    try {
+        const historial = await getHistorialPredicciones(req.userId);
+        res.status(200).json(historial);
+    } catch (error) {
+        console.error("Error al obtener historial de predicciones:", error);
+        res.status(500).json({ error: "Error interno del servidor." });
+    }
+});
+
+app.get("/api/fantasy/mis-predicciones", authenticateToken, async (req, res) => {
+    try {
+        const userId = req.userId;
+        const { jornada } = req.query; // Esperamos ?jornada=11
+
+        if (!jornada) {
+            return res.status(400).json({ error: "Falta el número de jornada." });
+        }
+
+        const misPredicciones = await getMisPredicciones(userId, jornada);
+        
+        res.status(200).json(misPredicciones);
+
+    } catch (error) {
+        console.error("Error al obtener mis predicciones:", error);
+        res.status(500).json({ error: "Error interno del servidor." });
+    }
+});
+
+app.post("/api/fantasy/guardar-prediccion", authenticateToken, async (req, res) => {
+    try {
+        const userId = req.userId;
+        const { id_partido, resultado_predicho, primer_equipo_anotar_id, primer_jugador_anotar_id } = req.body;
+
+        if (!id_partido) {
+            return res.status(400).json({ error: "Falta el ID del partido." });
+        }
+
+        // 1. Obtener la jornada del partido (necesaria para la tabla)
+        const partidoInfo = await getJornadaFromPartido(id_partido);
+        if (!partidoInfo) {
+            return res.status(404).json({ error: "El partido no existe." });
+        }
+
+        // 2. Preparar el objeto de datos para la BD
+        const prediccion = {
+            id_usuario: userId,
+            id_partido: id_partido,
+            jornada: partidoInfo.jornada,
+            resultado_predicho: resultado_predicho,
+            primer_equipo_anotar_id: primer_equipo_anotar_id,
+            primer_jugador_anotar_id: primer_jugador_anotar_id
+        };
+
+        // 3. Llamar a la función de la BD (que usa ON DUPLICATE KEY UPDATE)
+        await guardarPrediccionUsuario(prediccion);
+
+        res.status(200).json({ message: "Predicción guardada con éxito." });
+
+    } catch (error) {
+        console.error("Error al guardar predicción:", error);
+        res.status(500).json({ error: "Error interno del servidor." });
+    }
+});
+
+
+app.get("/api/fantasy/predicciones-populares/:id",  async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const resultado = await getPronosticoResultado(id);
+        const primerEquipo = await getPronosticoPrimerEquipoEnAnotar(id);
+        const primerJugador = await getPronosticoPrimerJugadorEnAnotar(id);
+
+
+        if (resultado.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del jugador" });
+        }
+
+        res.json({resultado, primerEquipo, primerJugador});   
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del jugador" });
+    }
+});
+
+app.get("/api/estado-forma/:id",  async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const info = await getEstadoDeForma(id);
+
+        if (info.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del jugador" });
+        }
+
+        res.json(info);   
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del jugador" });
+    }
+});
+
+app.get("/api/plantillas-partido/:id",  async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const info = await getPlantillasDePredicciones(id);
+
+        if (info.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del jugador" });
+        }
+
+        res.json(info);   
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del jugador" });
+    }
+});
+
+app.get("/api/fantasy/partidos-prediccion",  async (req, res) => {
+    try {
+        
+        const info = await getPartidosRandom();
+
+        if (info.length === 0) {
+            return res.status(404).json({ error: "No hay suficiente informacion del partido" });
+        }
+
+        res.json(info);   
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtener estadísticas del jugador" });
+    }
+});
 
 app.get("/api/fantasy/mvp-de-la-jornada",  async (req, res) => {
     try {
@@ -299,14 +432,14 @@ app.post("/api/login", async (req, res) => {
 
 app.post("/api/registrar-usuario", async (req, res) => {
     try {
-        // req.body es el objeto JSON que enviaste desde el frontend
         const { username, correo, contrasenia, fecnac, pais, equipo_favorito } = req.body;
 
-        // --- Aquí van tus validaciones de backend  ---
+        
         const usuarioExistente = await buscarUsuarioPorUsername(username);
         if (usuarioExistente) {
             return res.status(409).json({ error: "El nombre de usuario ya está en uso." });
         } 
+        // RQNF1
         const correoExistente = await buscarUsuarioPorEmail(correo);
         if (correoExistente) {
             return res.status(409).json({ error: "El correo ya está en uso." });

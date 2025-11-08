@@ -143,16 +143,14 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                // --- DECLARACIÓN DE VARIABLES ---
                 const params = new URLSearchParams(window.location.search);
                 const partidoParam = params.get("partido");
                 let evolucionChartInstance = null;
-                let equiposEvolucion = {}; // Para guardar IDs y redibujar
+                let equiposEvolucion = {}; 
                                 
-                let clickablePlayersLocal = [];     // 👈 AÑADE ESTA LÍNEA
+                let clickablePlayersLocal = [];     
                 let clickablePlayersVisitante = [];
                 
-                // --- LÓGICA DE TEMA ---
                 const themeToggleButton = document.getElementById('theme-toggle');
                 const body = document.body;
 
@@ -167,7 +165,6 @@
                         body.classList.remove('light-mode');
                         themeToggleButton.textContent = '☀️';
                     }
-                    // Volver a cargar/dibujar los elementos dinámicos
                     if (partidoParam) {
                         cargarAlineacionLocal(partidoParam);
                         cargarAlineacionVisitante(partidoParam);
@@ -242,12 +239,13 @@
                 
                 let nombreLocal = 'Equipo Local';
                 let nombreVisitante = 'Equipo Visitante';
+
+                // RQF1
                 function cargarInfoPartido(partido){
                     fetch(`/api/info-prepartido/${partido}`).then(r => r.json()).then(data => {
                         if (!data) return;
-                        // Guardamos los IDs para poder redibujar el gráfico de evolución al cambiar de tema
+                       
                         equiposEvolucion = { local: data.id_local, visitante: data.id_visitante, total: data.total_equipos_liga };
-                        // El resto de la función...
                         let infoPrincipal = document.getElementById("info-general");
                         const fechaParaMostrar = new Date(data.fecha).toISOString().split('T')[0];
                         const arbitro = data.arbitro_nombre || 'No asignado';
@@ -262,7 +260,9 @@
                                 <p>${momiosHTML}</p> 
                             </div> 
                             <div class="equipo"><img src="${data.escudo_visitante}" id="clubImgVisitante"></div>`;
+
                         
+                        // RQF8
                         document.getElementById("clubImgLocal").addEventListener("click", () => window.location.href = `club.html?id=${data.id_local}`);
                         document.getElementById("clubImgVisitante").addEventListener("click", () => window.location.href = `club.html?id=${data.id_visitante}`);
 
@@ -272,7 +272,8 @@
 
                     
                 }
-
+                
+                // RQF2
                 function cargarAlineacionLocal(partido){
                     fetch(`/api/alineaciones/${partido}`)
                     .then(response => response.json())
@@ -280,14 +281,13 @@
                         const container = document.getElementById('id-alineacion-local-container');
                         if (!data || !data.nombre1) {
                             console.warn("Los datos de la alineación no están disponibles.");
-                            // Reemplazamos el contenido del div con un mensaje
                             container.innerHTML = `
                                 <h2>Posible Alineación Local</h2>
                                 <p style="padding: 40px 0; color: #a0a0c0;">
                                     Las alineaciones aún no están disponibles.
                                 </p>
                             `;
-                            return; // Detenemos la ejecución aquí
+                            return; 
                         }
                         const canvas = document.getElementById('campo-local');
                         if (!canvas.getContext) return;
@@ -303,14 +303,12 @@
                             });
                         }
 
-                        // --- LÓGICA DINÁMICA DE FORMACIÓN ---
-                        // 1. Obtener la formación del JSON. Usar "4-4-2" como fallback.
+                   
                         const formacionKey = data.formacion_local || "4-4-2";
 
-                        // 2. Actualizar el título en la página
                         document.getElementById('formacion-local-titulo').innerText = `Formación: ${formacionKey}`;
 
-                        // 3. Seleccionar las coordenadas del diccionario. Si no existe, usar "4-4-2".
+                     
                         const formacionCoordenadas = FORMACIONES[formacionKey] || FORMACIONES["4-4-2"];
 
                         precargarImagenesYDibujar(ctx, jugadores, formacionCoordenadas, clickablePlayersLocal);
@@ -329,7 +327,7 @@
                             }
                             const img = new Image();
 
-                            img.crossOrigin = "Anonymous"; // Necesario para cargar imágenes de otros dominios
+                            img.crossOrigin = "Anonymous"; 
 
                             img.onload = () => resolve(img);
 
@@ -340,21 +338,18 @@
                         });
 
                     });
-                    // ... (tu código de promesas de imágenes se queda igual) ...
                     Promise.all(promesasDeImagenes)
                         .then(imagenesCargadas => {
                             jugadores.forEach((jugador, index) => {
-                                // imagenCargada será el objeto <img> o null
                                 jugador.imagenCargada = imagenesCargadas[index];
                             });
                             
-                            // ¡Ahora sí! Dibujamos todo en el canvas
                             dibujarAlineacion(ctx, jugadores, formacion, clickablePlayersArray);
                         });
                 }
                 
-                
-
+                    
+                // RQF2
                 function cargarAlineacionVisitante(partido){
                     fetch(`/api/alineaciones/${partido}`)
                     .then(response => response.json())
@@ -362,14 +357,13 @@
                         const container = document.getElementById('id-alineacion-visitante-container');
                         if (!data || !data.nombre1) {
                             console.warn("Los datos de la alineación no están disponibles.");
-                            // Reemplazamos el contenido del div con un mensaje
                             container.innerHTML = `
                                 <h2>Posible Alineación Local</h2>
                                 <p style="padding: 40px 0; color: #a0a0c0;">
                                     Las alineaciones aún no están disponibles.
                                 </p>
                             `;
-                            return; // Detenemos la ejecución aquí
+                            return; 
                         }
                         const canvas = document.getElementById('campo-visitante');
                         if (!canvas.getContext) return;
@@ -385,14 +379,10 @@
                             });
                         }
 
-                        // --- LÓGICA DINÁMICA DE FORMACIÓN ---
-                        // 1. Obtener la formación del JSON. Usar "4-4-2" como fallback.
                         const formacionKey = data.formacion_visitante || "4-4-2";
 
-                        // 2. Actualizar el título en la página
                         document.getElementById('formacion-visitante-titulo').innerText = `Formación: ${formacionKey}`;
 
-                        // 3. Seleccionar las coordenadas del diccionario. Si no existe, usar "4-4-2".
                         const formacionCoordenadas = FORMACIONES[formacionKey] || FORMACIONES["4-4-2"];
                         precargarImagenesYDibujar(ctx, jugadores, formacionCoordenadas, clickablePlayersVisitante);
                     })
@@ -408,22 +398,19 @@
                     ctx.fillStyle = isLight ? '#d4e9d4' : '#2a5f2a';
                     ctx.fillRect(0, 0, width, height);
                     ctx.strokeStyle = isLight ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.3)';
-                    // ... el resto de tu código de dibujo de campo ...
                     jugadores.forEach((jugador, index) => {
                         if (formacion[index]) {
                             const x = formacion[index][0] * width;
                             const y = formacion[index][1] * height;
-                            const radio = 22; // El mismo radio de dibujarJugador
+                            const radio = 22; 
 
-                            // 👇 Guardamos la "hitbox" del jugador
                             clickablePlayersArray.push({
                                 id: jugador.id,
                                 x: x,
                                 y: y,
-                                radio: radio + 5 // Un radio de clic un poco más grande
+                                radio: radio + 5 
                             });
                             
-                            // Pasamos el radio a dibujarJugador
                             dibujarJugador(ctx, x, y, jugador, radio);
                         }
                     });
@@ -436,8 +423,7 @@
                     if (jugador.imagenCargada) {
                         ctx.drawImage(jugador.imagenCargada, x - radio, y - radio, radio * 2, radio * 2);
                     } else {
-                        // Si no cargó (null), dibuja un círculo de color como fallback
-                        ctx.fillStyle = isLight ? '#cce' : '#3a3a5a'; // Color de fallback
+                        ctx.fillStyle = isLight ? '#cce' : '#3a3a5a'; 
                         ctx.fill();
                     }
                     ctx.restore();
@@ -453,33 +439,44 @@
                     ctx.shadowBlur = 0;
                 }
 
+                // RQF6
                 function cargarUltimosEnfrentamientos(partido){
                     const ultimosEnfrentamientos = document.getElementById('ultimos-enfrentamientos');
                     ultimosEnfrentamientos.innerHTML="";
                     fetch(`/api/ultimos-enfrentamientos/${partido}`)
                     .then(response => response.json())
                     .then(data => {
-                        data.forEach((partido) => {
-                            const fechaPartidoNormalizada = new Date(partido.fecha);
-                            fechaPartidoNormalizada.setHours(0, 0, 0, 0);
-                            const anio = fechaPartidoNormalizada.getFullYear();
-                            const mesFormateado = String(fechaPartidoNormalizada.getMonth() + 1).padStart(2, '0');
-                            const diaFormateado = String(fechaPartidoNormalizada.getDate()).padStart(2, '0');
-                            const fechaParaMostrar = `${anio}-${mesFormateado}-${diaFormateado}`;
+                        //RQNF3
+                        if(data.length == 0){
                             const match = document.createElement("div");
                             match.innerHTML=`
-                                <p>
-                                    <img src="${partido.escudo_local}" alt="Escudo">
-                                    ${partido.goles_local} - ${partido.goles_visitante}  
-                                    <img src="${partido.escudo_visitante}" alt="Escudo">
-                                    ${fechaParaMostrar}
-                                </p>    
+                                <p>No hay enfrentamientos previos entre los equipos</p>    
                             `;
-                            ultimosEnfrentamientos.appendChild(match);
-                        })
+                        } else {
+                            data.forEach((partido) => {
+                                const fechaPartidoNormalizada = new Date(partido.fecha);
+                                fechaPartidoNormalizada.setHours(0, 0, 0, 0);
+                                const anio = fechaPartidoNormalizada.getFullYear();
+                                const mesFormateado = String(fechaPartidoNormalizada.getMonth() + 1).padStart(2, '0');
+                                const diaFormateado = String(fechaPartidoNormalizada.getDate()).padStart(2, '0');
+                                const fechaParaMostrar = `${anio}-${mesFormateado}-${diaFormateado}`;
+                                const match = document.createElement("div");
+                                match.innerHTML=`
+                                    <p>
+                                        <img src="${partido.escudo_local}" alt="Escudo">
+                                        ${partido.goles_local} - ${partido.goles_visitante}  
+                                        <img src="${partido.escudo_visitante}" alt="Escudo">
+                                        ${fechaParaMostrar}
+                                    </p>    
+                                `;
+                                ultimosEnfrentamientos.appendChild(match);
+                            })
+                        }
+                        
                     })
                 }
 
+                // RQF5
                 function cargarComparacionStats(equipoLocal, equipoVisitante){
                     fetch(`/api/comparacion-estadisticas-equipos/${equipoLocal}/${equipoVisitante}`)
                     .then(response => response.json())
@@ -510,13 +507,12 @@
                             const visitorValue = parseFloat(visitorStats[stat.key]) || 0;
                             const total = localValue + visitorValue;
 
-                            // Calculamos el porcentaje para la barra (con fallback para evitar división por cero)
+                            
                             let localPercentage = 50;
                             if (total > 0) {
                                 localPercentage = (localValue / total) * 100;
                             }
                             
-                            // Creamos el bloque HTML para esta estadística
                             finalHTML += `
                                 <div class="stat-comparison">
                                     <div class="stat-header">
@@ -540,6 +536,7 @@
                     });
                 }
                 
+                //RQF4
                 function cargarEvolucionEquipos(equipoLocal, equipoVisitante, totalEquiposLiga){
                     fetch(`/api/comparacion-evoluciones/${equipoLocal}/${equipoVisitante}`)
                     .then(response => response.json())
@@ -564,11 +561,11 @@
                             const posLocal = evolucionLocal[`jornada${i}`];
                             const posVisitante = evolucionVisitante[`jornada${i}`];
 
-                            // Si al menos uno de los equipos tiene una posición válida (no es 0), la contamos.
+                            
                             if (posLocal > 0 || posVisitante > 0) {
                                 ultimaJornadaValida = i;
                             }
-                            datosLocal.push(posLocal > 0 ? posLocal : null); // null crea un corte en la gráfica
+                            datosLocal.push(posLocal > 0 ? posLocal : null); 
                             datosVisitante.push(posVisitante > 0 ? posVisitante : null);
                         }
                         const labels = [];
@@ -587,14 +584,14 @@
                             data: {
                                 labels: labels,
                                 datasets: [{
-                                    label: nombreLocal, // Usamos el nombre que guardamos antes
+                                    label: nombreLocal, 
                                     data: datosLocalRecortados,
                                     borderColor: 'rgba(54, 162, 235, 1)',
                                     backgroundColor: 'rgba(54, 162, 235, 0.2)',
                                     tension: 0.3,
                                     fill: false
                                 }, {
-                                    label: nombreVisitante, // Usamos el nombre que guardamos antes
+                                    label: nombreVisitante, 
                                     data: datosVisitanteRecortados,
                                     borderColor: 'rgba(255, 99, 132, 1)',
                                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
@@ -606,11 +603,11 @@
                                 responsive: true, 
                                 plugins: {
                                     legend: { position: 'top', labels: { color: '#e0e0e0' } },
-                                    title: { display: false } // Ya tenemos un H2, no necesitamos otro título
+                                    title: { display: false } 
                                 },
                                 scales: {
                                     y: {
-                                        reverse: true, // ¡Importante! La posición 1 debe estar arriba
+                                        reverse: true, 
                                         min: 1,
                                         max: totalEquiposLiga,
                                         title: {
@@ -646,21 +643,16 @@
                     const canvas = event.currentTarget;
                     const rect = canvas.getBoundingClientRect();
                     
-                    // Convertir las coordenadas del clic de la ventana al canvas
-                    // (Esto es crucial si el canvas tiene un tamaño diferente al de su CSS)
+                    
                     const scaleX = canvas.width / rect.width;
                     const scaleY = canvas.height / rect.height;
                     const mouseX = (event.clientX - rect.left) * scaleX;
                     const mouseY = (event.clientY - rect.top) * scaleY;
 
-                    // Buscar si el clic fue sobre un jugador
                     for (const player of clickablePlayers) {
-                        // Usamos la fórmula de la distancia para ver si el clic está dentro del círculo
-                        // (x2-x1)^2 + (y2-y1)^2 < radio^2
                         const distanceSquared = Math.pow(mouseX - player.x, 2) + Math.pow(mouseY - player.y, 2);
                         
                         if (distanceSquared < Math.pow(player.radio, 2)) {
-                            // ¡Clic en el jugador!
                             if (!player.id) {
                                 console.warn("Este jugador no tiene ID:", player.nombre);
                                 return;
@@ -668,16 +660,17 @@
                             
                             console.log(`Clic en jugador ID: ${player.id}`);
                             window.location.href = `jugador.html?id=${player.id}`;
-                            return; // Salir del bucle una vez que se encuentra un jugador
+                            return; 
                         }
                     }
                 }
 
-                // Añadimos los listeners a los canvas
+                // RQF7
                 canvasLocal.addEventListener('click', (event) => {
                     handleCanvasClick(event, clickablePlayersLocal);
                 });
 
+                // RQF7
                 canvasVisitante.addEventListener('click', (event) => {
                     handleCanvasClick(event, clickablePlayersVisitante);
                 });

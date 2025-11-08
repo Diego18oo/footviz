@@ -214,12 +214,10 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                // --- DECLARACIÓN DE VARIABLES ---
                 const tbody = document.querySelector("#tabla-partidos tbody");
                 const ligaSelect = document.getElementById('liga');
                 const jornadaSelect = document.getElementById('jornada');
                 
-                // --- LÓGICA DE TEMA ---
                 const themeToggleButton = document.getElementById('theme-toggle');
                 const body = document.body;
 
@@ -256,7 +254,8 @@
                 
                      
                 }
-            
+                
+                // RQF1
                 async function cargarPartidos(ligaSeleccionada, jornadaSeleccionada) {
                     tbody.innerHTML = "";
                     const endpoints = { "premierleague": "1", "laliga": "2", "seriea": "3", "bundesliga": "4", "ligueone": "5" };
@@ -264,32 +263,25 @@
                         const response = await fetch(`/api/ultimos-partidos/${endpoints[ligaSeleccionada]}/${jornadaSeleccionada}`);
                         const partidos = await response.json();
 
-                        // --- 👇 LA CORRECCIÓN MÁGICA ESTÁ AQUÍ 👇 ---
 
-                        // 1. Obtener la fecha y hora actual en la zona horaria de México
                         const hoyEnMexico = new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" });
-                        
-                        // 2. Crear un objeto Date a partir de esa hora (que ahora es "local" de México)
+          
                         const hoy = new Date(hoyEnMexico);
 
-                        // 3. Formatear "hoy" a una cadena "YYYY-MM-DD" para una comparación segura
                         const yyyy = hoy.getFullYear();
-                        const mm = String(hoy.getMonth() + 1).padStart(2, '0'); // +1 porque los meses son 0-11
+                        const mm = String(hoy.getMonth() + 1).padStart(2, '0'); 
                         const dd = String(hoy.getDate()).padStart(2, '0');
                         const hoyString = `${yyyy}-${mm}-${dd}`;
                         
-                        // --- 👆 FIN DE LA CORRECCIÓN 👆 ---
 
 
                         for (const partido of partidos) {
-                            // 4. Obtenemos la fecha del partido (asumiendo que viene como "2025-11-03T...")
+                       
                             const fechaPartido = partido.fecha.split('T')[0];
                             const fila = document.createElement("tr");
 
-                            // 5. Comparamos las cadenas de texto (ej. "2025-11-04" > "2025-11-03")
-                            // Esta comparación no se ve afectada por zonas horarias.
+                            // RQNF2
                             if (hoyString > fechaPartido) {
-                                // Partido PASADO
                                 const resResponse = await fetch(`/api/resultado-partido/${partido.id_partido}`); 
                                 const resultado = await resResponse.json();
                                 fila.innerHTML = `
@@ -299,14 +291,15 @@
                                         <img src="${partido.escudo_visitante}" alt="Escudo visitante">
                                     </td>
                                     <td>Finalizado</td>`;
+                                // RQF3
                                 fila.addEventListener("click", () => window.location = "informe-postpartido.html?partido=" + partido.id_partido);
                             } else {
-                                // Partido DE HOY O FUTURO
                                 fila.innerHTML = `
                                     <td class="match-cell">
                                         <img src="${partido.escudo_local}" alt="Escudo local"> vs <img src="${partido.escudo_visitante}" alt="Escudo visitante">
                                     </td>
-                                    <td>${fechaPartido}</td>`; // Mostramos la fecha
+                                    <td>${fechaPartido}</td>`; 
+                                // RQF3
                                 fila.addEventListener("click", () => window.location = "informe-prepartido.html?partido=" + partido.id_partido);
                             }
                             tbody.appendChild(fila);
@@ -332,6 +325,8 @@
                     actualizarJornadas(this.value);
                     cargarPartidos(this.value, jornada.value);
                 });
+
+                // RQF2
                 jornada.addEventListener("change", function(){
                     cargarPartidos(liga.value, this.value);     
                 });

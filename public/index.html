@@ -418,6 +418,7 @@
                 fetch(endpoints[ligaSeleccionada])
                     .then(response => response.json())
                     .then(data => { 
+                        // RQF1 Pantalla principal
                         tbodyEquipos.innerHTML = "";
                         const equipos = data.tabla_liga;
                         equipos.sort((a,b) => a.posicion - b.posicion);
@@ -436,35 +437,49 @@
                             tbodyEquipos.appendChild(fila);
                         });
 
+                        // RQF2 Pantalla principal
                         const tbodyPartidos = document.querySelector("#ultimos-partidos tbody");
                         tbodyPartidos.innerHTML = "";
-                        data.ultimos_partidos.forEach(partido => {
+                        if (data.ultimos_partidos.length == 0) {
                             const fila = document.createElement("tr");
-                            const fechaFormateada = partido.fecha.split('T')[0];
-                            
-                            fila.innerHTML = `
-                                <td>${fechaFormateada}</td>
-                                <td><img src="${partido.escudo_local}" alt="Local">${partido.nombre_local || ""}</td>
-                                <td>${partido.goles_local} - ${partido.goles_visitante}</td>
-                                <td><img src="${partido.escudo_visitante}" alt="Visitante">${partido.nombre_visitante || ""}</td>
-                            `;
-                            tbodyPartidos.appendChild(fila);
-                        });
+                            fila.innerHTML = 'No hay partidos disponibles';
+                        }
+                        else {
+                            data.ultimos_partidos.forEach(partido => {
+                                const fila = document.createElement("tr");
+                                const fechaFormateada = partido.fecha.split('T')[0];
+                                
+                                fila.innerHTML = `
+                                    <td>${fechaFormateada}</td>
+                                    <td><img src="${partido.escudo_local}" alt="Local">${partido.nombre_local || ""}</td>
+                                    <td>${partido.goles_local} - ${partido.goles_visitante}</td>
+                                    <td><img src="${partido.escudo_visitante}" alt="Visitante">${partido.nombre_visitante || ""}</td>
+                                `;
+                                tbodyPartidos.appendChild(fila);
+                            });
+                        }
                         
+                        // RQF3 Pantalla principal
                         const tbodyGoleadores = document.getElementById("maximos-goleadores-jugadores");
                         tbodyGoleadores.innerHTML = "";
-                        data.maximos_goleadores.forEach(goleador => {
-                            const encodedUrl = encodeURIComponent(goleador.imagen_jugador);
-                            const proxyUrl = `/api/image-proxy?url=${encodedUrl}`;
+                        if(data.maximos_goleadores.length == 0){
                             const fila = document.createElement("tr");
-                            fila.dataset.idJugador = goleador.id_jugador;
-                            fila.innerHTML = `
-                                <td><img src="${goleador.imagen_jugador}" alt="Jugador">${goleador.nombre_jugador}</td>
-                                <td>${goleador.total_goles}</td>
-                            `; 
-                            tbodyGoleadores.appendChild(fila);
-                        }); 
-
+                            fila.innerHTML = 'No hay informacion disponible '; 
+                        } else{
+                            data.maximos_goleadores.forEach(goleador => {
+                                const encodedUrl = encodeURIComponent(goleador.imagen_jugador);
+                                const proxyUrl = `/api/image-proxy?url=${encodedUrl}`;
+                                const fila = document.createElement("tr");
+                                fila.dataset.idJugador = goleador.id_jugador;
+                                fila.innerHTML = `
+                                    <td><img src="${goleador.imagen_jugador}" alt="Jugador">${goleador.nombre_jugador}</td>
+                                    <td>${goleador.total_goles}</td>
+                                `; 
+                                tbodyGoleadores.appendChild(fila);
+                            }); 
+                        }
+                        
+                        // RQF4 Pantalla principal
                         const tbodyMejoresValorados = document.querySelector("#mejores-valorados-jugadores");
                         tbodyMejoresValorados.innerHTML = "";
                         data.mejores_valorados.forEach(mejor_valorado => {
@@ -499,6 +514,8 @@
             window.location.href = "estadistica_ofensivas.html?liga=" + ligaSelect.value;
         });
 
+
+        //RQF6 Pantalla principal
         document.getElementById("maximos-goleadores-jugadores").addEventListener("click", function(event) {
             const filaClickeada = event.target.closest('tr');
             if (filaClickeada) {
@@ -537,6 +554,7 @@
             window.location.href = "partidos.html?liga=" + ligaSelect.value;
         });
         
+        // RQF5 Pantalla principal
         ligaSelect.addEventListener("change", function(){
             cargarTabla(this.value);
         });

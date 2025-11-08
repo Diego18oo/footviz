@@ -266,24 +266,20 @@
         <script>
 
             document.addEventListener('DOMContentLoaded', function() {
-                // --- DECLARACIÓN DE VARIABLES ---
                 let totalEquiposLiga = 20;
                 let lineChartInstance = null;
                 let barChartInstance = null;
                 const ligaSelect = document.getElementById('liga');
                 const tbody = document.querySelector("#tabla-equipos tbody");
-                let allTeamData = []; // Guardará los datos de la tabla de la liga
-                let sortColumn = 'puntos'; // Columna por defecto (Pts)
+                let allTeamData = []; 
+                let sortColumn = 'puntos'; 
                 let sortDirection = 'desc';
-                // --- LÓGICA DE TEMA ---
                 const themeToggleButton = document.getElementById('theme-toggle');
                 const body = document.body;
 
-                // Opciones para Gráfico de Líneas
                 const darkLineOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { color: '#e0e0e0' } }, title: { display: true, text: 'Comparación de Posición por Jornada', color: '#ffffff' } }, scales: { y: { reverse: true, min: 0, ticks: { color: '#a0a0c0', stepSize: 1 }, grid: { color: 'rgba(224, 224, 224, 0.1)' }, title: { display: true, text: 'Posición', color: '#e0e0e0' } }, x: { ticks: { color: '#a0a0c0' }, grid: { color: 'rgba(224, 224, 224, 0.1)' }, title: { display: true, text: 'Jornada', color: '#e0e0e0' } } } };
                 const lightLineOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { color: '#333' } }, title: { display: true, text: 'Comparación de Posición por Jornada', color: '#1a1a2e' } }, scales: { y: { reverse: true, min: 0, ticks: { color: '#666', stepSize: 1 }, grid: { color: 'rgba(0, 0, 0, 0.1)' }, title: { display: true, text: 'Posición', color: '#333' } }, x: { ticks: { color: '#666' }, grid: { color: 'rgba(0, 0, 0, 0.1)' }, title: { display: true, text: 'Jornada', color: '#333' } } } };
                 
-                // Opciones para Gráfico de Barras
                 const darkBarOptions = { responsive: true, maintainAspectRatio: false, layout: { padding: { bottom: 40 } }, plugins: { legend: { display: false }, title: { display: true, color: '#ffffff' }, tooltip: { callbacks: { title: (tooltipItems) => tooltipItems[0].label }}}, scales: { y: { beginAtZero: true, ticks: { color: '#a0a0c0' }, grid: { color: 'rgba(224, 224, 224, 0.1)' }, title: { display: true, text: 'Promedio por Partido', color: '#e0e0e0' }}, x: { ticks: { display: false }}}};
                 const lightBarOptions = { responsive: true, maintainAspectRatio: false, layout: { padding: { bottom: 40 } }, plugins: { legend: { display: false }, title: { display: true, color: '#1a1a2e' }, tooltip: { callbacks: { title: (tooltipItems) => tooltipItems[0].label }}}, scales: { y: { beginAtZero: true, ticks: { color: '#666' }, grid: { color: 'rgba(0, 0, 0, 0.1)' }, title: { display: true, text: 'Promedio por Partido', color: '#333' }}, x: { ticks: { display: false }}}};
 
@@ -324,7 +320,6 @@
             };
 
             function sortData() {
-                // Lógica de desempate (Reglas de la liga)
                 const tieBreaker = (a, b) => {
                     if (b.diferencia_de_goles !== a.diferencia_de_goles) return b.diferencia_de_goles - a.diferencia_de_goles;
                     return b.goles_anotados - a.goles_anotados;
@@ -337,25 +332,19 @@
                     let comparison = 0;
                     
                     if (sortColumn === 'nombre_equipo') {
-                        // Ordenamiento de texto
                         comparison = valA.localeCompare(valB);
                         return (sortDirection === 'desc') ? (comparison * -1) : comparison;
                     } else {
-                        // Ordenamiento numérico
                         const numA = parseFloat(valA);
                         const numB = parseFloat(valB);
                         comparison = numA - numB;
                         
-                        // Si la columna principal es la misma, aplicar desempate de Puntos/DG/GA
                         if (comparison === 0) {
-                            // Si estamos ordenando por Puntos, el desempate es DG -> GA
                             if (sortColumn === 'puntos') return tieBreaker(a, b);
-                            // Si ordenamos por DG, el desempate es Pts -> GA
                             if (sortColumn === 'diferencia_de_goles') {
                                 if (b.puntos !== a.puntos) return b.puntos - a.puntos;
                                 return b.goles_anotados - a.goles_anotados;
                             }
-                            // ... puedes añadir más reglas de desempate si quieres
                         }
                         
                         return (sortDirection === 'desc') ? (comparison * -1) : comparison;
@@ -363,27 +352,23 @@
                 });
             }
 
+            // RQF2
             function handleHeaderClick(event) {
                 const clickedKey = event.currentTarget.dataset.sortKey;
 
                 if (sortColumn === clickedKey) {
-                    // Si es la misma columna, invertir dirección
                     sortDirection = (sortDirection === 'desc') ? 'asc' : 'desc';
                 } else {
-                    // Si es una nueva columna, resetear dirección
                     sortColumn = clickedKey;
-                    // Por defecto, desc, excepto para nombre de equipo
                     sortDirection = (clickedKey === 'nombre_equipo') ? 'asc' : 'desc';
                 }
                 
-                sortData(); // Ordena los datos
-                renderTabla(); // Vuelve a dibujar la tabla
-                updateHeaderArrows(); // Actualiza las flechas
+                sortData(); 
+                renderTabla(); 
+                updateHeaderArrows(); 
             }
 
-            /**
-             * Actualiza las flechas (▲/▼) en los encabezados de la tabla.
-             */
+            
             function updateHeaderArrows() {
                 document.querySelectorAll('#tabla-equipos th[data-sort-key]').forEach(th => {
                     th.classList.remove('sort-asc', 'sort-desc');
@@ -393,8 +378,9 @@
                 });
             }
 
+            // RQF1
             function renderTabla() {
-                tbody.innerHTML = ""; // Limpia la tabla
+                tbody.innerHTML = ""; 
                 
                 allTeamData.forEach((equipo, index) => {
                     const fila = document.createElement("tr");
@@ -415,6 +401,7 @@
                 });
             }
 
+            // RQF3
             function cargarGraficaEvo(equipoSeleccionado, nombreEquipo, color, slot){
                 console.log(equipoSeleccionado)
                 fetch(`/api/evolucion-equipos/${equipoSeleccionado}`)
@@ -423,6 +410,8 @@
                     const evolucion = info[0];
                     const jornadas = [];
                     const posiciones = [];
+
+                    // RQNF2
                     for (let i = 1; i <= 38; i++) {
                         const pos = evolucion[`jornada${i}`];
                         if (pos !== 0 ) {   
@@ -453,10 +442,10 @@
                                     y: {
                                         reverse: true, 
                                         min: 0,
-                                        max: totalEquiposLiga,   // límite superior (20 equipos)
+                                        max: totalEquiposLiga,   
                                         ticks: {
                                             color: '#a0a0c0',
-                                            stepSize: 1 // opcional, para que se vean todos los enteros
+                                            stepSize: 1 
                                         },
                                         grid: { color: 'rgba(224, 224, 224, 0.1)' },
                                         title: {
@@ -492,6 +481,8 @@
             }
 
             let barChartInstance = null;
+
+            // RQF6
             function cargarGraficaPromedios(ligaSeleccionada){
                 let endpoints2 = {
                     "premierleague" : "1",
@@ -584,7 +575,7 @@
                                             title: { display: true, text: 'Promedio por Partido', color: '#e0e0e0' }
                                         },
                                         x: {
-                                            ticks: { display: false } // Ocultamos los nombres para poner logos
+                                            ticks: { display: false } 
                                         }
                                     }
                                 },
@@ -607,7 +598,6 @@
                             });
                         }
 
-                        // inicial con goles
                         renderBarChart("goles", "Goles");
 
                         document.getElementById("stat").onchange = function(){
@@ -631,7 +621,7 @@
                             totalEquiposLiga = allTeamData.length;
                             sortColumn = 'puntos'; 
                             sortDirection = 'desc';
-                            sortData(); // Ordena los datos frescos
+                            sortData(); 
                             updateHeaderArrows();
                             
                             renderTabla();
@@ -695,6 +685,7 @@
                 cargarGraficaPromedios(this.value);
             });
 
+            // RQF7
             document.getElementById("tabla-equipos-clubes").addEventListener("click", 
             function(event) {
                 const filaClickeada = event.target.closest('tr');

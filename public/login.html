@@ -174,12 +174,13 @@
             const form = document.querySelector('form');
 
             form.addEventListener('submit', async (event) => {
-                event.preventDefault(); // Evita que la página se recargue
+                event.preventDefault(); 
 
                 const formData = new FormData(form);
                 const data = Object.fromEntries(formData.entries());
 
                 try {
+                    // RQNF1
                     const response = await fetch('/api/login', {
                         method: 'POST',
                         headers: {
@@ -191,14 +192,12 @@
                     const result = await response.json();
 
                     if (!response.ok) {
-                        // Si el servidor dice que las credenciales son incorrectas
                         throw new Error(result.error || 'Error en el servidor.');
                     }
 
-                    // ¡Éxito! El login fue correcto.
                     alert('¡Bienvenido de nuevo!');
-                    // Redirigir a la página principal del fantasy
-                    window.location.href = '/fantasy.html'; // O la página que corresponda
+                    //RQNF2
+                    window.location.href = '/fantasy.html'; 
 
                 } catch (error) {
                     alert('Error: ' + error.message);

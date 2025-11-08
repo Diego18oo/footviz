@@ -153,7 +153,6 @@
         
         <script>
             document.addEventListener("DOMContentLoaded", function() {
-                // --- DECLARACIÓN DE VARIABLES PRINCIPALES (CORREGIDO) ---
                 let players = [];
                 let percentileChartInstance = null;
                 const playerColors = ['rgba(54, 162, 235, 1)', 'rgba(255, 99, 132, 1)', 'rgba(75, 192, 192, 1)', 'rgba(255, 206, 86, 1)'];
@@ -161,7 +160,6 @@
                 const themeToggleButton = document.getElementById('theme-toggle');
                 const body = document.body;
 
-                // --- LÓGICA DE TEMA ---
                 const darkChartOptions = { responsive: true, maintainAspectRatio: false, scales: { r: { angleLines: { color: 'rgba(224, 224, 224, 0.2)' }, grid: { color: 'rgba(224, 224, 224, 0.2)' }, pointLabels: { color: '#e0e0e0', font: { size: 10 } }, ticks: { display: false, max: 100, min: 0 }}}, plugins: { legend: { labels: { color: '#e0e0e0' }}}};
                 const lightChartOptions = { responsive: true, maintainAspectRatio: false, scales: { r: { angleLines: { color: 'rgba(0, 0, 0, 0.1)' }, grid: { color: 'rgba(0, 0, 0, 0.1)' }, pointLabels: { color: '#666', font: { size: 10 } }, ticks: { display: false, max: 100, min: 0 }}}, plugins: { legend: { labels: { color: '#333' }}}};
 
@@ -201,40 +199,42 @@
                         addPlayer(initialPlayerId);
                         
                     } else {
-                        createAddPlayerPlaceholder(); // Si no hay jugador inicial, mostrar para agregar el primero
+                        createAddPlayerPlaceholder(); 
                     }
                 }
 
                 function addPlayer(playerId) {
-                    if (players.length >= 4 || players.find(p => p.id === playerId)) return;
-
+                    // RQNF3
+                    const pid = parseInt(playerId);
+                    if (players.length >= 4 ) return;
+                    if (players.find(p => p.id === pid)) {
+                        return; 
+                    }
                     const playerIndex = players.length;
-                    const newPlayer = { id: playerId, index: playerIndex, color: playerColors[playerIndex], bgColor: playerBgColors[playerIndex] };
+                    const newPlayer = { id: pid , index: playerIndex, color: playerColors[playerIndex], bgColor: playerBgColors[playerIndex] };
                     players.push(newPlayer);
 
-                    // Eliminar el placeholder si existe
                     const placeholder = document.getElementById('add-player-placeholder');
                     if (placeholder) placeholder.remove();
 
-                    // Crear y añadir la nueva columna del jugador
                     const column = document.createElement('div');
                     column.className = 'player-column';
-                    column.id = `player-column-${playerId}`;
+                    column.id = `player-column-${pid}`;
                     column.innerHTML = `
-                        <div class="card info-card" id="info-general-${playerId}">
-                            <button class="remove-btn" data-player-id="${playerId}">×</button>
+                        <div class="card info-card" id="info-general-${pid}">
+                            <button class="remove-btn" data-player-id="${pid}">×</button>
                             <!-- Contenido se carga dinámicamente -->
                         </div>
                         <div class="card">
                             <h2>Mapa de Calor</h2>
-                            <div class="pitch-container"><canvas id="heatmap-canvas-${playerId}"></canvas></div>
+                            <div class="pitch-container"><canvas id="heatmap-canvas-${pid}"></canvas></div>
                         </div>
                         <div class="card">
                             <h2>Mapa de Disparos</h2>
-                            <div class="pitch-container" style="padding-top: 80%;"><canvas id="shot-map-canvas-${playerId}"></canvas></div>
+                            <div class="pitch-container" style="padding-top: 80%;"><canvas id="shot-map-canvas-${pid}"></canvas></div>
                         </div>
                         <div class="card info-card" >
-                            <div id="stats-general-${playerId}">
+                            <div id="stats-general-${pid}">
                             
                             </div>
                             
@@ -243,31 +243,29 @@
                         ;
                     comparisonWrapper.appendChild(column);
 
-                    // Cargar todos los datos del nuevo jugador
                     cargarInfoBasicaJugador(newPlayer);
                     cargarPercentilesJugador(newPlayer);
                     cargarMapaDeCalorJugador(newPlayer);
                     cargarMapaDeDisparosJugador(newPlayer);
                     cargarEstadisticasJugador(newPlayer);
 
-                    // Si aún hay espacio, crear un nuevo placeholder
                     if (players.length < 4) {
                         createAddPlayerPlaceholder();
                     }
 
-                    // Añadir listener al nuevo botón de eliminar
                     column.querySelector('.remove-btn').addEventListener('click', (e) => {
                         removePlayer(e.target.dataset.playerId);
                     });
                 }
                 
-                
+                // RQF4
                 function removePlayer(playerId) {
-                    document.getElementById(`player-column-${playerId}`).remove();
-                    players = players.filter(p => p.id != playerId);
+                    const pid = parseInt(playerId);
+                    document.getElementById(`player-column-${pid}`).remove();
+                    players = players.filter(p => p.id != pid);
 
                     if (percentileChartInstance) {
-                        percentileChartInstance.data.datasets = percentileChartInstance.data.datasets.filter(ds => ds.playerId != playerId);
+                        percentileChartInstance.data.datasets = percentileChartInstance.data.datasets.filter(ds => ds.playerId != pid);
                         percentileChartInstance.update();
                     }
 
@@ -296,14 +294,10 @@
                     });
                 }
                 
-                
 
-                
-                // --- FUNCIONES REUTILIZABLES ---
                 
                 function loadPlayerColumn(jugadorId, playerIndex) {
                     const column = document.getElementById(`player-column-${playerIndex}`);
-                    // Inyectar la estructura HTML necesaria para un jugador
                     column.innerHTML = `
                         <div class="card info-card" id="info-general-${playerIndex}"></div>
                         <div class="card">
@@ -325,7 +319,6 @@
                             </div>
                         </div>`;
                     
-                    // Llamar a todas las funciones de carga para ese jugador y columna
                     cargarInfoBasicaJugador(jugadorId, playerIndex);
                     cargarPercentilesJugador(jugadorId, playerIndex);
                     cargarMapaDeCalorJugador(jugadorId, playerIndex);
@@ -341,7 +334,13 @@
                         if (query.length < 2) return;
                         const res = await fetch(`/api/buscar-jugadores?nombre=${query}`);
                         const jugadores = await res.json();
-                        jugadores.forEach(jugador => {
+                        console.log(jugadores.length);
+                        //RQNF2
+                        const jugadoresFiltrados = jugadores.filter(jugador => {
+                            return !players.find(p => p.id === jugador.id_jugador);
+                        });
+                        console.log(jugadoresFiltrados.length);
+                        jugadoresFiltrados.forEach(jugador => {
                             const div = document.createElement("div");
                             div.innerHTML = `<img src="${jugador.imagen_jugador}"><span>${jugador.nombre_jugador}</span><img src="${jugador.imagen_equipo}" style="margin-left: auto;">`;
                             div.addEventListener("click", () => addPlayer(jugador.id_jugador));
@@ -388,19 +387,23 @@
                             label: percentiles.nombre_jugador, data: values,
                             backgroundColor: player.bgColor, borderColor: player.color,
                             borderWidth: 2, pointBackgroundColor: player.color,
-                            playerId: player.id // Identificador para poder eliminarlo después
+                            playerId: player.id
                         };
                         percentileChartInstance.data.datasets.push(newDataset);
                         percentileChartInstance.update();
                     });
                 }
 
-
+                // RQF2
                 function cargarMapaDeCalorJugador(player) {
                     fetch(`/api/mapa-calor-jugador/${player.id}`)
                     .then(response => response.json())
                     .then(data => {
-                        if (!data || data.length === 0) return;
+                        if (!data || data.length === 0){
+                            div = document.createElement('div');
+                            div.innerHTML = '<p>No hay info disponible</p>'
+                            return;
+                        } 
                         const canvas = document.getElementById(`heatmap-canvas-${player.id}`);
                         const ctx = canvas.getContext('2d');
                         canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
@@ -417,11 +420,16 @@
                     });
                 }
                 
+                //RQF3
                 function cargarMapaDeDisparosJugador(player) {
                     fetch(`/api/mapa-disparos-jugador/${player.id}`)
                     .then(response => response.json())
                     .then(shots => {
-                        if (!shots || shots.length === 0) return;
+                        if (!shots || shots.length === 0) {
+                            div = document.createElement('div');
+                            div.innerHTML = '<p>No hay info disponible</p>';    
+                            return;
+                        }
                         const canvas = document.getElementById(`shot-map-canvas-${player.id}`);
                         const ctx = canvas.getContext('2d');
                         canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
@@ -451,6 +459,7 @@
                     });
                 }
 
+                // RQF1
                 function cargarEstadisticasJugador(player){
                     fetch(`/api/jugador/${player.id}`)
                     .then(response => response.json())

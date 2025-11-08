@@ -232,10 +232,10 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                let allStatsData = []; // Guardará los datos de la tabla de estadísticas
-                let sortColumn = 'goles_anotados'; // Columna por defecto para ordenar
+                let allStatsData = []; 
+                let sortColumn = 'goles_anotados'; 
                 let sortDirection = 'desc';
-                // --- DECLARACIÓN DE VARIABLES ---
+                
                 const ligaSelect = document.getElementById('liga');
                 const tipoDeStatBtn = document.getElementById('tipo-de-estadistica');
                 const tooltip = document.getElementById("tooltip");
@@ -243,7 +243,6 @@
                 let disparosPorteriaGuardados = [];
                 let lineChartInstance = null;
                 
-                // --- LÓGICA DE TEMA ---
                 const themeToggleButton = document.getElementById('theme-toggle');
                 const body = document.body;
 
@@ -260,7 +259,6 @@
                         themeToggleButton.textContent = '☀️';
                         if (lineChartInstance) { lineChartInstance.options = darkLineOptions; lineChartInstance.update(); }
                     }
-                    // Vuelve a dibujar los canvas de disparos si ya hay datos
                     if (document.querySelectorAll(".btn-estadisticas").length > 0) {
                         const activeButton = document.querySelector(".btn-estadisticas[data-active='true']");
                         if(activeButton) activeButton.click();
@@ -286,25 +284,23 @@
                         const valA = a[sortColumn];
                         const valB = b[sortColumn];
 
-                        // Detectar si son números para un ordenamiento numérico
                         const numA = parseFloat(valA);
                         const numB = parseFloat(valB);
 
                         let comparison = 0;
                         
                         if (!isNaN(numA) && !isNaN(numB)) {
-                            // Ordenamiento numérico
                             comparison = numA - numB;
                         } else {
-                            // Ordenamiento de texto (alfabético)
                             comparison = valA.toString().localeCompare(valB.toString());
                         }
 
-                        // Invertir el resultado si la dirección es descendente
                         return (sortDirection === 'desc') ? (comparison * -1) : comparison;
                     });
                 }
                 
+
+                // RQF2
                 function handleHeaderClick(event) {
                     const clickedKey = event.currentTarget.dataset.sortKey;
 
@@ -315,9 +311,9 @@
                         sortDirection = 'desc';
                     }
                     
-                    sortStatsData(); // Ordena los datos
-                    renderTablaStats(); // Vuelve a dibujar la tabla
-                    updateHeaderArrows(); // Actualiza las flechas
+                    sortStatsData(); 
+                    renderTablaStats(); 
+                    updateHeaderArrows(); 
                 }
 
                 function updateHeaderArrows() {
@@ -329,6 +325,7 @@
                     });
                 }
 
+                // RQF1 
                 function renderTablaStats() {
                     const tbodyStatsOfensivas = document.querySelector("#estadisticas-ofensivas-equipo tbody");
                     tbodyStatsOfensivas.innerHTML = "";
@@ -345,23 +342,30 @@
                         `;
                         tbodyStatsOfensivas.appendChild(fila);
                     });
-                    // Es importante volver a añadir los listeners a los nuevos botones
                     addEventListenersToButtons();
                 }
 
                 function cargarTablaStats(ligaSeleccionada){
                     let endpoints = { "premierleague": "1", "laliga": "2", "seriea": "3", "bundesliga": "4", "ligueone": "5" };
                     fetch(`/api/estadisticas-ofensivas-equipo/${endpoints[ligaSeleccionada]}`).then(r => r.json()).then(data => {
-                        allStatsData = data; // Guarda los datos en la variable global
+                        allStatsData = data; 
 
-                        // --- 👇 AÑADIR ORDENAMIENTO INICIAL AQUÍ 👇 ---
-                        sortColumn = 'goles_anotados'; // Resetea al orden por defecto
+               
+                        sortColumn = 'goles_anotados'; 
                         sortDirection = 'desc';
-                        sortStatsData(); // Ordena los datos frescos
-                        updateHeaderArrows(); // Muestra la flecha en Goles
-                        // --- FIN DE LA MODIFICACIÓN ---
+                        sortStatsData(); 
+                        updateHeaderArrows(); 
 
                         renderTablaStats();
+
+
+                        // RQNF2
+                        const primerBoton = document.querySelector("#estadisticas-ofensivas-equipo tbody tr .btn-estadisticas");
+
+                        if (primerBoton) {
+                            primerBoton.click();
+                            primerBoton.dataset.active = "true";
+                        }
                     });
                     
 
@@ -372,7 +376,7 @@
                     const w = ctx.canvas.width, h = ctx.canvas.height;
                     const isLight = body.classList.contains('light-mode');
                     ctx.clearRect(0, 0, w, h);
-                    ctx.fillStyle = isLight ? "#d4e9d4" : "#2a5f2a"; // Verde claro / oscuro
+                    ctx.fillStyle = isLight ? "#d4e9d4" : "#2a5f2a"; 
                     ctx.fillRect(0, 0, w, h);
                     ctx.strokeStyle = isLight ? "rgba(0, 0, 0, 0.4)" : "rgba(255, 255, 255, 0.5)";
                     ctx.lineWidth = 2;
@@ -411,7 +415,7 @@
 
                         ctx.beginPath();
                         ctx.arc(x, y, radio, 0, Math.PI * 2);
-                        ctx.fillStyle = d.resultado === "goal" ? "#ff4d4d" : "#ffd700"; // Rojo para gol, amarillo para otros
+                        ctx.fillStyle = d.resultado === "goal" ? "#ff4d4d" : "#ffd700"; 
                         ctx.fill();
                         ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
                         ctx.stroke();
@@ -421,28 +425,22 @@
                 }
 
                 function plotearDisparosPorteria(ctx, disparos) {
-                    // Ordena para que los goles se dibujen encima
                     disparos.sort((a, b) => (a.resultado === 'goal') - (b.resultado === 'goal'));
                     
                     disparosPorteriaGuardados.length = 0;
                     const w = ctx.canvas.width, h = ctx.canvas.height;
                     
-                    // El marco visual que dibujamos
                     const frameW = w * 0.8, frameH = h * 0.65;
                     const frameStartX = (w - frameW) / 2, frameStartY = (h - frameH) / 2;
 
-                    // --- FÓRMULAS CORREGIDAS ---
-                    // Expandimos el área de ploteo para que sea más grande que el marco.
-                    // Esto hará que los disparos errados (miss) caigan fuera del marco.
-                    const plotWidth = frameW * 10;   // Área de ploteo horizontal (más del doble del marco)
-                    const plotHeight = frameH * 3;  // Área de ploteo vertical (el triple del marco)
+                    
+                    const plotWidth = frameW * 10;   
+                    const plotHeight = frameH * 3;  
 
                     disparos.forEach(d => {
-                        // Centramos el ploteo y usamos el nuevo rango expandido.
-                        // Se asume que la data `goal_mouth_y` = 50 es el centro horizontal.
+                        
                         const x = (w / 2) - ((d.goal_mouth_y - 50) / 105 * plotWidth);
 
-                        // Se asume que la data `goal_mouth_z` = 0 es el suelo.
                         const y = (frameStartY + frameH) - (d.goal_mouth_z / 100 * plotHeight);
 
                         const radio = 8;
@@ -457,10 +455,11 @@
                         disparosPorteriaGuardados.push({ x, y, radio, jugador: d.nombre, resultado: d.resultado });
                     });
                 }
+
+                // RQF3
                 function addEventListenersToButtons() {
                     document.querySelectorAll(".btn-estadisticas").forEach(button => {
                         button.addEventListener("click", function() {
-                            // Marcar este botón como activo para redibujar si cambia el tema
                             document.querySelectorAll(".btn-estadisticas").forEach(btn => btn.dataset.active = "false");
                             this.dataset.active = "true";
 
@@ -474,17 +473,22 @@
                                 lineChartInstance = new Chart(ctx, { type: 'line', data: { labels: info.map(item => `J${item.jornada}`), datasets: [{ label: 'xG a Favor', data: info.map(item => item.xg_equipo), borderColor: 'rgba(54, 162, 235, 1)', backgroundColor: 'rgba(54, 162, 235, 0.2)', fill: true, tension: 0.4 }, { label: 'xG en Contra', data: info.map(item => item.xg_rival), borderColor: 'rgba(255, 99, 132, 1)', backgroundColor: 'rgba(255, 99, 132, 0.2)', fill: true, tension: 0.4 }] }, options: currentOptions });
                             });
                             
+
+                            
                             fetch(`/api/mapa-disparos/${equipoId}`).then(r => r.json()).then(data => {
                                 document.getElementById("label-equipo").textContent = `Mapa de disparos de: ${equipoNombre}`;
                                 const campoCanvas = document.getElementById("campoCanvas");
                                 const ctxCampo = campoCanvas.getContext("2d");
                                 campoCanvas.width = campoCanvas.offsetWidth; campoCanvas.height = campoCanvas.offsetHeight;
+                                // RQF5
                                 dibujarCampo(ctxCampo);
                                 plotearDisparos(ctxCampo, data);
 
                                 const porteriaCanvas = document.getElementById("porteriaCanvas");
                                 const ctxPorteria = porteriaCanvas.getContext("2d");
                                 porteriaCanvas.width = porteriaCanvas.offsetWidth; porteriaCanvas.height = porteriaCanvas.offsetHeight;
+
+                                // RQF6
                                 dibujarPorteria(ctxPorteria);
                                 plotearDisparosPorteria(ctxPorteria, data);
                             });
@@ -518,7 +522,6 @@
                 setupTooltip(document.getElementById("campoCanvas"), disparosGuardados);
                 setupTooltip(document.getElementById("porteriaCanvas"), disparosPorteriaGuardados);
 
-                // --- Carga Inicial ---
                 const params = new URLSearchParams(window.location.search);
                 const ligaParam = params.get("liga");
                 if (ligaParam) ligaSelect.value = ligaParam;
@@ -527,6 +530,7 @@
                 ligaSelect.addEventListener("change", function() {
                     cargarTablaStats(this.value);
                 });
+
 
                 document.querySelectorAll('#estadisticas-ofensivas-equipo th[data-sort-key]').forEach(header => {
                     header.addEventListener('click', handleHeaderClick);

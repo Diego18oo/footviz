@@ -195,6 +195,7 @@
             const paisSelect = document.getElementById('pais');
             paisSelect.innerHTML="";
             equipoFavorito.innerHTML = "";
+            // RQNF6
             fetch(`/api/lista-equipos`)
             .then(response => response.json())
             .then(data => { 
@@ -207,6 +208,7 @@
                 });
             })
 
+            // RQF3
             fetch(`/api/lista-paises`)
             .then(response => response.json())
             .then(data => { 
@@ -219,88 +221,82 @@
                 });
             })
 
-            // --- El nuevo código para manejar el POST ---
             const form = document.querySelector('form');
 
+            // RQF1
             form.addEventListener('submit', async (event) => {
                 
-                // 1. Evita que la página se recargue al enviar el formulario
                 event.preventDefault();
 
-                // 2. Recolecta todos los datos del formulario en un objeto
                 const formData = new FormData(form);
                 
-                // ¡OJO! El <select> necesita un atributo 'name' para ser incluido
                 equipoFavorito.name = 'equipo_favorito'; 
                 
 
                 const data = Object.fromEntries(formData.entries());
+                // RQF2
                 const fechaNacimientoStr = data.fecnac;
                 const fechaNacimiento = new Date(fechaNacimientoStr);
                 const hoy = new Date();
-
+                // RQNF7
                 const fechaLimite = new Date(hoy.getFullYear() - 13, hoy.getMonth(), hoy.getDate());
 
-                
+                //RQNF5
                 const usernameRegex = /^\w+$/;
+                //RQNF8
                 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-                // Aquí irían tus validaciones de frontend (contraseñas coinciden, etc.)
                 if (data.contrasenia !== data.repetirContrasenia) {
                     alert('Las contraseñas no coinciden.');
-                    return; // Detiene el envío
+                    return; 
                 }
 
+                //RQNF3
                 if (data.username.length < 3 || data.username.length > 20) {
                     alert('El nombre de usuario debe contener minimo 2 caracteres y maximo 20.');
-                    return; // Detiene el envío
+                    return; 
                 }
 
                 if (data.fecnac > data.repetirContrasenia) {
                     alert('Las contraseñas no coinciden.');
-                    return; // Detiene el envío
+                    return; 
                 }
 
                 if (fechaNacimiento > fechaLimite) {
                     alert('Debes tener al menos 13 años para registrarte.');
-                    return; // Detiene el envío
+                    return; 
                 }
 
                 
 
                 if (!usernameRegex.test(data.username)) {
-                    // Si el test falla, mostramos un error y detenemos el envío
                     alert('El nombre de usuario solo puede contener letras, números y guiones bajos.');
                     return; 
                 }
 
                 if (!passwordRegex.test(data.contrasenia)) {
                     alert('La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número.');
-                    return; // Detiene el envío
+                    return; 
                 }
 
-                // 3. Envía el objeto a la "cocina" (tu backend) usando POST
                 try {
                     const response = await fetch('/api/registrar-usuario', {
-                        method: 'POST', // Especificamos que es una petición POST
+                        method: 'POST', 
                         headers: {
-                            'Content-Type': 'application/json' // Le decimos a la cocina que le enviamos JSON
+                            'Content-Type': 'application/json' 
                         },
-                        body: JSON.stringify(data) // Convertimos nuestro objeto JS a un string JSON
+                        body: JSON.stringify(data) 
                     });
 
                     const result = await response.json();
 
                     if (!response.ok) {
-                        // Si la cocina nos devuelve un error (ej: "usuario ya existe")
                         throw new Error(result.error || 'Algo salió mal en el servidor.');
                     }
 
-                    // 4. ¡Éxito! La cocina nos dio una buena respuesta.
                     alert('¡Cuenta creada exitosamente! Ahora inicia sesión.');
-                    window.location.href = '/login.html'; // Redirige al usuario
+                    window.location.href = '/login.html'; 
 
                 } catch (error) {
-                    // Muestra cualquier error al usuario
                     alert('Error: ' + error.message);
                 }
             });

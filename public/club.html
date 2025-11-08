@@ -153,7 +153,6 @@
                     evolucionChartInstance.options = body.classList.contains('light-mode') ? lightLineOptions : darkLineOptions;
                     evolucionChartInstance.update();
                 }
-                // Volver a dibujar los canvas
                 if (clubId) {
                     cargarAlineacion(clubId);
                     cargarMapaDisparos(clubId);
@@ -177,7 +176,7 @@
             };
 
             
-
+            // RQF1
             function cargarInfoClub(club){
                 fetch(`/api/info-club/${club}`)
                 .then(response => response.json())
@@ -202,6 +201,7 @@
                 });
             }
 
+            // RQF2
             function cargarUltimosPartidos(club){
                 fetch(`/api/ultimos-partidos-club/${club}`)
                 .then(response => response.json())
@@ -215,7 +215,7 @@
                     tbody.innerHTML = '';
                     data.forEach(partido => {
                         const fila = document.createElement('tr');
-                        fila.dataset.partidoId = partido.id_partido; // Guardamos el ID del partido
+                        fila.dataset.partidoId = partido.id_partido; 
                         
                         const local = partido.id_local == club;
                         const resultado = local ? `${partido.goles_local} - ${partido.goles_visitante}` : `${partido.goles_visitante} - ${partido.goles_local}`;
@@ -231,7 +231,6 @@
 
                         fila.innerHTML = `<td>vs <img src="${oponenteImg}" title="${oponenteNombre}"> <span class="score ${resultadoClase}">${resultado}</span></td>`;
                         
-                        // Añadimos el listener para redirigir
                         fila.addEventListener('click', () => {
                             window.location.href = `informe-postpartido.html?partido=${partido.id_partido}`;
                         });
@@ -241,6 +240,7 @@
                 })
             }   
 
+            // RQF3
             function cargarAlineacion(club){
                 fetch(`/api/alineacion-club/${club}`)
                 .then(response => response.json())
@@ -267,7 +267,7 @@
                     const img = new Image();
                     img.src = j.imgUrl;
                     img.onload = () => resolve(img);
-                    img.onerror = () => resolve(null); // Resolve null if image fails
+                    img.onerror = () => resolve(null); 
                 }));
                 Promise.all(promesas).then(imagenes => {
                     jugadores.forEach((jugador, i) => jugador.imagenCargada = imagenes[i]);
@@ -300,12 +300,16 @@
                 ctx.shadowBlur = 0;
             }
 
-
+            // RQF4
             function cargarEvolucion(club){
                 fetch(`/api/evolucion-equipos/${club}`)
                 .then(response => response.json())
                 .then(data => {
-                    if (!data || data.length === 0) return;
+                    if (!data || data.length === 0){
+                        div = document.createElement('div');
+                        div.innerHTML ='<p>No hay info disponibe</p>';
+                        return;
+                    }
                     const evolucion = data[0];
                     const labels = [], posiciones = [], idk = [];
                     let totalEquipos = 20; 
@@ -376,11 +380,17 @@
                 })
             }
 
+            // RQF5
             function cargarMapaDisparos(club){
                 fetch(`/api/mapa-disparos/${club}`)
                 .then(response => response.json())
                 .then(shots => {
-                    if (!shots || shots.length === 0) return;
+                    if (!shots || shots.length === 0) 
+                    {
+                        div = document.createElement('div');
+                        div.innerHTML = '<p>No hay info disponible</p>';
+                        return;
+                    }
                     const canvas = document.getElementById('shot-map-canvas');
                     const ctx = canvas.getContext('2d');
                     canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
@@ -439,6 +449,7 @@
                 ctx.beginPath(); ctx.arc(w/2, marginY + h*0.25, 30, 0, Math.PI, false); ctx.stroke();
             }
 
+            // RQF6
             function cargarPlantilla(club){
                 fetch(`/api/plantilla-club/${club}`)
                 .then(response => response.json())
@@ -462,6 +473,7 @@
                 })
             }
 
+            // RQF7
             document.getElementById('plantilla-tabla').addEventListener('click', (e) => {
                 const fila = e.target.closest('tr');
                 if (fila && fila.dataset.idJugador) {

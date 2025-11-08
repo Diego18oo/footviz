@@ -280,14 +280,13 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                // --- DECLARACIÓN DE VARIABLES ---
                 let jugador1Id = null, jugador2Id = null;
                 let jugador1Stats = null, jugador2Stats = null;
-                let radarChart = null; // Variable para la instancia del gráfico
+                let radarChart = null; 
                 let allData = [];
                 let currentPage = 1;
                 const pageSize = 10;
-                let sortColumn = 'total_goles'; // Columna por defecto para ordenar
+                let sortColumn = 'total_goles'; 
                 let sortDirection = 'desc';
 
                 const ligaSelect = document.getElementById('liga');
@@ -338,21 +337,17 @@
                         const valA = a[sortColumn];
                         const valB = b[sortColumn];
 
-                        // Detectar si son números para un ordenamiento numérico
                         const numA = parseFloat(valA);
                         const numB = parseFloat(valB);
 
                         let comparison = 0;
                         
                         if (!isNaN(numA) && !isNaN(numB)) {
-                            // Ordenamiento numérico
                             comparison = numA - numB;
                         } else {
-                            // Ordenamiento de texto (alfabético)
                             comparison = valA.toString().localeCompare(valB.toString());
                         }
 
-                        // Invertir el resultado si la dirección es descendente
                         return (sortDirection === 'desc') ? (comparison * -1) : comparison;
                     });
                 }
@@ -360,37 +355,31 @@
                 function handleHeaderClick(event) {
                     const clickedKey = event.currentTarget.dataset.sortKey;
 
-                    // 1. Determinar nueva dirección y columna
                     if (sortColumn === clickedKey) {
-                        // Si es la misma columna, invertir dirección
                         sortDirection = (sortDirection === 'desc') ? 'asc' : 'desc';
                     } else {
-                        // Si es una nueva columna, resetear a descendente
                         sortColumn = clickedKey;
                         sortDirection = 'desc';
                     }
                     
-                    // 2. Ordenar los datos
                     sortData();
                     
-                    // 3. Resetear paginación y re-renderizar la tabla
                     currentPage = 1;
                     renderPage();
                     
-                    // 4. Actualizar las flechas visuales
                     updateHeaderArrows();
                 }
                 
                 function updateHeaderArrows() {
                     document.querySelectorAll('#estadisticas-ofensivas th[data-sort-key]').forEach(th => {
-                        th.classList.remove('sort-asc', 'sort-desc'); // Limpia todas
+                        th.classList.remove('sort-asc', 'sort-desc'); 
                         if (th.dataset.sortKey === sortColumn) {
-                            // Aplica la clase correcta solo a la columna activa
                             th.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
                         }
                     });
                 }
 
+                // RQF5 estadísticas ofensivas individuales
                 function cargarMejoresGoles (ligaSeleccionada){  
                     let endpoints = {
                         "premierleague": "1", "laliga": "2", "seriea": "3", "bundesliga": "4", "ligueone": "5"
@@ -418,6 +407,8 @@
                         });
                 }
                 
+
+                // RQF3 estadísticas ofensivas individuales
                 function setupSearch(inputID, jugadorNum){
                     const input = document.getElementById(inputID);
                     input.addEventListener("input", async (e) => {
@@ -425,6 +416,7 @@
                         const resultsDiv = document.getElementById(`searchResults${jugadorNum}`);
                         resultsDiv.innerHTML ="";
                         if (query.length < 2) return;
+                        // RQNF3 y RQNF4
                         const res = await fetch(`/api/buscar-jugadores?nombre=${query}`);
                         const jugadores = await res.json();
                         jugadores.forEach(jugador => {
@@ -468,7 +460,7 @@
                     ];
 
                     jugadores.forEach(j => {
-                        if (!j.stats) return; // si aún no hay stats del jugador, lo saltamos
+                        if (!j.stats) return; 
 
                         const normalizados = {
                             nombre_jugador: j.stats.nombre_jugador,
@@ -493,17 +485,19 @@
                     });
                 }
                 
+
+                // RQF4 estadísticas ofensivas individuales
                 function renderRadarChart(stats, rawStats, jugadorNum) {
                     if (!window.radarChartInstance) {
                         const ctx = document.getElementById('radarChart').getContext('2d');
                         window.radarChartInstance = new Chart(ctx, {
                             type: 'radar',
                             data: {
-                                labels: ["goles", "disparos", "asistencias", 
-                                "acciones_creadas", "pases", "porcentaje_de_efectividad_de_pases",
-                                "pases_progresivos", "acarreos_progresivos", "regates_efectivos", 
-                                "toques_de_balon", "entradas", "intercepciones",
-                                "bloqueos", "despejes", "duelos_aereos_ganados"],
+                                labels: ["Goles", "Disparos", "Asistencias", 
+                                "Acciones Creadas", "Pases", "% Efectivad de pases",
+                                "Pases progresivos", "Acarreos progresivos", "Regates efectivos", 
+                                "Toques", "Entradas", "Intercepciones",
+                                "Bloqueos", "Despejes", "Duelos aereos ganados"],
                                 datasets: [
                                     { label: "Jugador 1", data: [], customStats: {} },
                                     { label: "Jugador 2", data: [], customStats: {} }
@@ -537,9 +531,9 @@
                                 },
                                 scales: {
                                     r: {
-                                        angleLines: { color: 'rgba(224, 224, 224, 0.2)' }, // Color de las líneas radiales
-                                        grid: { color: 'rgba(224, 224, 224, 0.2)' }, // Color de la cuadrícula
-                                        pointLabels: { color: '#e0e0e0', font: { size: 10 } }, // Color de las etiquetas de las estadísticas
+                                        angleLines: { color: 'rgba(224, 224, 224, 0.2)' }, 
+                                        grid: { color: 'rgba(224, 224, 224, 0.2)' }, 
+                                        pointLabels: { color: '#e0e0e0', font: { size: 10 } }, 
                                         ticks: { display: false }
                                     }
                                 }
@@ -600,7 +594,7 @@
                 
                 let tipoDeStat = document.getElementById('tipo-de-estadistica');
                 
-
+                // RQF1 estadísticas ofensivas individuales
                 function renderPage() {
                     tbody.innerHTML = "";
                     const start = (currentPage - 1) * pageSize;
@@ -610,8 +604,7 @@
                     pageData.forEach((estadistica_ofensiva, index) => {
                         const fila = document.createElement("tr");
                         
-                        // --- 1. AÑADIMOS EL ID DEL JUGADOR A LA FILA ---
-                        // Asegúrate que tu JSON de estadísticas ofensivas incluye 'id_jugador'
+                      
                         fila.dataset.idJugador = estadistica_ofensiva.id_jugador; 
 
                         fila.innerHTML = `
@@ -642,9 +635,9 @@
                         .then(response => response.json())
                         .then(data => {
                             allData = data;
-                            sortColumn = 'total_goles'; // Resetea al orden por defecto
+                            sortColumn = 'total_goles'; 
                             sortDirection = 'desc';
-                            sortData(); // Ordena los datos frescos
+                            sortData(); 
                             updateHeaderArrows();
                             currentPage = 1;
                             renderPage();
@@ -653,7 +646,7 @@
                     }
                 }
 
-                // --- 2. AÑADIMOS EL NUEVO LISTENER ---
+                // RQF6 estadísticas ofensivas individuales
                 document.getElementById('maximos-goleadores-jugadores').addEventListener('click', function(event) {
                     const filaClickeada = event.target.closest('tr');
                     if (filaClickeada && filaClickeada.dataset.idJugador) {
@@ -687,7 +680,6 @@
                     window.location = "estadisticas-ofensivas-equipo.html?liga=" + liga.value;
                 });
                 
-                // --- Carga Inicial ---
                 const params = new URLSearchParams(window.location.search);
                 const ligaParam = params.get("liga");
                 if (ligaParam) {
@@ -704,6 +696,8 @@
                 setupSearch("searchInput1", 1);
                 setupSearch("searchInput2", 2);
 
+
+                // RQF2 estadísticas ofensivas individuales
                 document.querySelectorAll('#estadisticas-ofensivas th[data-sort-key]').forEach(header => {
                     header.addEventListener('click', handleHeaderClick);
                 });

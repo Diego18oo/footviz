@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from sqlalchemy.dialects.mysql import insert
 from scrape_sofa import get_sofascore_api_data, init_driver, get_all_urls_fbref
 from datetime import datetime, timedelta
-from funciones import liga_fbref_fixtures, ligas_ids, temporadas_ids, insert_tabla_posiciones, insert_update_partidos, insert_estadistica_partido, insert_update_plantilla_equipos, insert_mapa_de_calor, insert_mapa_de_disparos, insert_estadistica_jugador, update_standings_evolution_graph, ultimos_partidos, update_fecha_partidos, prematch_odds, postmatch_odss, pending_odds, insert_confirmed_lineups, prematch_ref, insert_predicted_lineups, extract_img_url, transfer_to_database, procesar_puntos_partido, actualizar_valor_mercado_fantasy, actualizar_porcentaje_popularidad, update_fantasy_team_points
+from funciones import liga_fbref_fixtures, ligas_ids, temporadas_ids, insert_tabla_posiciones, insert_update_partidos, insert_estadistica_partido, insert_update_plantilla_equipos, insert_mapa_de_calor, insert_mapa_de_disparos, insert_estadistica_jugador, update_standings_evolution_graph, ultimos_partidos, update_fecha_partidos, prematch_odds, postmatch_odss, pending_odds, insert_confirmed_lineups, prematch_ref, insert_predicted_lineups, extract_img_url, transfer_to_database, procesar_puntos_partido, actualizar_valor_mercado_fantasy, actualizar_porcentaje_popularidad, update_fantasy_team_points, calcular_puntos_predicciones
 import pandas as pd
 
 load_dotenv()
@@ -48,17 +48,23 @@ ids_para_scrapear_temporada = df_partidos_ayer['temporada'].unique()
 
 
 
-if len(df_partidos_futuros) > 0:
-    print("Entrando...")
-    for i in range(len(df_partidos_futuros)):
-        prematch_ref(engine, df_partidos_futuros.iloc[i] )
-        prematch_odds(engine, df_partidos_futuros.iloc[i])
-        insert_predicted_lineups(engine, df_partidos_futuros.iloc[i])
+#if len(df_partidos_futuros) > 0:
+    #print("Entrando...")
+    #for i in range(len(df_partidos_futuros)):
+        #prematch_ref(engine, df_partidos_futuros.iloc[i] )
+        #prematch_odds(engine, df_partidos_futuros.iloc[i])
+        #insert_predicted_lineups(engine, df_partidos_futuros.iloc[i])
 
 
 #actualizar_porcentaje_popularidad(engine)
 #actualizar_valor_mercado_fantasy(engine)
 #update_fantasy_team_points(engine)
+
+df_partidos_predicciones = pd.read_sql(f"select distinct pu.id_partido from prediccion_usuario pu JOIN partido p on pu.id_partido = p.id_partido where p.fecha < '{today}'", engine)
+
+for i in range(len(df_partidos_predicciones)):
+    calcular_puntos_predicciones(engine, df_partidos_predicciones.iloc[i]['id_partido'])
+
 #verifica que si haya partidos el dia de ayer
 if len(df_partidos_ayer) == 0:
     print("Hoy no hay nada que hacer mi loco")
@@ -73,28 +79,28 @@ else:
         #url = f"https://fbref.com/en/comps/{liga_fbref_fixtures[iteracion]}"
         #lista_links = get_all_urls_fbref(driver, liga_url=url)
         #links_totales.extend(lista_links)
-    #for i in range(len(df_partidos_ayer)):
-        #print(f"Entrando a partido: {df_partidos_ayer['id_partido'][i]}")
-        #partido_sofascore = df_partidos_ayer['url_sofascore'][i].split(':')[2]  
-        #lista_ids_sofascore.append(partido_sofascore)
-        #insert_update_partidos(engine, df_partidos_ayer.iloc[i]) 
-        #insert_confirmed_lineups(engine, df_partidos_ayer.iloc[i])
-        #print("Partido actualizado correctamente")
-        #postmatch_odss(engine, df_partidos_ayer.iloc[i])
-        #insert_estadistica_partido(engine, df_partidos_ayer.iloc[i])
-        #print("Estadistica de partidos insertada correctamente")
-        #insert_mapa_de_calor(engine, driver, partido_sofascore)
-        #print(f"Mapa de calor de partido {partido_sofascore} insertado correctamente")
-        #insert_mapa_de_disparos(engine, driver, partido_sofascore)
-        #id_partido_actual = df_partidos_ayer.iloc[i]['id_partido']
-        #procesar_puntos_partido(engine, id_partido_actual)
+    for i in range(len(df_partidos_ayer)):
+        print(f"Entrando a partido: {df_partidos_ayer['id_partido'][i]}")
+        partido_sofascore = df_partidos_ayer['url_sofascore'][i].split(':')[2]  
+        lista_ids_sofascore.append(partido_sofascore)
+        insert_update_partidos(engine, df_partidos_ayer.iloc[i]) 
+        insert_confirmed_lineups(engine, df_partidos_ayer.iloc[i])
+        print("Partido actualizado correctamente")
+        postmatch_odss(engine, df_partidos_ayer.iloc[i])
+        insert_estadistica_partido(engine, df_partidos_ayer.iloc[i])
+        print("Estadistica de partidos insertada correctamente")
+        insert_mapa_de_calor(engine, driver, partido_sofascore)
+        print(f"Mapa de calor de partido {partido_sofascore} insertado correctamente")
+        insert_mapa_de_disparos(engine, driver, partido_sofascore)
+        id_partido_actual = df_partidos_ayer.iloc[i]['id_partido']
+        procesar_puntos_partido(engine, id_partido_actual)
          
-    #for i in range(len(ids_para_scrapear_temporada)):
-        #liga_a_scrapear = ids_para_scrapear_temporada[i]
-        #insert_tabla_posiciones(liga_a_scrapear, engine=engine,temporada=temporadas_ids
-        #[liga_a_scrapear-1])   #actualiza la tabla de posiciones de todas las ligas
-        #update_standings_evolution_graph(liga_a_scrapear,engine=engine, temporada=temporadas_ids[liga_a_scrapear-1])
-        #print(f"Tabla {liga_a_scrapear} insertada correctamente")
+    for i in range(len(ids_para_scrapear_temporada)):
+        liga_a_scrapear = ids_para_scrapear_temporada[i]
+        insert_tabla_posiciones(liga_a_scrapear, engine=engine,temporada=temporadas_ids
+        [liga_a_scrapear-1])   #actualiza la tabla de posiciones de todas las ligas
+        update_standings_evolution_graph(liga_a_scrapear,engine=engine, temporada=temporadas_ids[liga_a_scrapear-1])
+        print(f"Tabla {liga_a_scrapear} insertada correctamente")
     
 #ultimos_partidos(engine, temporada = 4)
 #ultimos_partidos(engine, temporada = 5)

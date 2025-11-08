@@ -9,7 +9,7 @@ from playwright.async_api import async_playwright
 
 
 import LanusStats as ls
-from sqlalchemy import create_engine, MetaData, Table, text
+from sqlalchemy import create_engine, MetaData, Table, text, update, bindparam
 from sqlalchemy.dialects.mysql import insert
 from scrape_sofa import get_sofascore_api_data, init_driver, get_all_teams_stats_fbref, get_all_urls_fbref, get_all_players_stats_fbref
 #from scrape import links_totales 
@@ -1274,7 +1274,7 @@ def insert_estadistica_jugador(engine,  ids_para_scrapear_temp, db_url):
                     print(f"No se pudo agregar correctamente a {nombre_fbref}")
                 
 
-        print(f"Liga {ligas[iteracion-1]} insertada correctamente")
+        print(f"Liga insertada correctamente")
     return 
 
 def update_standings_evolution_graph(liga_a_scrapear, engine,  temporada):
@@ -2416,4 +2416,148 @@ def update_fantasy_team_points(engine):
         count_updated = len(update_data)
 
     print(f"✅ Actualización completada. Se sumaron puntos a {count_updated} equipos fantasy.")
+    return
+
+def calcular_puntos_predicciones(engine, id_partido):
+    """
+    Calcula y actualiza los puntos de predicción para todos los usuarios
+    que participaron en un partido específico.
+    """
+    
+    print(f"--- Iniciando cálculo de puntos para el partido {id_partido} ---")
+
+    # --- 1. OBTENER LA "HOJA DE RESPUESTAS" (Resultados Reales) ---
+    
+    # Primero, obtenemos el resultado (quién ganó) y los IDs de los equipos
+    sql_match_results = text(f"""
+        SELECT
+            p.equipo_local,
+            p.equipo_visitante,
+            e.goles_local,
+            e.goles_visitante
+        FROM partido p
+        JOIN estadisticas_partido e ON p.id_partido = e.partido
+        WHERE p.id_partido = :id_partido
+    """)
+    
+    # Segundo, obtenemos el primer gol (jugador y equipo)
+    sql_first_goal = text(f"""
+        SELECT
+            jugador,
+            es_local
+        FROM mapa_de_disparos
+        WHERE
+            partido = :id_partido AND resultado = 'Goal'
+        ORDER BY
+            minuto ASC
+        LIMIT 1
+    """)
+    
+    actual_winner = None
+    actual_first_team_id = None
+    actual_first_player_id = None
+
+    with engine.connect() as conn:
+        df_match = pd.read_sql(sql_match_results, conn, params={"id_partido": id_partido})
+        df_first_goal = pd.read_sql(sql_first_goal, conn, params={"id_partido": id_partido})
+
+    # --- 2. PROCESAR LA "HOJA DE RESPUESTAS" ---
+
+    if df_match.empty:
+        print(f"Error: No se encontraron datos de partido/estadísticas para {id_partido}. Saltando.")
+        return
+
+    # Determinar ganador real
+    goles_local = df_match['goles_local'].iloc[0]
+    goles_visitante = df_match['goles_visitante'].iloc[0]
+    
+    if goles_local > goles_visitante:
+        actual_winner = 'L'
+    elif goles_visitante > goles_local:
+        actual_winner = 'V'
+    else:
+        actual_winner = 'E'
+
+    # Determinar primer gol (si hubo)
+    if df_first_goal.empty:
+        # Partido fue 0-0
+        print("Partido sin goles (0-0).")
+        actual_first_team_id = None
+        actual_first_player_id = None
+    else:
+        # Hubo goles
+        actual_first_player_id = int(df_first_goal['jugador'].iloc[0])
+        es_local = df_first_goal['es_local'].iloc[0]
+        
+        if es_local:
+            actual_first_team_id = int(df_match['equipo_local'].iloc[0])
+        else:
+            actual_first_team_id = int(df_match['equipo_visitante'].iloc[0])
+
+    print(f"Resultados Reales: Ganador={actual_winner}, 1er Equipo={actual_first_team_id}, 1er Jugador={actual_first_player_id}")
+
+    # --- 3. OBTENER TODAS LAS PREDICCIONES DE USUARIOS ---
+    
+    sql_predictions = text("""
+        SELECT id_prediccion, id_usuario, resultado_predicho, 
+               primer_equipo_anotar_id, primer_jugador_anotar_id
+        FROM prediccion_usuario
+        WHERE id_partido = :id_partido
+    """)
+    
+    with engine.connect() as conn:
+        df_predictions = pd.read_sql(sql_predictions, conn, params={"id_partido": id_partido})
+
+    if df_predictions.empty:
+        print("No se encontraron predicciones de usuarios para este partido. Saltando.")
+        return
+
+    print(f"Se encontraron {len(df_predictions)} predicciones para calificar.")
+
+    # --- 4. CALIFICAR CADA PREDICCIÓN ---
+    
+    data_para_actualizar = []
+    
+    for row in df_predictions.itertuples():
+        puntos = 0
+        
+        # +3 por adivinar ganador
+        if row.resultado_predicho == actual_winner:
+            puntos += 3
+            
+        # +2 por primer equipo en anotar
+        # Esto funciona aunque sea 0-0, ya que (None == None) es True
+        if row.primer_equipo_anotar_id == actual_first_team_id:
+            puntos += 2
+            
+        # +5 por primer jugador en anotar
+        # Esto también funciona para 0-0
+        if row.primer_jugador_anotar_id == actual_first_player_id:
+            puntos += 5
+            
+        # Preparamos los datos para la actualización masiva
+        data_para_actualizar.append({
+            'p_id': row.id_prediccion,
+            'puntos': puntos
+        })
+
+    # --- 5. ACTUALIZAR PUNTOS EN LA BD (Bulk Update) ---
+    
+    if data_para_actualizar:
+        meta = MetaData()
+        meta.reflect(bind=engine)
+        tabla_predicciones = meta.tables['prediccion_usuario']
+        
+        # Preparamos un "bulk update"
+        stmt = update(tabla_predicciones).where(
+            tabla_predicciones.c.id_prediccion == bindparam('p_id')
+        ).values(
+            puntos_obtenidos = bindparam('puntos')
+        )
+        
+        with engine.begin() as conn:
+            conn.execute(stmt, data_para_actualizar)
+            
+        print(f"¡Éxito! Se actualizaron {len(data_para_actualizar)} predicciones.")
+    
     return

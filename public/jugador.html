@@ -389,24 +389,20 @@
                 const themeToggleButton = document.getElementById('theme-toggle');
                 const body = document.body;
 
-                // Función para aplicar el tema y actualizar el botón
                 const applyTheme = (theme) => {
                     if (theme === 'light') {
                         body.classList.add('light-mode');
-                        themeToggleButton.textContent = '🌙'; // Luna para modo claro
+                        themeToggleButton.textContent = '🌙'; 
                     } else {
                         body.classList.remove('light-mode');
-                        themeToggleButton.textContent = '☀️'; // Sol para modo oscuro
+                        themeToggleButton.textContent = '☀️'; 
                     }
                 };
 
-                // Cargar el tema guardado al iniciar la página
-                const savedTheme = localStorage.getItem('theme') || 'dark'; // 'dark' es el default
+                const savedTheme = localStorage.getItem('theme') || 'dark'; 
                 applyTheme(savedTheme);
 
-                // Event listener para el botón
                 themeToggleButton.addEventListener('click', () => {
-                    // Comprobar si el modo claro está activo para decidir a qué cambiar
                     const isLightMode = body.classList.contains('light-mode');
                     if (isLightMode) {
                         localStorage.setItem('theme', 'dark');
@@ -423,7 +419,7 @@
             const jugadorParam = params.get("id");
             const boton = document.getElementById("botonComparar");
             
-
+            // RQF1
             function cargarInfoBasicaJugador(jugador){
                 fetch(`/api/jugador/${jugador}`)
                 .then(response => response.json())
@@ -432,10 +428,6 @@
                         console.error("No se encontraron datos para el jugador:", jugador);
                         return;
                     }
- 
-                    
-                    
-
                     let infoPrincipal = document.getElementById("info-general");
                     const fechaNac = new Date(data.fec_nac).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
                     infoPrincipal.innerHTML = `
@@ -465,6 +457,7 @@
                 
             }
 
+            // RQF6 
             function cargarUltimosPartidosJugador(jugador){
                 fetch(`/api/jugador/${jugador}`)
                 .then(response => response.json())
@@ -521,6 +514,7 @@
                 
             }
 
+            // RQF2
             function cargarPercentilesJugador(jugador){
                 fetch(`/api/jugador/${jugador}`)
                 .then(response => response.json())
@@ -568,7 +562,7 @@
                                             grid: { color: 'rgba(224, 224, 224, 0.2)' },
                                             pointLabels: { color: '#e0e0e0', font: { size: 11 } },
                                             ticks: {
-                                                color: '#1a1a2e', // Ocultar ticks numéricos
+                                                color: '#1a1a2e', 
                                                 backdropColor: 'rgba(0,0,0,0)',
                                                 stepSize: 25,
                                                 max: 100,
@@ -627,7 +621,7 @@
                                             grid: { color: 'rgba(224, 224, 224, 0.2)' },
                                             pointLabels: { color: '#e0e0e0', font: { size: 11 } },
                                             ticks: {
-                                                color: '#1a1a2e', // Ocultar ticks numéricos
+                                                color: '#1a1a2e', 
                                                 backdropColor: 'rgba(0,0,0,0)',
                                                 stepSize: 25,
                                                 max: 100,
@@ -688,7 +682,7 @@
                                     grid: { color: 'rgba(224, 224, 224, 0.2)' },
                                     pointLabels: { color: '#e0e0e0', font: { size: 11 } },
                                     ticks: {
-                                        color: '#1a1a2e', // Ocultar ticks numéricos
+                                        color: '#1a1a2e', 
                                         backdropColor: 'rgba(0,0,0,0)',
                                         stepSize: 25,
                                         max: 100,
@@ -704,6 +698,8 @@
                 })
             }
 
+
+            // RQF3
             function cargarMapaDeCalorJugador(jugador){
                 fetch(`/api/mapa-calor-jugador/${jugador}`)
                 .then(response => response.json())
@@ -715,11 +711,10 @@
                     
                     const heatmapInstance = h337.create({
                         container: canvas.parentElement,
-                        radius: 30, // Aumentamos el radio para puntos más grandes
-                        maxOpacity: 0.8, // Hacemos que el máximo sea un poco transparente
-                        minOpacity: 0.1, // Hacemos que los bordes se desvanezcan
-                        blur: .75, // Un desenfoque más suave
-                        // Nuevo gradiente de color más profesional
+                        radius: 30, 
+                        maxOpacity: 0.8, 
+                        minOpacity: 0.1, 
+                        blur: .75, 
                         gradient: {
                             '0.1': 'rgba(0, 255, 255, 0.1)',
                             '0.4': 'rgba(0, 255, 0, 0.4)',
@@ -728,7 +723,6 @@
                         }
                     });
 
-                        // Lógica de mapeo corregida
                     const marginX = canvas.width * 0.05;
                     const marginY = canvas.height * 0.05;
                     const pitchWidth = canvas.width * 0.9;
@@ -741,12 +735,13 @@
                         value: 1
                     }));
                     heatmapInstance.setData({
-                        max: 4, // Puedes ajustar este valor para cambiar la intensidad general
+                        max: 4, 
                         data: points
                     });
                 });
             }
 
+            // RQF4
             function cargarMapaDeDisparosJugador(jugador){
                 fetch(`/api/mapa-disparos-jugador/${jugador}`)
                 .then(response => response.json())
@@ -774,8 +769,7 @@
                         shotsOnCanvas.push({ x: canvasX, y: canvasY, radius, info: shot });
                     });
 
-                    // --- LÓGICA DEL TOOLTIP MOVIDA AQUÍ DENTRO ---
-                    // Esto asegura que el listener siempre tiene acceso al array 'shotsOnCanvas' correcto.
+                
                     const tooltip = document.getElementById('shot-tooltip');
                     
                     canvas.addEventListener('mousemove', (e) => {
@@ -784,7 +778,6 @@
                         const mouseY = e.clientY - rect.top;
                         let hoveredShot = null;
 
-                        // Comprobamos si el ratón está sobre algún disparo
                         for (let i = shotsOnCanvas.length - 1; i >= 0; i--) {
                             const s = shotsOnCanvas[i];
                             if (Math.sqrt((mouseX - s.x)**2 + (mouseY - s.y)**2) <= s.radius) {
@@ -817,18 +810,18 @@
                 ctx.strokeStyle = lineColor;
                 ctx.lineWidth = 2;
                 
-                if (vertical) { // Campo de futbol vertical para mapa de disparos
+                if (vertical) { 
                     ctx.strokeRect(w * 0.05, h * 0.05, w * 0.9, h * 0.9);
                     ctx.beginPath(); ctx.moveTo(w * 0.05, h/2); ctx.lineTo(w*0.95, h/2); ctx.stroke();
                     ctx.beginPath(); ctx.arc(w/2, h/2, 60, 0, 2*Math.PI); ctx.stroke();
-                    ctx.strokeRect(w*0.2, h*0.05, w*0.6, h*0.15); // Area arriba
-                    ctx.strokeRect(w*0.2, h - h*0.20, w*0.6, h*0.15); // Area abajo
-                } else { // Campo horizontal para mapa de calor
+                    ctx.strokeRect(w*0.2, h*0.05, w*0.6, h*0.15); 
+                    ctx.strokeRect(w*0.2, h - h*0.20, w*0.6, h*0.15); 
+                } else { 
                     ctx.strokeRect(w * 0.05, h * 0.05, w * 0.9, h * 0.9);
                     ctx.beginPath(); ctx.moveTo(w/2, h*0.05); ctx.lineTo(w/2, h*0.95); ctx.stroke();
                     ctx.beginPath(); ctx.arc(w/2, h/2, 60, 0, 2*Math.PI); ctx.stroke();
-                    ctx.strokeRect(w*0.05, h*0.2, w*0.15, h*0.6); // Area izq
-                    ctx.strokeRect(w - w*0.20, h*0.2, w*0.15, h*0.6); // Area der
+                    ctx.strokeRect(w*0.05, h*0.2, w*0.15, h*0.6); 
+                    ctx.strokeRect(w - w*0.20, h*0.2, w*0.15, h*0.6); 
                 }
             }
 
@@ -840,13 +833,10 @@
                 ctx.strokeStyle = lineColor;
                 ctx.lineWidth = 2;
 
-                // Dibujar solo la mitad superior del campo
                 const marginX = w * 0.05;
                 const marginY = h * 0.05;
                 const fieldWidth = w * 0.9;
-                const fieldHalfHeight = h * 0.9; // Usamos todo el alto para la mitad del campo
-
-                // Líneas exteriores de la mitad del campo
+                const fieldHalfHeight = h * 0.9; 
                 ctx.beginPath();
                 ctx.moveTo(marginX, marginY + fieldHalfHeight);
                 ctx.lineTo(marginX, marginY);
@@ -854,12 +844,9 @@
                 ctx.lineTo(marginX + fieldWidth, marginY + fieldHalfHeight);
                 ctx.stroke();
                 
-                // Área grande
                 ctx.strokeRect(w * 0.2, marginY, w * 0.6, h * 0.35);
-                // Área pequeña
                 ctx.strokeRect(w * 0.35, marginY, w * 0.3, h * 0.1);
 
-                // Semicírculo del área
                 ctx.beginPath();
                 ctx.arc(w / 2, marginY + h * 0.35, 30, 0, Math.PI, false);
                 ctx.stroke();
@@ -875,14 +862,12 @@
                 const pitchWidth = w * 0.9;
                 const pitchHeight = h * 0.9;
 
-                // Mapeo horizontal sin cambios
                 const canvasX = marginX + (parseFloat(shot.pitch_y) / 100) * pitchWidth;
                 
-                // Mapeo vertical con ZOOM: Asumimos que pitch_x (0-50) es la mitad de ataque
-                // y lo expandimos a todo el alto del canvas (pitchHeight).
+
                 const canvasY = marginY + (parseFloat(shot.pitch_x) / 50) * pitchHeight;
 
-                const radius = 5 + (parseFloat(shot.xg) * 10); // Un poco más grandes
+                const radius = 5 + (parseFloat(shot.xg) * 10); 
                 ctx.fillStyle = shot.resultado === 'goal' ? '#ffd700' : 'rgba(54, 162, 235, 0.9)';
                 ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)'; 
                 ctx.lineWidth = 1.5;
@@ -924,13 +909,11 @@
                             <img src="${jugador.imagen_equipo}" style="margin-left: auto;" />
                         `;
                         div.addEventListener("click", () => {
-                            // Redirigir a la página del jugador seleccionado
                             window.location.href = `jugador.html?id=${jugador.id_jugador}`;
                         });
                         resultsDiv.appendChild(div);
                     });
                 });
-                // Opcional: Ocultar resultados si se hace clic fuera
                 document.addEventListener('click', function(event) {
                     if (!input.contains(event.target)) {
                         resultsDiv.innerHTML = '';
@@ -944,8 +927,9 @@
             cargarMapaDeCalorJugador(jugadorParam);
             cargarMapaDeDisparosJugador(jugadorParam); 
             setupSearch("searchInput", "searchResults");
+
+            // RQF7
             boton.addEventListener("click", () => {
-                // Redirigir a la página del jugador seleccionado
                 window.location.href = `comparar.html?id=${jugadorParam}`;
             });
 

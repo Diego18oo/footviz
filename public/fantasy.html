@@ -331,12 +331,11 @@
             fichajesRestantes = document.getElementById('transfers-remaining');
             async function cargarDatosDashboard() { 
                 try {
-                    const response = await fetch('/api/fantasy-dashboard'); // El navegador envía la cookie
+                    const response = await fetch('/api/fantasy-dashboard'); 
 
                     if (response.status === 401 || response.status === 403) {
-                        // ¡Sesión inválida o expirada!
                         alert("Tu sesión ha expirado. Por favor, inicia sesión de nuevo.");
-                        window.location.href = '/login.html'; // Redirigir al login
+                        window.location.href = '/login.html'; 
                         return;
                     }
 
@@ -356,30 +355,28 @@
                     equipoData = data.equipoData;
                     textoVerifiacion = document.getElementById('verificar-equipo-text');
                     botonManejador = document.getElementById('manage-team-button');
-                    const teamDisplayVisual = document.getElementById('team-display-visual'); // Referencia al campo
+                    const teamDisplayVisual = document.getElementById('team-display-visual'); 
                     if (equipoData) {
-                        textoVerifiacion.style.display = 'none'; // Ocultar el texto
+                        textoVerifiacion.style.display = 'none';
                         botonManejador.innerHTML = "Gestionar Equipo";
                         botonManejador.onclick = function() { window.location.href='mi-equipo.html' };
                         presupuestoRestante.innerHTML=`$${equipoData.presupuesto_restante}M`;
                         fichajesRestantes.innerHTML=`${equipoData.fichajes_jornada_restantes}`;
 
-                        // --- 👇 NUEVO: Renderizar plantilla en el campo 👇 ---
                         if (data.plantillaConDetalles && data.plantillaConDetalles.length > 0) {
                             renderizarPlantillaEnCampo(data.plantillaConDetalles, teamDisplayVisual);
                         } else {
                             teamDisplayVisual.innerHTML = "<p style='color:#fff; text-align:center;'>No hay jugadores en tu plantilla titular.</p>";
                         }
-                        // --- 👆 FIN NUEVO ---
 
                     } else {
-                        textoVerifiacion.style.display = 'block'; // Mostrar el texto
+                        textoVerifiacion.style.display = 'block'; 
                         textoVerifiacion.innerHTML = "Aún no has creado un equipo.";
                         botonManejador.innerHTML = "Crear Equipo";
                         botonManejador.onclick = function() { window.location.href='crear-equipo.html' };
                         presupuestoRestante.innerHTML = "N/A";
                         fichajesRestantes.innerHTML = "N/A";
-                        teamDisplayVisual.innerHTML = "<p style='color:#fff; text-align:center;'>Accede a Crear Equipo</p>"; // Mensaje si no hay equipo
+                        teamDisplayVisual.innerHTML = "<p style='color:#fff; text-align:center;'>Accede a Crear Equipo</p>";
                     }
                     
 
@@ -395,7 +392,7 @@
             } 
 
             function renderizarPlantillaEnCampo(plantilla, container) {
-                container.innerHTML = ''; // Limpia el <p> "Cargando equipo..."
+                container.innerHTML = ''; 
 
                 const titulares = plantilla.filter(p => p.es_titular === 1);
 
@@ -404,53 +401,46 @@
                     return;
                 }
 
-                // 1. Crear las 4 filas de la cancha
                 const rowG = document.createElement('div');
                 rowG.className = 'pitch-row';
-                rowG.id = 'pitch-row-G'; // Para Porteros
-
+                rowG.id = 'pitch-row-G'; 
                 const rowD = document.createElement('div');
                 rowD.className = 'pitch-row';
-                rowD.id = 'pitch-row-D'; // Para Defensas
+                rowD.id = 'pitch-row-D'; 
 
                 const rowM = document.createElement('div');
                 rowM.className = 'pitch-row';
-                rowM.id = 'pitch-row-M'; // Para Medios
+                rowM.id = 'pitch-row-M'; 
 
                 const rowF = document.createElement('div');
                 rowF.className = 'pitch-row';
-                rowF.id = 'pitch-row-F'; // Para Delanteros
+                rowF.id = 'pitch-row-F'; 
                 
-                // 2. Añadir las filas al contenedor del campo en el orden visual
-                container.appendChild(rowF); // Delanteros arriba
+                container.appendChild(rowF); 
                 container.appendChild(rowM);
                 container.appendChild(rowD);
-                container.appendChild(rowG); // Portero abajo
+                container.appendChild(rowG); 
 
-                // 3. Iterar sobre los 11 titulares y añadir cada uno a su fila
                 titulares.forEach(player => {
                     let targetRow;
                     
-                    // Asigna el jugador a la fila correcta
                     switch(player.posicion) {
                         case 'G': targetRow = rowG; break;
                         case 'D': targetRow = rowD; break;
                         case 'M': targetRow = rowM; break;
                         case 'F': targetRow = rowF; break;
-                        default:  targetRow = rowM; // Fallback por si acaso
+                        default:  targetRow = rowM; 
                     }
 
                     const playerDiv = document.createElement('div');
-                    playerDiv.classList.add('player-on-field'); // Ya no necesita 'pos-X' o 'slot-X'
+                    playerDiv.classList.add('player-on-field');
                     
                     if (player.es_capitan === 1) {
                         playerDiv.classList.add('captain');
                     }
 
-                    // Usamos un fallback por si la imagen del jugador es null
                     const playerImgSrc = player.url_imagen_jugador || 'placeholder-player-face.png';
                     
-                    // Mostramos solo el primer nombre para que quepa
                     const firstName = player.nombre_jugador; 
 
                     playerDiv.innerHTML = `
@@ -470,7 +460,7 @@
                         return res.json();
                     })
                     .then(data => {
-                        fixturesList.innerHTML = ""; // Limpiar la lista de placeholders
+                        fixturesList.innerHTML = ""; 
 
                         if (data.length === 0) {
                             fixturesList.innerHTML = "<li>No hay partidos programados.</li>";
@@ -480,18 +470,15 @@
                         
                         
 
-                        // Creamos un <li> para cada partido
                         data.forEach(partido => {
                             const li = document.createElement('li');
                             
-                            // Añadimos estilos para que se vea bien, como en tu maqueta
                             li.style.display = 'flex';
                             li.style.alignItems = 'center';
                             li.style.justifyContent = 'center';
                             li.style.gap = '10px';
                             li.style.padding = '5px 0';
 
-                            // Usamos 'data-partido-id' para poder hacerlos clicables en el futuro
                             li.dataset.partidoId = partido.id_partido; 
                             
                             li.innerHTML = `
@@ -515,7 +502,7 @@
             }
 
             function cargarMVP() {
-                const mvpList = document.getElementById('mvp-list'); // 1. Obtener el contenedor de la lista
+                const mvpList = document.getElementById('mvp-list'); 
 
                 fetch(`/api/fantasy/mvp-de-la-jornada`)
                 .then(res => {
@@ -523,19 +510,17 @@
                     return res.json();
                 })
                 .then(data => {
-                    mvpList.innerHTML = ""; // Limpiar lista
+                    mvpList.innerHTML = ""; 
 
                     if (data.length === 0) {
-                        mvpList.innerHTML = "<p>Aún no disponible.</p>"; // Mensaje si está vacío
+                        mvpList.innerHTML = "<p>Aún no disponible.</p>"; 
                         return; 
                     }
                     
-                    // 2. Iterar sobre los jugadores (hasta 5)
                     data.forEach((player, index) => {
                         const li = document.createElement('li');
-                        li.classList.add('mvp-item'); // Añadir clase para el estilo
+                        li.classList.add('mvp-item'); 
 
-                        // 3. Construir el HTML para cada jugador
                         li.innerHTML = `
                             <span class="mvp-rank">${index + 1}</span>
                             <img src="${player.url_imagen_jugador || 'placeholder-player-face.png'}" alt="${player.nombre_jugador}" class="mvp-player-img">
@@ -548,7 +533,6 @@
                         mvpList.appendChild(li);
                     });
 
-                    // 4. Lógica de la jornada
                     const nextGameweekEl = document.getElementById('current-gameweek-fixtures');
                     
                 })

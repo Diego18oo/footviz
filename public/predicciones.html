@@ -86,9 +86,9 @@
                 width: 20px; height: 20px; border-radius: 50%; display: inline-block;
                 line-height: 20px; text-align: center; font-weight: 700;
             }
-            .form-W { background-color: #16a34a; color: white; } /* Victoria */
-            .form-D { background-color: #6b7280; color: white; } /* Empate */
-            .form-L { background-color: #dc2626; color: white; } /* Derrota */
+            .form-V { background-color: #16a34a; color: white; } /* Victoria */
+            .form-E { background-color: #6b7280; color: white; } /* Empate */
+            .form-D { background-color: #dc2626; color: white; } /* Derrota */
 
             .prediction-group { /* RQF1 */
                 margin-bottom: 15px;
@@ -169,6 +169,68 @@
                 margin-top: 10px;
                 font-weight: 600;
             }
+            
+            /* --- 👇 NUEVO: ESTILOS TABLA RECOMPENSAS 👇 --- */
+            .rewards-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 15px;
+            }
+            .rewards-table th, .rewards-table td {
+                padding: 12px 15px;
+                text-align: left;
+                border-bottom: 1px solid #2a2a4a;
+            }
+            .rewards-table th {
+                background-color: #2a2a4a;
+                color: #ffffff;
+                font-weight: 600;
+                font-size: 0.9rem;
+            }
+            .rewards-table td {
+                font-size: 0.9rem;
+            }
+            .rewards-table td:last-child {
+                text-align: center;
+                font-weight: 700;
+                font-size: 1rem;
+                color: #4a69ff;
+            }
+            .rewards-table tr:last-child td {
+                border-bottom: none;
+            }
+            /* --- 👆 FIN DE NUEVOS ESTILOS 👆 --- */
+            
+            /* --- MODO LUZ --- */
+            body.light-mode { background-color: #f4f4f9; color: #333333; }
+            body.light-mode .header { border-bottom-color: #e0e0e0; }
+            body.light-mode .header h1, body.light-mode h2, body.light-mode h3 { color: #1a1a2e; }
+            body.light-mode .theme-toggle-button { background: #ffffff; border-color: #d1d1d1; color: #333; }
+            body.light-mode .card { background-color: #ffffff; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); }
+            body.light-mode .team-form { color: #666; }
+            body.light-mode .prediction-group label { color: #555; }
+            body.light-mode .prediction-group select, body.light-mode .prediction-group input { background-color: #f0f0f0; border-color: #d1d1d1; color: #333; }
+            body.light-mode .result-buttons button { background-color: #e9e9f3; border-color: #d1d1d1; color: #333; }
+            body.light-mode .result-buttons button:hover { background-color: #d1d1d1; }
+            body.light-mode .result-buttons button.selected { background-color: #4a69ff; border-color: #4a69ff; color: white; }
+            body.light-mode .popular-picks-bar { background-color: #e9e9f3; }
+            body.light-mode .prediction-status { color: #059669; }
+
+            /* 👇 NUEVO: MODO LUZ PARA TABLA RECOMPENSAS 👇 */
+            body.light-mode .rewards-table th {
+                background-color: #e9e9f3;
+                color: #333;
+            }
+            body.light-mode .rewards-table td {
+                border-color: #e0e0e0;
+            }
+            /* 👆 FIN MODO LUZ 👆 */
+            .chart-container {
+                position: relative;
+                width: 100%;
+                height: 250px; /* Altura para el gráfico */
+            }
+
         </style>
     </head>
     <body>
@@ -179,6 +241,15 @@
             </header>
 
             <main class="predictions-container">
+                <div class="card">
+                    <h2>Evolución de Puntos XP</h2>
+                    <div class="chart-container">
+                        <canvas id="points-graph"></canvas>
+                        <p id="points-graph-placeholder" style="display: none; text-align: center; padding-top: 50px;">
+                            Aún no hay datos de puntos para mostrar.
+                        </p>
+                    </div>
+                </div>
                 <div class="card prediction-header">
                     <h2>Jornada <span id="jornada-numero">X</span></h2>
                     <p>Mercado de predicciones cierra: <strong id="deadline-timer" class="deadline-timer">Jueves 11:59 PM</strong></p>
@@ -187,48 +258,7 @@
                 <div id="prediction-matches-container">
                     
                     <div class="card prediction-card" data-match-id="1">
-                        <div class="match-header">
-                            <img src="placeholder-team-1.png" alt="Equipo Local" id="local-team-img-1">
-                            <span><span id="local-team-name-1">Equipo A</span> vs <span id="visitante-team-name-1">Equipo B</span></span>
-                            <img src="placeholder-team-2.png" alt="Equipo Visitante" id="visitante-team-img-1">
                         </div>
-                        <div class="team-form">
-                            <div class="form-streaks" id="local-form-1"></div>
-                            <span>Forma (Últ. 5)</span>
-                            <div class="form-streaks" id="visitante-form-1"></div>
-                        </div>
-                        <div class="popular-picks">
-                            <label>Predicciones Populares</label>
-                            <div class="popular-picks-bar">
-                                <div class="popular-local" id="pop-local-1" title="Local"></div>
-                                <div class="popular-empate" id="pop-empate-1" title="Empate"></div>
-                                <div class="popular-visitante" id="pop-visitante-1" title="Visitante"></div>
-                            </div>
-                        </div>
-                        <hr style="border-color: #2a2a4a; margin: 20px 0;">
-                        <div class="prediction-group">
-                            <label>Resultado Final</label>
-                            <div class="result-buttons">
-                                <button data-prediction="L">Local</button>
-                                <button data-prediction="E">Empate</button>
-                                <button data-prediction="V">Visitante</button>
-                            </div>
-                        </div>
-                        <div class="prediction-group">
-                            <label for="first-to-score-1">Primer Equipo en Anotar</label>
-                            <select id="first-to-score-1">
-                                <option value="">Seleccionar...</option>
-                            </select>
-                        </div>
-                        <div class="prediction-group">
-                            <label for="first-player-to-score-1">Primer Jugador en Anotar</label>
-                            <select id="first-player-to-score-1">
-                                <option value="">Seleccionar Jugador...</option>
-                            </select>
-                        </div>
-                        <button class="save-prediction-btn" data-match-id="1">Guardar Predicción</button>
-                        <p class="prediction-status">¡Predicción Guardada!</p>
-                    </div>
                     
                     <div class="card prediction-card" data-match-id="2">
                         </div>
@@ -243,44 +273,229 @@
                         </div>
 
                 </div>
-            </main>
+                
+                <div class="card rewards-card">
+                    <h2>Recompensas de XP</h2>
+                    <table class="rewards-table">
+                        <thead>
+                            <tr>
+                                <th>Acción</th>
+                                <th>Puntos de xp</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Adivina el ganador</td>
+                                <td>3</td>
+                            </tr>
+                            <tr>
+                                <td>Adivina correctamente el primer equipo en anotar</td>
+                                <td>2</td>
+                            </tr>
+                            <tr>
+                                <td>Adivina correctamente el primer jugador en anotar</td>
+                                <td>5</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                </main>
         </div>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
+            let pointsChartInstance = null;
+            const imgLocal = document.getElementById('local-team-img-1');
+            const imgVisitante = document.getElementById('visitante-team-img-1');
+            const darkChartOptions = { 
+                responsive: true, maintainAspectRatio: false,
+                scales: { 
+                    y: { ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(224, 224, 224, 0.1)' }, title: { display: true, text: 'Puntos XP Acumulados', color: '#e0e0e0'} }, 
+                    x: { ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(224, 224, 224, 0.1)' }, title: { display: true, text: 'Jornada', color: '#e0e0e0'} } 
+                }, 
+                plugins: { legend: { display: false } } 
+            };
+            const lightChartOptions = { 
+                responsive: true, maintainAspectRatio: false,
+                scales: { 
+                    y: { ticks: { color: '#666' }, grid: { color: 'rgba(0, 0, 0, 0.1)' }, title: { display: true, text: 'Puntos XP Acumulados', color: '#333'} }, 
+                    x: { ticks: { color: '#666' }, grid: { color: 'rgba(0, 0, 0, 0.1)' }, title: { display: true, text: 'Jornada', color: '#333'} } 
+                }, 
+                plugins: { legend: { display: false } } 
+            };
             async function cargarPagina() {
-                // 1. Obtener los 5 partidos de la jornada
-                // const response = await fetch('/api/fantasy/partidos-prediccion');
-                // const partidos = await response.json();
-                
-                // 2. Renderizar las tarjetas
-                // renderPredictionCards(partidos);
-                
-                // 3. Añadir listeners a los botones de guardar
-                // addSaveButtonListeners();
+                try {
+                    // 1. Iniciar ambas peticiones en paralelo
+                    const partidosPromise = fetch('/api/fantasy/partidos-prediccion').then(res => res.json());
+                    const historialPromise = fetch('/api/fantasy/historial-predicciones').then(res => {
+                        if (res.status === 401 || res.status === 403) {
+                            alert("Tu sesión ha expirado.");
+                            window.location.href = '/login.html';
+                            return Promise.reject('Sesión expirada');
+                        }
+                        if (!res.ok) return []; // Si falla (ej. 404), devuelve array vacío
+                        return res.json();
+                    });
+
+                    // 2. Esperar a que ambas terminen
+                    const [partidos, historial] = await Promise.all([partidosPromise, historialPromise]);
+
+                    // 3. Renderizar las tarjetas de predicción
+                    if (partidos && partidos.length > 0) {
+                        document.getElementById('jornada-numero').textContent = partidos[0].jornada;
+                        // Pasamos un array vacío por ahora para 'misPredicciones'
+                        renderPredictionCards(partidos, []); 
+                    } else {
+                        document.getElementById('prediction-matches-container').innerHTML = "<p>No hay partidos de predicción disponibles.</p>";
+                    }
+                    
+                    // 4. Renderizar el gráfico de historial (RQF4)
+                    renderPointsGraph(historial);
+
+                    // 5. Añadir listeners a los botones de guardar
+                    addSaveButtonListeners();
+
+                } catch (error) {
+                    console.error("Error al cargar la página de predicciones:", error);
+                    if (error !== 'Sesión expirada') {
+                        document.getElementById('prediction-matches-container').innerHTML = "<p>Error al cargar la página.</p>";
+                    }
+                }
             }
             
-            // --- FUNCIONES DE RENDERIZADO (ESQUELETOS) ---
+            function renderPointsGraph(historial) {
+                const ctx = document.getElementById('points-graph').getContext('2d');
+                const placeholder = document.getElementById('points-graph-placeholder');
+
+                // RQF4 Condición: Si no hay datos, mostrar placeholder
+                if (!historial || historial.length === 0) {
+                    placeholder.style.display = 'block';
+                    ctx.canvas.style.display = 'none';
+                    
+                    // Lógica de 1 de Agosto (opcional, pero como lo pediste)
+                    const hoy = new Date();
+                    if (hoy.getMonth() == 7 && hoy.getDay() < 10) { // 7 es Agosto (0-11)
+                        placeholder.textContent = "La temporada de predicciones aún no ha comenzado.";
+                    } else {
+                        placeholder.textContent = "¡Empieza a predecir para ver tu historial de puntos!";
+                    }
+                    return;
+                }
+                
+                placeholder.style.display = 'none';
+                ctx.canvas.style.display = 'block';
+
+                let labels = [];
+                let cumulativeData = [];
+                let totalAcumulado = 0;
+
+                // Calcular puntos acumulados
+                historial.forEach(item => {
+                    totalAcumulado += parseInt(item.puntos_jornada, 10); // Suma los puntos de esta jornada
+                    labels.push(`J${item.jornada}`);
+                    cumulativeData.push(totalAcumulado); // Añade el total acumulado
+                });
+
+                if (pointsChartInstance) {
+                    pointsChartInstance.destroy(); // Destruir gráfico anterior si existe
+                }
+
+                const currentOptions = body.classList.contains('light-mode') ? lightChartOptions : darkChartOptions;
+
+                pointsChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Puntos XP Acumulados',
+                            data: cumulativeData,
+                            borderColor: '#4a69ff',
+                            backgroundColor: 'rgba(74, 105, 255, 0.2)',
+                            fill: true,
+                            tension: 0.1
+                        }]
+                    },
+                    options: currentOptions
+                });
+            }
             
-            function renderPredictionCards(partidos) {
+            function renderPredictionCards(partidos, misPredicciones) {
                 const container = document.getElementById('prediction-matches-container');
                 container.innerHTML = ''; // Limpiar los placeholders
-                
-                partidos.forEach(partido => {
-                    // --- Aquí va la lógica para crear el HTML de cada tarjeta ---
-                    // (Esta parte es compleja y requiere crear cada elemento)
+
+                partidos.forEach((partido, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'card prediction-card';
+                    card.dataset.matchId = partido.id_partido;
                     
-                    // const card = document.createElement('div');
-                    // card.className = 'card prediction-card';
-                    // card.dataset.matchId = partido.id_partido;
+                    const cardIndex = index + 1; // Para los IDs únicos (1 a 5)
+
+                    // 1. Buscar si hay una predicción guardada para ESTE partido
+                    const miPrediccion = misPredicciones.find(p => p.id_partido === partido.id_partido);
+
+                    // 2. Preparar los valores guardados (si existen)
+                    const savedResult = miPrediccion?.resultado_predicho || '';
+                    const savedTeam = miPrediccion?.primer_equipo_anotar_id || '';
+                    const savedPlayer = miPrediccion?.primer_jugador_anotar_id || '';
+
+                    card.innerHTML = `
+                        <div class="match-header">
+                            <img src="${partido.escudo_local}" alt="${partido.nombre_local}">
+                            <span>
+                                <span id="local-team-name-${cardIndex}">${partido.nombre_local}</span> vs 
+                                <span id="visitante-team-name-${cardIndex}">${partido.nombre_visitante}</span>
+                            </span>
+                            <img src="${partido.escudo_visitante}" alt="${partido.nombre_visitante}">
+                        </div>
+                        <div class="team-form">
+                            <div class="form-streaks" id="local-form-${cardIndex}"></div>
+                            <span>Forma (Últ. 5)</span>
+                            <div class="form-streaks" id="visitante-form-${cardIndex}"></div>
+                        </div>
+                        <div class="popular-picks">
+                            <label>Predicciones Populares</label>
+                            <div class="popular-picks-bar">
+                                <div class="popular-local" id="pop-local-${cardIndex}" title="Local"></div>
+                                <div class="popular-empate" id="pop-empate-${cardIndex}" title="Empate"></div>
+                                <div class="popular-visitante" id="pop-visitante-${cardIndex}" title="Visitante"></div>
+                            </div>
+                        </div>
+                        <hr style="border-color: #2a2a4a; margin: 20px 0;">
+                        <div class="prediction-group">
+                            <label>Resultado Final</label>
+                            <div class="result-buttons">
+                                <button data-prediction="L" class="${savedResult === 'L' ? 'selected' : ''}">Local</button>
+                                <button data-prediction="E" class="${savedResult === 'E' ? 'selected' : ''}">Empate</button>
+                                <button data-prediction="V" class="${savedResult === 'V' ? 'selected' : ''}">Visitante</button>
+                            </div>
+                        </div>
+                        <div class="prediction-group">
+                            <label for="first-to-score-${cardIndex}">Primer Equipo en Anotar</label>
+                            <select id="first-to-score-${cardIndex}">
+                                <option value="">Seleccionar...</option>
+                                <option value="${partido.id_local}" ${savedTeam == partido.id_local ? 'selected' : ''}>${partido.nombre_local}</option>
+                                <option value="${partido.id_visitante}" ${savedTeam == partido.id_visitante ? 'selected' : ''}>${partido.nombre_visitante}</option>
+                            </select>
+                        </div>
+                        <div class="prediction-group">
+                            <label for="first-player-to-score-${cardIndex}">Primer Jugador en Anotar</label>
+                            <select id="first-player-to-score-${cardIndex}">
+                                <option value="">Seleccionar Jugador...</option>
+                                </select>
+                        </div>
+                        <button class="save-prediction-btn" data-match-id="${partido.id_partido}">Guardar Predicción</button>
+                        <p class="prediction-status">¡Predicción Guardada!</p>
+                    `;
                     
-                    // ... (construir todo el innerHTML con los datos de 'partido') ...
+                    container.appendChild(card);
+
+                    // --- Cargar datos asíncronos para la tarjeta ---
+                    cargarEstadoDeForma(partido.id_local, `local-form-${cardIndex}`);
+                    cargarEstadoDeForma(partido.id_visitante, `visitante-form-${cardIndex}`);
                     
-                    // ... (hacer fetch a /api/plantillas-partido/partido.id_partido para llenar los <select>) ...
+                    // 5. Pasamos el ID del jugador guardado a la función que carga el select
+                    cargarJugadoresParaSelect(partido.id_partido, `first-player-to-score-${cardIndex}`, savedPlayer);
                     
-                    // ... (hacer fetch a /api/estado-forma/partido.id_partido para llenar el RQF5) ...
-                    
-                    // ... (hacer fetch a /api/predicciones-populares/partido.id_partido para llenar el RQF6) ...
-                    
-                    // container.appendChild(card);
+                    cargarPronosticosPopulares(partido.id_partido, cardIndex);
                 });
             }
             
@@ -291,23 +506,221 @@
             }
             
             async function handleSavePrediction(event) {
-                // RQF2: Validar la fecha límite
-                // ... (tu lógica de validación de fecha) ...
-                
-                // 1. Recolectar datos
-                const card = event.target.closest('.prediction-card');
-                const matchId = card.dataset.matchId;
-                const result = card.querySelector('.result-buttons button.selected')?.dataset.prediction;
-                // ... (recolectar los otros select) ...
-                
-                // 2. Enviar datos al backend (POST a /api/fantasy/guardar-prediccion)
-                
-                // 3. Mostrar confirmación
+                const saveButton = event.target;
+                const card = saveButton.closest('.prediction-card');
                 const status = card.querySelector('.prediction-status');
-                status.style.display = 'block';
-                setTimeout(() => { status.style.display = 'none'; }, 2000);
+
+                // --- RQF2: Validar la fecha límite ---
+                try {
+                    const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" }));
+                    const dayOfWeek = now.getDay(); // 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
+                    
+                    // Días en que el mercado está CERRADO
+                    const closedDays = [0, 1, 5, 6]; // Dom, Lun, Vie, Sáb
+
+                    if (closedDays.includes(dayOfWeek)) {
+                        alert("¡Mercado de predicciones cerrado!\n\nLas predicciones se abren de martes a jueves.");
+                        return;
+                    }
+                    
+                    // (Tu lógica de Jueves 23:59 ya está cubierta, ya que el Viernes (5) está en closedDays)
+
+                } catch (e) {
+                    console.error("Error al validar la fecha:", e);
+                    alert("No se pudo verificar la fecha límite. Intenta de nuevo.");
+                    return;
+                }
+                // --- Fin de Validación ---
+
+                // 1. Recolectar datos
+                const matchId = card.dataset.matchId;
+                const result = card.querySelector('.result-buttons button.selected')?.dataset.prediction || null;
+                const firstTeam = card.querySelector(`select[id^="first-to-score-"]`).value || null;
+                const firstPlayer = card.querySelector(`select[id^="first-player-to-score-"]`).value || null;
+
+                // Prevenir que se guarde si no ha seleccionado nada
+                if (result === null && firstTeam === null && firstPlayer === null) {
+                    alert("Debes seleccionar al menos una predicción para guardar.");
+                    return;
+                }
+
+                saveButton.disabled = true;
+                saveButton.textContent = "Guardando...";
+
+                // 2. Enviar datos al backend (POST a /api/fantasy/guardar-prediccion)
+                try {
+                    const response = await fetch('/api/fantasy/guardar-prediccion', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                            // El token (cookie) se envía automáticamente
+                        },
+                        body: JSON.stringify({
+                            id_partido: matchId,
+                            resultado_predicho: result,
+                            primer_equipo_anotar_id: firstTeam,
+                            primer_jugador_anotar_id: firstPlayer
+                        })
+                    });
+
+                    if (response.status === 401 || response.status === 403) {
+                        alert("Tu sesión ha expirado. Inicia sesión de nuevo.");
+                        window.location.href = '/login.html';
+                        return;
+                    }
+
+                    if (!response.ok) {
+                        const errData = await response.json();
+                        throw new Error(errData.error || "No se pudo guardar la predicción.");
+                    }
+
+                    // 3. Mostrar confirmación
+                    status.textContent = "¡Predicción Guardada!";
+                    status.style.color = "#059669";
+                    status.style.display = 'block';
+                    
+                } catch (error) {
+                    console.error("Error al guardar predicción:", error);
+                    status.textContent = `Error: ${error.message}`;
+                    status.style.color = "#dc2626"; // Rojo
+                    status.style.display = 'block';
+                } finally {
+                    saveButton.disabled = false;
+                    saveButton.textContent = "Guardar Predicción";
+                    setTimeout(() => { status.style.display = 'none'; }, 3000);
+                }
             }
             
+            async function cargarEstadoDeForma(equipoId, containerId) {
+                const container = document.getElementById(containerId);
+                container.innerHTML = ""; // Limpiar
+                try {
+                    const response = await fetch(`/api/estado-forma/${equipoId}`);
+                    if (!response.ok) throw new Error('Error al cargar forma');
+                    const forma = await response.json(); // Espera el array [ {resultado: 'V'}, ... ]
+
+                    // Tomamos solo los últimos 5
+                    forma.slice(0, 5).forEach(partido => {
+                        const span = document.createElement('span');
+                        span.className = `form-${partido.resultado}`; // form-V, form-E, o form-L
+                        span.textContent = partido.resultado;
+                        container.appendChild(span);
+                    });
+                } catch (error) {
+                    console.error(`Error cargando forma para ${containerId}:`, error);
+                    container.innerHTML = "<span>?</span>".repeat(5); // Poner '?' si falla
+                }
+            }
+
+            async function cargarJugadoresParaSelect(partidoId, selectId) {
+                const select = document.getElementById(selectId);
+                try {
+                    const response = await fetch(`/api/plantillas-partido/${partidoId}`);
+                    if (!response.ok) throw new Error('Error al cargar jugadores');
+                    const jugadores = await response.json();
+
+                    jugadores.forEach(jugador => {
+                        const option = document.createElement('option');
+                        option.value = jugador.id_jugador;
+                        option.textContent = `(${jugador.posicion}) ${jugador.nombre_jugador} (${jugador.nombre_equipo})`;
+                        
+                        // 6. Si este es el jugador que el usuario ya había guardado, lo seleccionamos
+                        if (jugador.id_jugador == jugadorSeleccionadoId) {
+                            option.selected = true;
+                        }
+                        
+                        select.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error(`Error cargando jugadores para ${selectId}:`, error);
+                }
+            }
+
+            async function cargarPronosticosPopulares(partidoId, cardIndex) {
+                try {
+                    // 1. Hacemos el fetch
+                    const response = await fetch(`/api/fantasy/predicciones-populares/${partidoId}`);
+                    if (!response.ok) throw new Error('Error al cargar populares');
+                    
+                    const data = await response.json(); // { resultado: [...], primerEquipo: [...], ... }
+
+                    // --- Parte A: Llenar la barra de Resultado Final ---
+
+                    // 2. Objeto para guardar los votos
+                    const votos = {
+                        L: 0,
+                        E: 0,
+                        V: 0
+                    };
+
+                    // 3. Llenamos el objeto 'votos' desde el array 'data.resultado'
+                    if (data.resultado) {
+                        data.resultado.forEach(item => {
+                            // item es { "resultado_predicho": "V", "total_votos": 2 }
+                            if (votos.hasOwnProperty(item.resultado_predicho)) {
+                                votos[item.resultado_predicho] = item.total_votos;
+                            }
+                        });
+                    }
+
+                    // 4. Calcular el total y los porcentajes
+                    const totalVotos = votos.L + votos.E + votos.V;
+
+                    let porcLocal = 0;
+                    let porcEmpate = 0;
+                    let porcVisitante = 0;
+
+                    if (totalVotos > 0) {
+                        porcLocal = (votos.L / totalVotos) * 100;
+                        porcEmpate = (votos.E / totalVotos) * 100;
+                        porcVisitante = (votos.V / totalVotos) * 100;
+                    }
+
+                    // 5. Aplicar al DOM (las barras de progreso)
+                    const localBar = document.getElementById(`pop-local-${cardIndex}`);
+                    const empateBar = document.getElementById(`pop-empate-${cardIndex}`);
+                    const visitanteBar = document.getElementById(`pop-visitante-${cardIndex}`);
+
+                    if (localBar) {
+                        localBar.style.width = `${porcLocal}%`;
+                        localBar.title = `Local: ${votos.L} votos (${porcLocal.toFixed(0)}%)`;
+                    }
+                    if (empateBar) {
+                        empateBar.style.width = `${porcEmpate}%`;
+                        empateBar.title = `Empate: ${votos.E} votos (${porcEmpate.toFixed(0)}%)`;
+                    }
+                    if (visitanteBar) {
+                        visitanteBar.style.width = `${porcVisitante}%`;
+                        visitanteBar.title = `Visitante: ${votos.V} votos (${porcVisitante.toFixed(0)}%)`;
+                    }
+
+                    // --- Parte B: (Opcional) Mostrar el jugador/equipo más popular ---
+                    // (Tu HTML no tiene dónde poner esto, pero así es como lo harías)
+
+                    if (data.primerEquipo && data.primerEquipo.length > 0) {
+                        const equipoPopular = data.primerEquipo[0];
+                        console.log(`Popular (Equipo): ${equipoPopular.nombre_equipo} con ${equipoPopular.total_votos} votos`);
+                        // Aquí podrías añadir un texto pequeño:
+                        // const labelEquipo = document.querySelector(`label[for="first-to-score-${cardIndex}"]`);
+                        // labelEquipo.innerHTML += ` <span style="font-size: 0.8rem; color: #a0a0c0;">(Pop: ${equipoPopular.nombre_equipo})</span>`;
+                    }
+
+                    if (data.primerJugador && data.primerJugador.length > 0) {
+                        const jugadorPopular = data.primerJugador[0];
+                        console.log(`Popular (Jugador): ${jugadorPopular.nombre_jugador} con ${jugadorPopular.total_votos} votos`);
+                        // Y aquí también:
+                        // const labelJugador = document.querySelector(`label[for="first-player-to-score-${cardIndex}"]`);
+                        // labelJugador.innerHTML += ` <span style="font-size: 0.8rem; color: #a0a0c0;">(Pop: ${jugadorPopular.nombre_jugador})</span>`;
+                    }
+
+                } catch (error) {
+                    console.error(`Error cargando populares para partido ${partidoId}:`, error);
+                    // Ocultamos la barra si falla la carga
+                    const popBar = document.getElementById(`pop-local-${cardIndex}`)?.closest('.popular-picks');
+                    if (popBar) popBar.style.display = 'none';
+                }
+            }
+
             // Lógica para botones de resultado (L/E/V)
             document.getElementById('prediction-matches-container').addEventListener('click', e => {
                 if (e.target.tagName === 'BUTTON' && e.target.closest('.result-buttons')) {
@@ -318,7 +731,7 @@
             });
 
             // Carga inicial (descomentar cuando tengas los endpoints)
-            // cargarPagina();
+            cargarPagina();
         </script>
 
     </body>
