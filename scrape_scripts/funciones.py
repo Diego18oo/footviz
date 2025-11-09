@@ -2561,3 +2561,146 @@ def calcular_puntos_predicciones(engine, id_partido):
         print(f"¡Éxito! Se actualizaron {len(data_para_actualizar)} predicciones.")
     
     return
+
+
+def update_fantasy_event_team_points(engine):
+    """
+    Calcula los puntos de la última jornada para CADA equipo fantasy y 
+    actualiza (suma) sus 'puntos_totales' en la base de datos.
+
+    Esta función asume que 'puntos_totales' es un acumulado histórico, 
+    por lo que los puntos de la jornada calculados se AÑADIRÁN al total.
+    """
+    
+    print(" Iniciando cálculo de puntos de la jornada fantasy...")
+
+    sql_gameweek_points = """
+        WITH 
+        -- CTE 1: Equipo real más reciente de cada jugador (Sin cambios)
+        LatestPlayerTeam AS (
+            SELECT
+                pe.jugador,
+                pe.equipo,
+                pe.temporada,
+                ROW_NUMBER() OVER(PARTITION BY pe.jugador ORDER BY pe.id_plantilla DESC) as rn
+            FROM
+                plantilla_equipos pe
+        ),
+        
+        -- CTE 2: Último partido completado de cada equipo real (Sin cambios)
+        LatestTeamMatch AS (
+            SELECT
+                team_id,
+                temporada_id,
+                match_id,
+                ROW_NUMBER() OVER(PARTITION BY team_id, temporada_id ORDER BY match_fecha DESC, match_id DESC) as rn
+            FROM (
+                -- Partidos como local
+                SELECT p.equipo_local as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha
+                FROM partido p
+                WHERE p.fecha <= CURDATE()
+                UNION ALL
+                -- Partidos como visitante
+                SELECT p.equipo_visitante as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha
+                FROM partido p
+                WHERE p.fecha <= CURDATE()
+            ) AS all_team_matches
+        ),
+        
+        -- CTE 3: Encontrar el ID del evento activo (RQF3)
+        ActiveEvent AS (
+            SELECT id_evento
+            FROM eventos
+            WHERE CURDATE() BETWEEN DATE(fecha_inicio) AND DATE(fecha_fin)
+            LIMIT 1
+        ),
+
+        -- CTE 4: Puntos de la última jornada para CADA jugador en CADA plantilla DE EVENTO ACTIVO
+        EventPlayerPoints AS (
+            SELECT
+                pe.id_equipo_evento,
+                
+                -- --- 👇 LÓGICA DE PUNTOS MODIFICADA 👇 ---
+                -- Simplemente toma los puntos. No hay 'es_titular' ni 'es_capitan'.
+                -- Todos los 11 jugadores suman puntos.
+                COALESCE(pjj.puntos_fantasy, 0) AS calculated_points
+                -- --- 👆 FIN DE LA MODIFICACIÓN 👆 ---
+                
+            FROM
+                plantilla_evento pe -- <-- MODIFICADO
+            
+            -- Unir para filtrar solo por equipos del evento activo
+            JOIN
+                equipo_evento ee ON pe.id_equipo_evento = ee.id_equipo_evento -- <-- MODIFICADO
+            JOIN
+                ActiveEvent ae ON ee.id_evento = ae.id_evento -- <-- NUEVO
+
+            -- El resto de los joins para encontrar los puntos son iguales
+            JOIN
+                jugador j ON pe.id_jugador = j.id_jugador
+            LEFT JOIN
+                LatestPlayerTeam lpt ON j.id_jugador = lpt.jugador AND lpt.rn = 1
+            LEFT JOIN
+                LatestTeamMatch ltm ON lpt.equipo = ltm.team_id AND lpt.temporada = ltm.temporada_id AND ltm.rn = 1
+            LEFT JOIN
+                puntos_jugador_jornada pjj ON pe.id_jugador = pjj.id_jugador AND ltm.match_id = pjj.id_partido
+        )
+        
+    -- Consulta final: Sumar todos los puntos de los jugadores por cada equipo de EVENTO
+    SELECT
+        id_equipo_evento,
+        SUM(calculated_points) AS total_jornada_points
+    FROM
+        EventPlayerPoints
+    GROUP BY
+        id_equipo_evento;
+    """
+    
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    tabla_equipo_evento = meta.tables['equipo_evento']
+    
+    count_updated = 0
+    
+    # Usamos una transacción para asegurar que todas las actualizaciones
+    # se completen con éxito.
+    with engine.begin() as conn:
+        # 1. Ejecutar la consulta masiva para obtener los puntos de la jornada de todos
+        try:
+            df_puntos_jornada = pd.read_sql(text(sql_gameweek_points), conn)
+        except Exception as e:
+            print(f"Error al calcular los puntos de la jornada: {e}")
+            return # Salir de la función si la consulta falla
+
+        if df_puntos_jornada.empty:
+            print("No se encontraron puntos de jornada para actualizar.")
+            return
+
+        print(f"Se calcularon puntos para {len(df_puntos_jornada)} equipos.")
+
+        # 2. Preparar los datos para una actualización masiva (bulk update)
+        # Esto es mucho más eficiente que un bucle 'for' con N consultas
+        update_data = [
+            {
+                'id_val': int(row.id_equipo_evento), 
+                'puntos_val': int(row.total_jornada_points)
+            }
+            for row in df_puntos_jornada.itertuples()
+            if row.total_jornada_points > 0 # Solo actualizar si hay puntos que sumar
+        ]
+
+        if not update_data:
+            print("No hay equipos con nuevos puntos para actualizar.")
+            return
+
+        # 3. Construir y ejecutar la actualización masiva
+        # Sumamos los nuevos puntos a los puntos totales existentes
+        update_stmt = tabla_equipo_evento.update(). \
+            where(tabla_equipo_evento.c.id_equipo_evento == text(':id_val')). \
+            values(puntos_totales = tabla_equipo_evento.c.puntos_totales + text(':puntos_val'))
+
+        conn.execute(update_stmt, update_data)
+        count_updated = len(update_data)
+
+    print(f"✅ Actualización completada. Se sumaron puntos a {count_updated} equipos de evento.")
+    return

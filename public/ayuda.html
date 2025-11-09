@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>FootViz - Ayuda y Reglas</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+        <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+        <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+        <style>
+            /* --- Estilos Base --- */
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Poppins', sans-serif;
+                background-color: #1a1a2e;
+                color: #e0e0e0;
+                padding: 20px;
+                transition: background-color 0.3s, color 0.3s;
+            }
+            .container { 
+                max-width: 900px; /* Ancho ideal para texto */
+                margin: 0 auto; 
+            }
+            h2 { 
+                color: #ffffff; 
+                margin-bottom: 20px; 
+                padding-bottom: 10px;
+                border-bottom: 1px solid #4a4a6a;
+                font-size: 1.5rem;
+            }
+            h3 { 
+                color: #4a69ff; /* Azul destacado */
+                margin-top: 20px;
+                margin-bottom: 10px;
+                font-size: 1.2rem;
+            }
+            p {
+                line-height: 1.6;
+                margin-bottom: 10px;
+                color: #a0a0c0;
+            }
+            ul {
+                list-style-position: inside;
+                padding-left: 5px;
+                line-height: 1.7;
+            }
+            li {
+                margin-bottom: 10px;
+                color: #a0a0c0;
+            }
+            li strong {
+                color: #e0e0e0;
+            }
+
+            /* --- Cabecera --- */
+            .header {
+                display: flex; justify-content: space-between; align-items: center;
+                margin-bottom: 30px; padding-bottom: 20px;
+                border-bottom: 1px solid #2a2a4a;
+            }
+            .header h1 { font-size: 2rem; color: #ffffff; font-weight: 700; }
+            .return-btn {
+                background: none; border: none; color: #a0a0c0; font-size: 1.5rem; 
+                cursor: pointer; display: flex; align-items: center; gap: 5px; 
+                transition: color 0.2s; text-decoration: none;
+            }
+            .return-btn:hover { color: #4a69ff; }
+            .theme-toggle-button {
+                background: #2a2a4a; border: 1px solid #4a4a6a; color: #fff; width: 42px; height: 42px;
+                padding: 10px; border-radius: 50%; cursor: pointer; font-size: 1.2rem;
+                display: flex; align-items: center; justify-content: center;
+            }
+
+            /* --- Tarjeta --- */
+            .card {
+                background-color: #1e1e3f;
+                border-radius: 12px;
+                padding: 25px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                margin-bottom: 20px;
+            }
+            
+            /* --- Tablas de Recompensas --- */
+            .rewards-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 15px;
+                font-size: 0.9rem;
+            }
+            .rewards-table th, .rewards-table td {
+                padding: 12px 15px;
+                text-align: left;
+                border: 1px solid #2a2a4a;
+            }
+            .rewards-table th {
+                background-color: #2a2a4a;
+                color: #ffffff;
+                font-weight: 600;
+            }
+            .rewards-table td:first-child {
+                font-weight: 600;
+                color: #e0e0e0;
+            }
+            .rewards-table td {
+                text-align: center;
+                font-weight: 700;
+                color: #a0a0c0;
+            }
+            .rewards-table .header-xp {
+                color: #f59e0b; /* Amarillo para XP */
+                font-weight: 700;
+            }
+
+            /* --- Modo Claro --- */
+            body.light-mode { background-color: #f4f4f9; color: #333; }
+            body.light-mode .header { border-bottom-color: #e0e0e0; }
+            body.light-mode .header h1, body.light-mode h2, body.light-mode h3 { color: #1a1a2e; }
+            body.light-mode .theme-toggle-button { background: #ffffff; border-color: #d1d1d1; color: #333; }
+            body.light-mode .return-btn { color: #666; }
+            body.light-mode .card { background-color: #ffffff; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); }
+            body.light-mode h2 { border-bottom-color: #e0e0e0; }
+            body.light-mode p, body.light-mode li { color: #555; }
+            body.light-mode li strong { color: #1a1a2e; }
+            body.light-mode .rewards-table th { background-color: #e9e9f3; color: #333; }
+            body.light-mode .rewards-table td { border-color: #e0e0e0; color: #333; }
+            body.light-mode .rewards-table td:first-child { color: #1a1a2e; }
+
+        </style>
+    </head>
+    <body>
+        <div class="container">
+
+            <header class="header">
+                
+                <h1>Centro de Ayuda</h1>
+            </header>
+
+            <main>
+                <div class="card">
+                    <h2>Reglas del Fantasy</h2>
+                    
+                    <h3>Creación de Equipos</h3>
+                    <ul>
+                        <li>El usuario deberá crear un equipo de 15 jugadores: 2 porteros, 5 defensas, 5 mediocampistas, y 3 delanteros.</li>
+                        <li>Cada usuario tendrá un presupuesto inicial de <strong>$100M</strong> para comprar a sus jugadores.</li>
+                        <li>Puede haber un <strong>máximo de 2 jugadores por club</strong> (por ejemplo, no puedes tener 3 jugadores del Barcelona).</li>
+                    </ul>
+
+                    <h3>Dirigir tu Equipo</h3>
+                    <ul>
+                        <li>La puntuación de cada usuario por jornada será la suma del <strong>11 inicial</strong> del usuario. Las puntuaciones de los jugadores en la banca NO cuentan.</li>
+                        <li>Todas las jornadas tienen un <strong>"Deadline" (fecha límite)</strong>, una hora antes del comienzo del primer partido de la jornada. Después de este punto, no se pueden hacer cambios.</li>
+                        <li>El usuario puede elegir cualquier formación siempre y cuando cuente con un mínimo de: <strong>1 portero, 2 defensas, 2 mediocampistas y 1 delantero</strong>.</li>
+                        <li>Debe haber un <strong>capitán</strong> por cada equipo. Al jugador seleccionado como capitán se le duplicarán los puntos.</li>
+                        <li>Solo se puede cambiar de capitán una vez por día durante la jornada. Los puntos solo se duplicarán del <strong>último capitán elegido</strong>.</li>
+                        <li>Solo se puede elegir como capitán a un jugador que todavía no haya jugado su partido.</li>
+                        <li>Después de que todos los partidos de un día se hayan jugado, el usuario puede realizar hasta <strong>4 sustituciones</strong> (meter a un suplente por un titular) y cambiar de capitán para el día siguiente.</li>
+                    </ul>
+
+                    <h3>Fichajes y Valor de Mercado</h3>
+                    <ul>
+                        <li>El usuario puede realizar <strong>2 fichajes gratis</strong> por jornada.</li>
+                        <li>Si el usuario excede el límite de fichajes, se le restarán <strong>5 puntos</strong> por cada fichaje extra.</li>
+                        <li>Para realizar un fichaje, primero debe vender a un jugador.</li>
+                        <li>El valor de mercado de los jugadores varía según la fórmula: <br>
+                            Vjugador=Vbase+((Rendimiento ×W1)(Popularidad ×W2))</li>
+                        <li>Este cálculo se realiza al término de cada jornada.</li>
+                        <li>Jugadores que no participen en 2 partidos consecutivos verán su valor reducido en <strong>5%</strong>.</li>
+                        <li>Si un jugador no participa debido a <strong>lesión</strong>, su valor se mantendrá.</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h2>Fichas (Boosters)</h2>
+                    <p>Cada ficha solo se puede usar una vez por temporada.</p>
+                    <ul>
+                        <li><strong>Fichaje Extra:</strong> Te permite realizar un fichaje extra (3 en total) sin penalización de puntos.</li>
+                        <li><strong>x2:</strong> Duplica la puntuación de un jugador de tu equipo que NO sea el capitán.</li>
+                        <li><strong>Doble Capitán:</strong> Te permite elegir a 2 capitanes durante una jornada.</li>
+                        <li><strong>Capitán Retro:</strong> Te permite elegir como capitán a un jugador que ya haya jugado su partido.</li>
+                        <li><strong>Capitán x3:</strong> Los puntos de tu capitán se multiplican por 3 en lugar de por 2.</li>
+                        <li><strong>Cambio Táctico:</strong> Te permite ignorar las restricciones de formación (ej. jugar con 1 solo defensa).</li>
+                        <li><strong>Comodín:</strong> Te permite realizar fichajes ilimitados en una jornada sin penalización de puntos.</li>
+                        <li><strong>Sin Límites:</strong> Te permite fichar sin límite de presupuesto ni de jugadores por club durante una jornada. Al terminar, tu equipo vuelve a la normalidad.</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h2>Reglas de Predicciones</h2>
+                    <ul>
+                        <li>Cada jornada, el sistema seleccionará <strong>5 partidos aleatorios</strong> (los mismos para todos).</li>
+                        <li>Podrás predecir: <strong>1. Resultado Final</strong> (L/E/V), <strong>2. Primer Equipo en Anotar</strong>, y <strong>3. Primer Jugador en Anotar</strong>.</li>
+                        <li>Las predicciones se bloquean en el <strong>"Deadline"</strong> (Jueves 11:59 PM, hora centro de México).</li>
+                        <li>No hay penalización por no participar, pero pierdes la oportunidad de ganar XP.</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h2>Eventos Especiales</h2>
+                    <ul>
+                        <li>Los eventos se desbloquean al <strong>Nivel 5 de XP</strong>.</li>
+                        <li>Se activan una vez al mes (la última semana del mes) y duran una jornada.</li>
+                        <li>Creas un equipo de <strong>11 jugadores</strong> (aparte de tu equipo principal) siguiendo reglas únicas.</li>
+                        <li>Al final del evento, el equipo se borra, pero tus puntos quedan registrados en el ranking.</li>
+                    </ul>
+                    
+                    <h3>Calendario de Eventos</h3>
+                    <table class="rewards-table">
+                        <thead>
+                            <tr>
+                                <th>Mes</th>
+                                <th>Evento</th>
+                                <th>Regla</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Noviembre</td>
+                                <td>Evento Sub-23</td>
+                                <td>Solo jugadores de 23 años o menos.</td>
+                            </tr>
+                            <tr>
+                                <td>Diciembre</td>
+                                <td>Un Solo País</td>
+                                <td>Los 11 jugadores deben ser del mismo país.</td>
+                            </tr>
+                            <tr>
+                                <td>Enero</td>
+                                <td>Una Sola Posición</td>
+                                <td>Los 11 jugadores deben ser de la misma posición.</td>
+                            </tr>
+                            <tr>
+                                <td>Febrero</td>
+                                <td>Gigantes</td>
+                                <td>Los 11 jugadores deben medir más de 1.90m.</td>
+                            </tr>
+                            <tr>
+                                <td>Marzo</td>
+                                <td>Cero Goles</td>
+                                <td>Solo jugadores con 0 goles en la temporada.</td>
+                            </tr>
+                            <tr>
+                                <td>Abril</td>
+                                <td>Sin Estrellas</td>
+                                <td>Solo jugadores con menos de 10% de popularidad.</td>
+                            </tr>
+                            <tr>
+                                <td>Mayo</td>
+                                <td>Inicial Común</td>
+                                <td>El apellido de todos los jugadores debe empezar con la misma letra.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h2>Sistema de Recompensas (XP)</h2>
+                    <p>Ganas XP (Puntos de Experiencia) por tu rendimiento en el Fantasy, las Predicciones y los Eventos Especiales. ¡Usa tus XP para subir de nivel!</p>
+
+                    <h3>Recompensas del Fantasy (Ligas)</h3>
+                    <p>Al final de la temporada, recibes XP según tu ranking en las ligas públicas.</p>
+                    <table class="rewards-table">
+                        <thead>
+                            <tr>
+                                <th>Liga</th>
+                                <th class="header-xp">Top 1%</th>
+                                <th class="header-xp">Top 10%</th>
+                                <th class="header-xp">Top 25%</th>
+                                <th class="header-xp">Top 50%</th>
+                                <th class="header-xp">Top 75%</th>
+                                <th class="header-xp">Top 100%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Global</td>
+                                <td>200</td>
+                                <td>100</td>
+                                <td>50</td>
+                                <td>15</td>
+                                <td>5</td>
+                                <td>2</td>
+                            </tr>
+                            <tr>
+                                <td>Local (País)</td>
+                                <td>150</td>
+                                <td>80</td>
+                                <td>45</td>
+                                <td>12</td>
+                                <td>4</td>
+                                <td>2</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Recompensas de Eventos Especiales</h3>
+                    <p>Al final de cada evento mensual, recibes XP según tu ranking global en ESE evento.</p>
+                    <table class="rewards-table">
+                        <thead>
+                            <tr>
+                                <th>Evento</th>
+                                <th class="header-xp">Top 1%</th>
+                                <th class="header-xp">Top 10%</th>
+                                <th class="header-xp">Top 25%</th>
+                                <th class="header-xp">Top 50%</th>
+                                <th class="header-xp">Top 75%</th>
+                                <th class="header-xp">Top 100%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Eventos</td>
+                                <td>250</td>
+                                <td>125</td>
+                                <td>70</td>
+                                <td>20</td>
+                                <td>6</td>
+                                <td>3</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Recompensas de Predicciones</h3>
+                    <p>Recibes XP por cada acierto en el módulo de predicciones, cada jornada.</p>
+                    <table class="rewards-table">
+                        <thead>
+                            <tr>
+                                <th>Acción</th>
+                                <th class="header-xp">Puntos de XP</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Adivina el ganador (L/E/V)</td>
+                                <td>3</td>
+                            </tr>
+                            <tr>
+                                <td>Adivina correctamente el primer equipo en anotar</td>
+                                <td>2</td>
+                            </tr>
+                            <tr>
+                                <td>Adivina correctamente el primer jugador en anotar</td>
+                                <td>5</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </main>
+        </div>
+        
+
+    </body>
+</html>

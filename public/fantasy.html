@@ -66,7 +66,7 @@
         }
         .user-profile-summary { display: flex; align-items: center; gap: 15px; }
         .user-level-xp { text-align: right; }
-        .user-icons { display: flex; gap: 10px; font-size: 1.5rem; }
+        .user-icons { display: flex; gap: 10px; font-size: 2.5rem;}
         .user-icons ion-icon { cursor: pointer; }
 
         /* --- Estilos de Secciones --- */
@@ -146,6 +146,10 @@
         .card-actions button:hover {
             background-color: #3a58cc;
         }
+
+        .card button:hover {
+            background-color: #3a58cc;
+        }
         /* --- 👆 FIN DE MODIFICACIÓN 2 👆 --- */
 
         /* --- Estilos para la lista de MVPs --- */
@@ -180,6 +184,57 @@
             .player-on-field { font-size: 0.6rem; }
             .card-actions { flex-direction: column; } /* Botones uno encima de otro en móvil */
         }
+        #profile-dropdown-menu {
+            display: none; /* Oculto por defecto */
+            position: absolute;
+            top: 120%; /* Justo debajo del ícono */
+            right: 0;
+            width: 200px; /* Ancho del menú */
+            padding: 10px; /* Menos padding que una card normal */
+            z-index: 1000; /* Encima de todo */
+        }
+
+        .user-icons {
+            position: relative; /* Contenedor padre para el menú */
+        }
+
+        #profile-dropdown-menu.open {
+            display: block; /* Clase 'open' lo hace visible */
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #e0e0e0;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+        }
+        .menu-item ion-icon {
+            font-size: 1.2rem;
+        }
+        .menu-item:hover {
+            background-color: #2a2a4a;
+        }
+        .menu-item.logout {
+            color: #ff4d4d; /* Color rojo para cerrar sesión */
+        }
+
+        .card button {
+            flex: 1;
+            background-color: #4a69ff;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
         </style>
     </head>
     <body>
@@ -187,7 +242,6 @@
 
             <header class="fantasy-header">
                 <div class="user-profile-summary">
-                    <ion-icon name="extension-puzzle-outline" title="Mis Piezas"></ion-icon>
                     <div class="user-level-xp"> 
                         <div>Nivel <strong id="user-level">--</strong></div>
                         <div><span id="user-xp">--</span></div>
@@ -196,7 +250,17 @@
                 </div>
                 <div class="user-icons">
                     <ion-icon name="trophy-outline" title="Mis Logros"></ion-icon>
-                    <ion-icon name="person-circle-outline" title="Mi Perfil"></ion-icon>
+                    <ion-icon name="person-circle-outline" title="Mi Perfil" id="user-profile-btn"></ion-icon>
+                    <div id="profile-dropdown-menu" class="card">
+                        <a href="ayuda.html" class="menu-item">
+                            <ion-icon name="help-circle-outline"></ion-icon>
+                            <span>Ayuda</span>
+                        </a>
+                        <a href="#" id="logout-btn" class="menu-item logout">
+                            <ion-icon name="log-out-outline"></ion-icon>
+                            <span>Cerrar Sesión</span>
+                        </a>
+                    </div>
                 </div>
             </header>
 
@@ -589,6 +653,49 @@
             cargarDatosDashboard();
             cargarMVP();
             cargarProximosPartidos();
+
+            const profileBtn = document.getElementById('user-profile-btn');
+            const profileDropdown = document.getElementById('profile-dropdown-menu');
+
+            // 1. Lógica para abrir/cerrar el menú
+            profileBtn.addEventListener('click', (event) => {
+                console.log("Click");
+                event.stopPropagation(); // Evita que el clic se propague al 'window'
+                profileDropdown.classList.toggle('open');
+            });
+
+            // 2. Lógica para cerrar el menú si se hace clic fuera
+            window.addEventListener('click', (event) => {
+                if (profileDropdown.classList.contains('open')) {
+                    // Si el clic NO fue dentro del menú Y NO fue en el botón
+                    if (!profileDropdown.contains(event.target) && event.target !== profileBtn) {
+                        profileDropdown.classList.remove('open');
+                    }
+                }
+            });
+
+            // 3. Lógica de Cerrar Sesión
+            const logoutBtn = document.getElementById('logout-btn');
+            logoutBtn.addEventListener('click', async (event) => {
+                event.preventDefault(); // Prevenir que el link '#' navegue
+                
+                try {
+                    // Llama al endpoint de logout que invalida la cookie/token
+                    const response = await fetch('/api/logout', { method: 'POST' });
+
+                    if (response.ok) {
+                        alert("Has cerrado sesión. ¡Vuelve pronto!");
+                        window.location.href = '/login.html'; // Redirigir al login
+                    } else {
+                        throw new Error('No se pudo cerrar sesión.');
+                    }
+                } catch (error) {
+                    console.error("Error al cerrar sesión:", error);
+                    alert("Sesion Cerrada");
+                    // (Igual lo redirigimos por si el token ya expiró)
+                    window.location.href = '/login.html';
+                }
+            });
             
         </script>
 
