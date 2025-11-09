@@ -190,7 +190,7 @@
                     <ion-icon name="extension-puzzle-outline" title="Mis Piezas"></ion-icon>
                     <div class="user-level-xp"> 
                         <div>Nivel <strong id="user-level">--</strong></div>
-                        <div><span id="user-xp">--</span> XP</div>
+                        <div><span id="user-xp">--</span></div>
                     </div>
                     <h2 id="username-display">Cargando...</h2>
                 </div>
@@ -224,6 +224,7 @@
                     <div class="card-actions">
                         <button id="view-predictions-btn" onclick="window.location.href='predicciones.html'">Predicciones</button>
                         <button id="view-leagues-btn" onclick="window.location.href='ligas.html'">Mis Ligas</button>
+                        <button id="view-events-btn" onclick="window.location.href='eventos.html'">Eventos</button>
                     </div>
                     <h3>Proximos Partidos</h3> 
                     <ul id="fixtures-list">
@@ -273,10 +274,11 @@
 
         </div>
 
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
             presupuestoRestante = document.getElementById('budget-remaining');
             fichajesRestantes = document.getElementById('transfers-remaining');
-
+            let pointsChartInstance = null;
             function renderLeagueTable(tbodyId, rankingData, currentUserId) {
                 console.log(rankingData, currentUserId);
                 const tbody = document.getElementById(tbodyId);
@@ -306,6 +308,61 @@
                         <td>${entry.puntos_totales}</td>
                     `;
                     tbody.appendChild(tr);
+                });
+            }
+
+            function renderPointsGraph(historial) {
+                const ctx = document.getElementById('points-chart').getContext('2d');
+                const placeholder = document.getElementById('points-graph-placeholder');
+
+                // RQF4 Condición: Si no hay datos, mostrar placeholder
+                if (!historial || historial.length === 0) {
+                    placeholder.style.display = 'block';
+                    ctx.canvas.style.display = 'none';
+                    
+                    const hoy = new Date();
+                    if (hoy.getMonth() == 7) { // 7 es Agosto (0-11)
+                        placeholder.textContent = "La temporada de predicciones aún no ha comenzado.";
+                    } else {
+                        placeholder.textContent = "¡Empieza a predecir para ver tu historial de puntos!";
+                    }
+                    return;
+                }
+                
+                placeholder.style.display = 'none';
+                ctx.canvas.style.display = 'block';
+
+                let labels = [];
+                let cumulativeData = [];
+                let totalAcumulado = 0;
+
+                // Calcular puntos acumulados
+                historial.forEach(item => {
+                    totalAcumulado += parseInt(item.puntos_jornada, 10);
+                    labels.push(`J${item.jornada}`);
+                    cumulativeData.push(totalAcumulado); 
+                });
+
+                if (pointsChartInstance) {
+                    pointsChartInstance.destroy(); // Destruir gráfico anterior si existe
+                }
+
+                const currentOptions = body.classList.contains('light-mode') ? lightChartOptions : darkChartOptions;
+
+                pointsChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Puntos XP Acumulados',
+                            data: cumulativeData,
+                            borderColor: '#4a69ff',
+                            backgroundColor: 'rgba(74, 105, 255, 0.2)',
+                            fill: true,
+                            tension: 0.1
+                        }]
+                    },
+                    options: currentOptions
                 });
             }
 
@@ -365,7 +422,7 @@
                     renderLeagueTable('global-league-ranking', data.globalRanking, currentUserId);
                     renderLeagueTable('local-league-ranking', data.localRanking, currentUserId);
                     
-
+                    renderPointsGraph(data.historialPredicciones);
                     
 
 

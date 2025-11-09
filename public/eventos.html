@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>FootViz - Eventos Especiales</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+        <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+        <style>
+            /* (Reutiliza los estilos de 'ligas.html' para .header, .card, .leagues-layout, etc.) */
+            body { font-family: 'Poppins', sans-serif; background-color: #1a1a2e; color: #e0e0e0; padding: 20px; }
+            .container { max-width: 1400px; margin: 0 auto; }
+            .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #2a2a4a; }
+            .header h1 { font-size: 1.8rem; color: #ffffff; font-weight: 700; }
+            .return-btn { background: none; border: none; color: #a0a0c0; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: color 0.2s; }
+            .return-btn:hover { color: #4a69ff; }
+            .card { background-color: #1e1e3f; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); margin-bottom: 20px; }
+            h2 { color: #ffffff; margin-bottom: 15px; }
+            .leagues-layout { display: flex; gap: 25px; align-items: flex-start; }
+            .leagues-sidebar { flex: 2;  }
+            .leagues-main { flex: 3; }
+            
+            /* Estilos específicos del evento */
+            .event-details p { color: #a0a0c0; margin-bottom: 15px; font-size: 1.1rem; line-height: 1.6; }
+            .event-details .regla { font-weight: 600; color: #f59e0b; } /* Amarillo para la regla */
+            .btn-action { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-family: 'Poppins', sans-serif; transition: background-color 0.2s; font-size: 1rem; width: 100%; }
+            .btn-create-event { background-color: #051685; color: white; }
+            .btn-create-event:hover { background-color: #047857; }
+            .btn-create-event:disabled { background-color: #475569; cursor: not-allowed; opacity: 0.7; }
+
+            .leaderboard-table { width: 100%; border-collapse: collapse; }
+            .leaderboard-table th { text-align: left; padding: 15px; color: #a0a0c0; font-weight: 400; border-bottom: 2px solid #2a2a4a; }
+            .leaderboard-table td { padding: 15px; border-bottom: 1px solid #2a2a4a; }
+            .rank-cell { font-weight: 700; font-size: 1.1rem; width: 60px; text-align: center; }
+            .user-cell { font-weight: 600; }
+            .points-cell { font-weight: 700; color: #4a69ff; text-align: right; }
+            
+            .rewards-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+            .rewards-table th, .rewards-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #2a2a4a; }
+            .rewards-table th { background-color: #2a2a4a; color: #ffffff; }
+            .rewards-table td:last-child { text-align: center; font-weight: 700; color: #f59e0b; }
+
+            #event-team-visual {
+                position: relative; 
+                background-color: #002050; 
+                
+                overflow: hidden;
+                
+                flex-direction: column; 
+                justify-content: space-around;
+            } 
+            .pitch-row {
+                display: flex;
+                justify-content: space-around; 
+                align-items: center;
+            }
+            .player-on-field {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                color: #ffffff;
+                font-size: 0.7rem;
+                font-weight: 600;
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+                padding: 5px;
+                width: 60px;
+            }
+            .player-on-field img {
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 2px solid #4a69ff;
+                box-shadow: 0 0 5px rgba(0,0,0,0.5);
+                margin-bottom: 3px;
+            }
+            
+        </style>
+    </head>
+    <body>
+
+        <div class="container">
+            <header class="header">
+                
+                <h1>Eventos Especiales</h1>
+                <div style="width: 42px;"></div>
+            </header>
+
+            <main class="leagues-layout">
+                <aside class="leagues-sidebar">
+                    <div class="card" id="event-info-card">
+                        <div id="active-event-details" style="display: none;">
+                            <h2 id="event-name">Nombre del Evento</h2>
+                            <div class="event-details">
+                                <p id="event-description">Descripción de las reglas.</p>
+                                <p><strong>Regla:</strong> <span class="regla" id="event-rule"></span></p>
+                                
+                                <button class="btn-action btn-create-event" id="create-event-team-btn" disabled>
+                                    Crear Equipo de Evento (Req. Nivel 5)
+                                </button>
+                            </div>
+
+                            <h2 id="my-event-team-title" style="display:none; margin-top: 20px;">Mi Equipo de Evento</h2>
+                            <div id="event-team-visual" style="display:none;"></div>
+                            </div>
+                        
+                        <div id="no-event-details" style="display: block;">
+                            </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>Recompensas (XP)</h2>
+                        <table class="rewards-table">
+                            <thead> <tr> <th>Clasificación</th> <th>Recompensa</th> </tr> </thead>
+                            <tbody>
+                                <tr> <td>Top 1%</td> <td>250 XP</td> </tr>
+                                <tr> <td>Top 10%</td> <td>125 XP</td> </tr>
+                                <tr> <td>Top 25%</td> <td>70 XP</td> </tr>
+                                <tr> <td>Top 50%</td> <td>20 XP</td> </tr>
+                                <tr> <td>Top 75%</td> <td>6 XP</td> </tr>
+                                <tr> <td>Top 100%</td> <td>2 XP</td> </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </aside>
+
+                <section class="card leagues-main">
+                    <h2>Clasificación Global del Evento</h2>
+                    
+                    <div class="leaderboard-container">
+                        <table class="leaderboard-table">
+                            <thead>
+                                <tr>
+                                    <th class="rank-cell">#</th>
+                                    <th>Equipo / Usuario</th>
+                                    <th style="text-align: right;">Puntos</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboard-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', async () => {
+                // --- ESTADO ---
+                let userLevel = 1;
+                let currentEvent = null; // { id_evento, nombre, regla_clave, descripcion, ... }
+                let clickablePlayers = [];
+                // --- ELEMENTOS ---
+                const activeEventEl = document.getElementById('active-event-details');
+                const noEventEl = document.getElementById('no-event-details');
+                const createBtn = document.getElementById('create-event-team-btn');
+                const leaderboardBodyEl = document.getElementById('leaderboard-body');
+                const eventNameEl = document.getElementById('event-name');
+                const eventDescEl = document.getElementById('event-description');
+                const eventRuleEl = document.getElementById('event-rule');
+                const myTeamTitle = document.getElementById('my-event-team-title');
+                const myTeamVisual = document.getElementById('event-team-visual');
+                const myTeamCanvas = document.createElement('canvas'); // Creamos el canvas dinámicamente
+                myTeamCanvas.width = 500;
+                myTeamCanvas.height = 700;
+                myTeamCanvas.style.width = "100%";
+                myTeamCanvas.style.height = "100%";
+                myTeamVisual.appendChild(myTeamCanvas);
+                // --- 1. Cargar Datos del Usuario (Nivel) ---
+                async function loadUserData() {
+                    try {
+                        const res = await fetch('/api/fantasy/user-info');
+                        if (res.status === 401) { 
+                            window.location.href = '/login.html'; 
+                            return; 
+                        }
+                        if (!res.ok) throw new Error('No se pudo cargar info de usuario');
+                        const data = await res.json();
+                        userLevel = data.nivel;
+                    } catch (error) {
+                        console.error("Error en loadUserData:", error);
+                    }
+                }
+
+                // --- 2. Cargar Evento Actual (RQF3) ---
+                async function loadActiveEvent() {
+                    try {
+                        const res = await fetch('/api/fantasy/evento-actual');
+                        if (res.status === 401) { 
+                            window.location.href = '/login.html'; 
+                            return; 
+                        }
+                        if (res.ok) {
+                            currentEvent = await res.json();
+                        }
+                    } catch (e) {
+                        console.error("Error cargando evento", e);
+                    }
+                }
+
+                // --- 3. Cargar Ranking del Evento (RQF2) ---
+                async function loadEventRanking(eventId) {
+                    leaderboardBodyEl.innerHTML = '<tr><td colspan="3" style="text-align:center; opacity: 0.6;">Cargando...</td></tr>';
+                    try {
+                        const res = await fetch(`/api/fantasy/evento-ranking/${eventId}`);
+                        if (!res.ok) throw new Error('Error al cargar ranking');
+                        const ranking = await res.json();
+
+                        if (ranking.length === 0) {
+                            leaderboardBodyEl.innerHTML = '<tr><td colspan="3" style="text-align:center; opacity: 0.6;">Aún no hay participantes.</td></tr>';
+                            return;
+                        }
+                        
+                        leaderboardBodyEl.innerHTML = "";
+                        ranking.forEach((entry, index) => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td class="rank-cell rank-${index + 1}">${index + 1}</td>
+                                <td class="user-cell">${entry.nombre_equipo} (${entry.username})</td>
+                                <td class="points-cell">${entry.puntos_totales}</td>
+                            `;
+                            leaderboardBodyEl.appendChild(tr);
+                        });
+                    } catch (error) {
+                        console.error("Error cargando ranking:", error);
+                        leaderboardBodyEl.innerHTML = '<tr><td colspan="3" style="color: #dc2626; text-align:center;">Error al cargar.</td></tr>';
+                    }
+                }
+
+                const FORMACIONES = {
+                    "4-4-2": [[0.5, 0.9], [0.9, 0.7], [0.63, 0.7], [0.37, 0.7], [0.1, 0.7], [0.9, 0.45], [0.63, 0.45], [0.37, 0.45], [0.1, 0.45], [0.63, 0.2], [0.37, 0.2]],
+                    "4-2-3-1": [[0.5, 0.9], [0.9, 0.7], [0.63, 0.7], [0.37, 0.7], [0.1, 0.7], [0.63, 0.55], [0.37, 0.55], [0.85, 0.35], [0.5, 0.35], [0.15, 0.35], [0.5, 0.15]],
+                    "4-3-3": [[0.5, 0.9], [0.9, 0.7], [0.63, 0.7], [0.37, 0.7], [0.1, 0.7], [0.75, 0.5], [0.5, 0.45], [0.25, 0.5], [0.8, 0.2], [0.5, 0.15], [0.2, 0.2]],
+                    "3-5-2": [[0.5, 0.9], [0.75, 0.7], [0.5, 0.7], [0.25, 0.7], [0.9, 0.45], [0.7, 0.5], [0.5, 0.4], [0.3, 0.5], [0.1, 0.45], [0.63, 0.2], [0.37, 0.2]],
+                    "3-4-2-1": [[0.5, 0.9], [0.75, 0.7], [0.5, 0.7], [0.25, 0.7], [0.9, 0.45], [0.63, 0.50], [0.37, 0.50], [0.1, 0.45], [0.63, 0.3], [0.37, 0.3], [0.50, 0.2]],
+                    // (Podrías necesitar formaciones especiales como 11-0-0 si la regla es "SOLO_POR")
+                    "1-4-4-2_fake": [[0.5, 0.9], [0.9, 0.7], [0.63, 0.7], [0.37, 0.7], [0.1, 0.7], [0.9, 0.45], [0.63, 0.45], [0.37, 0.45], [0.1, 0.45], [0.63, 0.2], [0.37, 0.2]]
+                };
+
+                function precargarImagenesYDibujar(ctx, jugadores, formacion, clickablePlayersArray) {
+                    const promesasDeImagenes = jugadores.map(jugador => {
+                        return new Promise((resolve) => {
+                            if (!jugador.url_imagen_jugador) { resolve(null); return; }
+                            const img = new Image();
+                            img.crossOrigin = "Anonymous";
+                            img.onload = () => resolve(img);
+                            img.onerror = () => resolve(null);
+                            img.src = jugador.url_imagen_jugador;
+                        });
+                    });
+
+                    Promise.all(promesasDeImagenes).then(imagenesCargadas => { 
+                        jugadores.forEach((jugador, index) => {
+                            jugador.imagenCargada = imagenesCargadas[index];
+                        });
+                        dibujarAlineacion(ctx, jugadores, formacion, clickablePlayersArray);
+                    });
+                }
+                
+                function dibujarAlineacion(ctx, jugadores, formacion, clickablePlayersArray) {
+                    const canvas = ctx.canvas;
+                    const width = canvas.width, height = canvas.height;
+                    clickablePlayersArray.length = 0; 
+
+                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+                    ctx.lineWidth = 2;
+                    
+                    
+                    
+                    jugadores.forEach((jugador, index) => {
+                        console.log(jugador.posicion, jugador.nombre_jugador);
+                        if (formacion[index]) {
+                            const x = formacion[index][0] * width;
+                            const y = formacion[index][1] * height ;
+                            const radio = 22; 
+                            clickablePlayersArray.push({ id: jugador.id_jugador, nombre: jugador.nombre_jugador, x, y, radio: radio + 5 });
+                            dibujarJugador(ctx, x, y, jugador, radio);
+                        }
+                    });
+                }
+
+                function dibujarJugador(ctx, x, y, jugador, radio) {
+                    ctx.save();
+                    ctx.beginPath(); ctx.arc(x, y, radio, 0, 2 * Math.PI); ctx.clip();
+                    if (jugador.imagenCargada) {
+                        ctx.drawImage(jugador.imagenCargada, x - radio, y - radio, radio * 2, radio * 2);
+                    } else {
+                        ctx.fillStyle =  '#3a3a5a';
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                    ctx.beginPath(); ctx.arc(x, y, radio, 0, 2 * Math.PI);
+                    ctx.strokeStyle = '#f5f0f0';
+                    ctx.lineWidth = 2; ctx.stroke();
+                    ctx.fillStyle = '#f5f0f0';
+                    ctx.font = 'bold 14px Poppins'; ctx.textAlign = 'center';
+                    ctx.shadowBlur = 4;
+                    ctx.fillText(jugador.nombre_jugador, x, y + radio + 14);
+                    ctx.shadowBlur = 0;
+                }
+
+               
+
+                // --- INICIALIZACIÓN ---
+                await loadUserData();
+                await loadActiveEvent();
+
+                if (currentEvent) {
+                    // Evento ACTIVO
+                    noEventEl.style.display = 'none';
+                    activeEventEl.style.display = 'block';
+
+                    eventNameEl.textContent = currentEvent.nombre;
+                    eventDescEl.textContent = currentEvent.descripcion;
+                    eventRuleEl.textContent = `${currentEvent.regla_clave}`;
+
+                    // RQNF2: Validar Nivel 5
+                    if (userLevel < 5) {
+                        createBtn.disabled = true;
+                        createBtn.textContent = `Desbloqueado a Nivel 5 (Eres Nivel ${userLevel})`;
+                    } else if (currentEvent.usuario_inscrito) {
+                        // --- 👇 MODIFICACIÓN: Mostrar equipo si está inscrito 👇 ---
+                        createBtn.style.display = 'none'; // Ocultar el botón de crear
+                        
+                        if (currentEvent.plantilla && currentEvent.plantilla.length > 0) {
+                            // Si la API devolvió la plantilla, la mostramos
+                            myTeamTitle.style.display = 'block';
+                            myTeamVisual.style.display = 'block';
+                            
+                            // Usamos una formación por defecto (4-4-2) para mostrar.
+                            // (La regla real de formación solo importa al *crear* el equipo)
+                            const formacion = FORMACIONES["1-4-4-2_fake"] || FORMACIONES["4-4-2"]; 
+                            
+                            // Ajustamos el tamaño del canvas dinámicamente al contenedor
+                            const ctx = myTeamCanvas.getContext('2d');
+                            myTeamCanvas.width = myTeamVisual.clientWidth;
+                            myTeamCanvas.height = (myTeamVisual.clientWidth / 500) * 700; // Mantenemos aspect ratio
+                            
+                            precargarImagenesYDibujar(ctx, currentEvent.plantilla, formacion, clickablePlayers);
+                        } else {
+                            // Inscrito pero sin plantilla (error raro)
+                            myTeamTitle.style.display = 'block';
+                            myTeamTitle.textContent = "Error al cargar tu equipo";
+                        }
+                        // --- 👆 FIN DE LA MODIFICACIÓN 👆 ---
+                    } else {
+                        // El usuario tiene nivel y no está inscrito
+                        createBtn.disabled = false;
+                        createBtn.textContent = "¡Crear Equipo de Evento!";
+                        createBtn.onclick = () => {
+                            window.location.href = `crear-equipo-evento.html?evento=${currentEvent.id_evento}&regla=${currentEvent.regla_clave}`;
+                        };
+                    }
+
+                    // Cargar el ranking del evento
+                    loadEventRanking(currentEvent.id_evento);
+                    
+                } else {
+                // Evento INACTIVO
+                    noEventEl.style.display = 'block';
+                    activeEventEl.style.display = 'none';
+                    leaderboardBodyEl.innerHTML = 
+                        '<tr><td colspan="3" style="text-align:center; opacity: 0.6;">No hay ningún evento activo.</td></tr>';
+                }
+            });
+        </script>
+        
+
+    </body>
+</html>

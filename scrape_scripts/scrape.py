@@ -95,12 +95,12 @@ else:
         #id_partido_actual = df_partidos_ayer.iloc[i]['id_partido']
         #procesar_puntos_partido(engine, id_partido_actual)
          
-    #for i in range(len(ids_para_scrapear_temporada)):
-        #liga_a_scrapear = ids_para_scrapear_temporada[i]
-        #insert_tabla_posiciones(liga_a_scrapear, engine=engine,temporada=temporadas_ids
-        #[liga_a_scrapear-1])   #actualiza la tabla de posiciones de todas las ligas
-        #update_standings_evolution_graph(liga_a_scrapear,engine=engine, temporada=temporadas_ids[liga_a_scrapear-1])
-        #print(f"Tabla {liga_a_scrapear} insertada correctamente")
+    for i in range(len(ids_para_scrapear_temporada)):
+        liga_a_scrapear = ids_para_scrapear_temporada[i]
+        insert_tabla_posiciones(liga_a_scrapear, engine=engine,temporada=temporadas_ids
+        [liga_a_scrapear-1])   #actualiza la tabla de posiciones de todas las ligas
+        update_standings_evolution_graph(liga_a_scrapear,engine=engine, temporada=temporadas_ids[liga_a_scrapear-1])
+        print(f"Tabla {liga_a_scrapear} insertada correctamente")
     
 #ultimos_partidos(engine, temporada = 4)
 #ultimos_partidos(engine, temporada = 5)

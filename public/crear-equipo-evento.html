@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>FootViz - Crear Equipo de Evento</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+        <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+        <style>
+            /* (Estilos base consistentes con tus otras páginas) */
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Poppins', sans-serif;
+                background-color: #1a1a2e;
+                color: #e0e0e0;
+                padding: 20px;
+            }
+            .container { max-width: 1400px; margin: 0 auto; }
+            .card { background-color: #1e1e3f; border-radius: 12px; padding: 20px; }
+            h2 { color: #ffffff; margin-bottom: 15px; }
+
+            /* --- Header --- */
+            .header {
+                display: flex; justify-content: space-between; align-items: center;
+                margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #2a2a4a;
+            }
+            .header h1 { font-size: 1.8rem; }
+            
+            /* --- Layout de Creación --- */
+            .creation-layout {
+                display: grid;
+                grid-template-columns: 4fr 5fr; /* 40% campo, 60% lista */
+                gap: 20px;
+                height: calc(100vh - 150px); /* Altura fija para que las columnas tengan scroll */
+            }
+            .team-column, .players-column {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                overflow-y: auto; /* Scroll independiente */
+            }
+            
+            /* --- Columna Izquierda: Campo --- */
+            .team-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding-bottom: 10px;
+                border-bottom: 1px solid #2a2a4a;
+            }
+            .team-info { font-size: 1.1rem; }
+            #team-count { font-weight: 700; color: #4a69ff; }
+            .btn-submit {
+                background-color: #059669;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 1rem;
+                font-weight: 600;
+            }
+            .btn-submit:disabled { background-color: #475569; }
+
+            /* (Estilos del campo, copiados de fantasy.html) */
+            #team-display-visual {
+                position: relative; 
+                height: 400px; 
+                background-color: #047857; /* Verde campo */
+                border: 5px solid #fff;
+                border-radius: 8px;
+                overflow: hidden;
+                padding: 10px;
+                display: flex;
+                flex-direction: column; 
+                justify-content: space-around;
+            } 
+            .pitch-row {
+                display: flex;
+                justify-content: space-around; 
+                align-items: center;
+            }
+            .player-slot {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                color: #ffffff;
+                font-size: 0.7rem;
+                width: 60px;
+                position: relative; /* Para el botón de eliminar */
+            }
+            .player-slot img {
+                width: 50px; height: 50px; border-radius: 50%;
+                object-fit: cover; border: 2px solid #4a69ff;
+                margin-bottom: 3px;
+            }
+            .player-slot .player-name {
+                font-weight: 600;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                width: 100%;
+            }
+            .player-slot .player-team {
+                font-size: 0.6rem;
+                opacity: 0.8;
+            }
+            .player-slot .remove-btn {
+                position: absolute;
+                top: -5px; right: 0;
+                background-color: #dc2626;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 20px; height: 20px;
+                cursor: pointer;
+                font-weight: 700;
+                line-height: 20px;
+            }
+            .empty-slot {
+                width: 50px; height: 50px;
+                border-radius: 50%;
+                background-color: rgba(0,0,0,0.2);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.5rem;
+                opacity: 0.5;
+                margin-bottom: 3px;
+            }
+            .empty-slot + .player-name { color: rgba(255,255,255,0.3); }
+
+            /* --- Columna Derecha: Mercado --- */
+            .filters {
+                display: grid;
+                grid-template-columns: 1fr 1fr 2fr;
+                gap: 10px;
+            }
+            .filters select, .filters input {
+                width: 100%;
+                background-color: #2a2a4a;
+                color: #e0e0e0;
+                border: 1px solid #4a4a6a;
+                border-radius: 8px;
+                padding: 10px;
+                font-family: 'Poppins', sans-serif;
+            }
+            .player-list-container {
+                flex-grow: 1; /* Ocupa el espacio restante */
+                overflow-y: auto; /* Scroll para la tabla */
+            }
+            .player-list {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            .player-list th {
+                text-align: left;
+                padding: 10px;
+                color: #a0a0c0;
+                font-weight: 400;
+                font-size: 0.8rem;
+                position: sticky; top: 0;
+                background-color: #1e1e3f; /* Para que tape al hacer scroll */
+            }
+            .player-list td {
+                padding: 8px 10px;
+                border-bottom: 1px solid #2a2a4a;
+                vertical-align: middle;
+            }
+            .player-list-info { display: flex; align-items: center; gap: 10px; }
+            .player-list-info img { width: 32px; height: 32px; border-radius: 50%; }
+            .player-list-info span { font-size: 0.8rem; opacity: 0.8; }
+            .player-list-info strong { font-size: 0.9rem; font-weight: 600; }
+            
+            .add-player-btn {
+                background-color: #2a2a4a;
+                color: #4a69ff;
+                border: 1px solid #4a4a6a;
+                border-radius: 50%;
+                width: 30px; height: 30px;
+                cursor: pointer;
+                font-size: 1.5rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .add-player-btn:disabled { color: #475569; border-color: #475569; cursor: not-allowed; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <header class="header">
+                <h1>Evento: <span id="event-name-title">Cargando...</span></h1>
+                
+            </header>
+
+            <main class="creation-layout">
+                <div class="team-column">
+                    <div class="card">
+                        <div class="team-header">
+                            <div class="team-info">
+                                <span id="team-count">0/11</span> Jugadores
+                            </div>
+                            <button class="btn-submit" id="submit-team-btn" disabled>Crear Equipo</button>
+                        </div>
+                    </div>
+
+                    <div class="card" style="padding: 10px;">
+                        <div id="team-display-visual">
+                            </div>
+                    </div>
+                </div>
+                
+                <div class="players-column card">
+                    <div class="filters">
+                        <select id="position-filter">
+                            <option value="ALL">Posición: Todas</option>
+                            <option value="G">Porteros</option>
+                            <option value="D">Defensas</option>
+                            <option value="M">Mediocampistas</option>
+                            <option value="F">Delanteros</option>
+                        </select>
+                        <select id="team-filter">
+                            <option value="ALL">Equipo: Todos</option>
+                            </select>
+                        <input type="text" id="search-player" placeholder="Buscar por nombre...">
+                    </div>
+
+                    <div class="player-list-container">
+                        <table class="player-list">
+                            <thead>
+                                <tr>
+                                    <th>Jugador</th>
+                                    <th>Pts</th>
+                                    <th>Precio</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="player-list-body">
+                                </tbody>
+                        </table>
+                    </div>
+                    </div>
+            </main>
+        </div>
+        <script>
+            // --- ESTADO GLOBAL ---
+            const MAX_PLAYERS = 11;
+            const MAX_PER_TEAM = 11; // Sin límite de equipo por defecto
+            
+            let allPlayers = []; // Lista completa de la API (pre-filtrada por regla)
+            let filteredPlayers = []; // Lista mostrada en la tabla
+            let selectedPlayers = []; // Los 11 jugadores del usuario
+
+            // Datos del evento (de la URL)
+            const urlParams = new URLSearchParams(window.location.search);
+            const eventoId = urlParams.get('evento');
+            const reglaClave = urlParams.get('regla'); // ej. "U23"
+
+            // Límites de posición (RQNF1)
+            let positionLimits = { G: 1, D: 4, M: 4, F: 2 }; // Por defecto
+            if (reglaClave === 'SOLO_POR') positionLimits = { G: 11, D: 0, M: 0, F: 0 };
+            // ... (añadir 'SOLO_DEF', 'UNA_POSICION' etc.) ...
+
+            // --- ELEMENTOS DOM ---
+            const tbodyListaJugs = document.getElementById('player-list-body');
+            const teamDisplayContainer = document.getElementById('team-display-visual');
+            const teamCountEl = document.getElementById('team-count');
+            const submitBtn = document.getElementById('submit-team-btn');
+            const positionFilter = document.getElementById('position-filter');
+            const teamFilter = document.getElementById('team-filter');
+            const searchInput = document.getElementById('search-player');
+
+            
+            // --- INICIALIZACIÓN ---
+            document.addEventListener('DOMContentLoaded', () => {
+                if (!eventoId || !reglaClave) {
+                    alert("Error: Faltan parámetros del evento. Volviendo a la página de eventos.");
+                    window.location.href = 'eventos.html';
+                    return;
+                }
+                
+                document.getElementById('event-name-title').textContent = `Evento ${reglaClave}`;
+                
+                cargarJugadoresDisponibles();
+                updateTeamGrid(); // Dibuja el campo vacío
+                
+                // Listeners de filtros
+                positionFilter.addEventListener('change', applyFilters);
+                teamFilter.addEventListener('change', applyFilters);
+                searchInput.addEventListener('input', applyFilters);
+                
+                // Listener del botón final
+                submitBtn.addEventListener('click', handleSubmitTeam);
+            });
+
+            // --- 1. LÓGICA DE CARGA DE DATOS ---
+            
+            async function cargarJugadoresDisponibles() {
+                tbodyListaJugs.innerHTML = `<tr><td colspan="4" style="text-align: center;">Cargando jugadores...</td></tr>`;
+                try {
+                    // RQNF1: El endpoint filtra por la regla
+                    const response = await fetch(`/api/fantasy/available-event-players?regla=${reglaClave}`); 
+                    if (!response.ok) {
+                        if (response.status === 401) { window.location.href = '/login.html'; return; }
+                        throw new Error('Error al cargar jugadores del evento.');
+                    }
+                    
+                    allPlayers = await response.json(); 
+                    
+                    // Ordenar por puntos (y desempate por precio, como en la otra página)
+                    allPlayers.sort((a, b) => {
+                        const puntosDiff = b.total_puntos_fantasy - a.total_puntos_fantasy;
+                        if (puntosDiff !== 0) return puntosDiff;
+                        return parseFloat(a.valor_actual) - parseFloat(b.valor_actual);
+                    });
+                    
+                    populateTeamFilter(); // Llena el filtro de equipos
+                    filteredPlayers = [...allPlayers];
+                    displayPage(1); // Muestra la primera página
+
+                } catch (error) {
+                    console.error("Error al cargar jugadores:", error);
+                    tbodyListaJugs.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #dc2626;">Error al cargar jugadores.</td></tr>`;
+                }
+            }
+            
+            function populateTeamFilter() {
+                const teams = new Map();
+                allPlayers.forEach(p => teams.set(p.id_equipo, p.nombre_equipo));
+                const sortedTeams = Array.from(teams.entries()).sort((a, b) => {
+                    // Si 'a' no tiene nombre, ponlo al final.
+                    if (!a[1]) return 1;
+                    // Si 'b' no tiene nombre, ponlo al final.
+                    if (!b[1]) return -1;
+                    // Si ambos tienen nombre, compáralos.
+                    return a[1].localeCompare(b[1]);
+                });
+                
+                sortedTeams.forEach(([id, name]) => {
+                    teamFilter.innerHTML += `<option value="${id}">${name}</option>`;
+                });
+            }
+
+            // --- 2. LÓGICA DE FILTRADO Y PAGINACIÓN ---
+
+            function applyFilters() {
+                const pos = positionFilter.value;
+                const team = teamFilter.value;
+                const search = searchInput.value.toLowerCase();
+                
+                filteredPlayers = allPlayers.filter(p => {
+                    return (pos === 'ALL' || p.posicion === pos) &&
+                        (team === 'ALL' || p.id_equipo == team) &&
+                        (p.nombre_jugador.toLowerCase().includes(search));
+                });
+                
+                displayPage(1); // Resetear a página 1
+            }
+            
+            function displayPage(page) { // (Paginación no implementada, muestra todo)
+                tbodyListaJugs.innerHTML = "";
+                
+                if (filteredPlayers.length === 0) {
+                    tbodyListaJugs.innerHTML = `<tr><td colspan="4" style="text-align: center; opacity: 0.7;">No se encontraron jugadores.</td></tr>`;
+                    return;
+                }
+
+                filteredPlayers.forEach(player => {
+                    const tr = document.createElement('tr');
+                    const isSelected = selectedPlayers.find(p => p.id_jugador === player.id_jugador);
+                    
+                    tr.innerHTML = `
+                        <td>
+                            <div class="player-list-info">
+                                <img src="${player.url_imagen_jugador || 'placeholder-player-face.png'}" alt="${player.nombre_jugador}">
+                                <div>
+                                    <strong>${player.nombre_jugador}</strong>
+                                    <span>${player.nombre_equipo} (${player.posicion})</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${player.total_puntos_fantasy}</td>
+                        <td>$${player.valor_actual}M</td>
+                        <td>
+                            <button class="add-player-btn" data-player-id="${player.id_jugador}" ${isSelected ? 'disabled' : ''}>
+                                <ion-icon name="add-outline"></ion-icon>
+                            </button>
+                        </td>
+                    `;
+                    
+                    // Añadir el listener al botón
+                    tr.querySelector('.add-player-btn').addEventListener('click', (e) => {
+                        handleAddPlayer(e.currentTarget.dataset.playerId);
+                    });
+                    
+                    tbodyListaJugs.appendChild(tr);
+                });
+            }
+
+            // --- 3. LÓGICA DE MANEJO DE EQUIPO ---
+
+            function handleAddPlayer(playerId) {
+                const player = allPlayers.find(p => p.id_jugador == playerId);
+                if (!player) return;
+
+                // RQF1: Validar 11 jugadores
+                if (selectedPlayers.length >= MAX_PLAYERS) {
+                    alert(`Límite alcanzado. Solo puedes seleccionar ${MAX_PLAYERS} jugadores.`);
+                    return;
+                }
+
+                // RQNF1: Validar límites de posición (basado en la regla)
+                const posCount = selectedPlayers.filter(p => p.posicion === player.posicion).length;
+                if (posCount >= positionLimits[player.posicion]) {
+                    alert(`Límite alcanzado para la posición ${player.posicion} (Máx: ${positionLimits[player.posicion]}).`);
+                    return;
+                }
+
+                // (Lógica de presupuesto y límite de equipo eliminada)
+
+                // Añadir jugador
+                selectedPlayers.push(player);
+                
+                // Actualizar UI
+                updateTeamGrid();
+                updatePlayerListButtons();
+                updateSubmitButton();
+            }
+
+            function handleRemovePlayer(playerId) {
+                selectedPlayers = selectedPlayers.filter(p => p.id_jugador != playerId);
+                
+                // Actualizar UI
+                updateTeamGrid();
+                updatePlayerListButtons();
+                updateSubmitButton();
+            }
+
+            function updatePlayerListButtons() {
+                document.querySelectorAll('.add-player-btn').forEach(btn => {
+                    const id = btn.dataset.playerId;
+                    const isSelected = selectedPlayers.find(p => p.id_jugador == id);
+                    btn.disabled = !!isSelected; // Deshabilitar si está seleccionado
+                });
+            }
+
+            function updateSubmitButton() {
+                teamCountEl.textContent = `${selectedPlayers.length}/${MAX_PLAYERS}`;
+                if (selectedPlayers.length === MAX_PLAYERS) {
+                    submitBtn.disabled = false;
+                } else {
+                    submitBtn.disabled = true;
+                }
+            }
+            
+            function updateTeamGrid() {
+                teamDisplayContainer.innerHTML = ''; // Limpiar campo
+
+                const titulares = selectedPlayers; // Aquí, los 11 son "titulares"
+                
+                // Crear las 4 filas
+                const rowG = document.createElement('div'); rowG.className = 'pitch-row';
+                const rowD = document.createElement('div'); rowD.className = 'pitch-row';
+                const rowM = document.createElement('div'); rowM.className = 'pitch-row';
+                const rowF = document.createElement('div'); rowF.className = 'pitch-row';
+                
+                teamDisplayContainer.appendChild(rowF);
+                teamDisplayContainer.appendChild(rowM);
+                teamDisplayContainer.appendChild(rowD);
+                teamDisplayContainer.appendChild(rowG);
+                
+                // Llenar las filas con jugadores
+                const counts = { G: 0, D: 0, M: 0, F: 0 };
+                titulares.forEach(player => {
+                    let targetRow;
+                    switch(player.posicion) {
+                        case 'G': targetRow = rowG; counts.G++; break;
+                        case 'D': targetRow = rowD; counts.D++; break;
+                        case 'M': targetRow = rowM; counts.M++; break;
+                        case 'F': targetRow = rowF; counts.F++; break;
+                        default: targetRow = rowM;
+                    }
+                    
+                    const playerDiv = document.createElement('div');
+                    playerDiv.className = 'player-slot';
+                    playerDiv.innerHTML = `
+                        <button class="remove-btn" data-player-id="${player.id_jugador}">×</button>
+                        <img src="${player.url_imagen_jugador || 'placeholder-player-face.png'}" alt="${player.nombre_jugador}">
+                        <span class="player-name">${player.nombre_jugador.split(' ')[0]}</span>
+                        <span class="player-team">${player.nombre_equipo}</span>
+                    `;
+                    playerDiv.querySelector('.remove-btn').addEventListener('click', (e) => {
+                        handleRemovePlayer(e.currentTarget.dataset.playerId);
+                    });
+                    targetRow.appendChild(playerDiv);
+                });
+                
+                // Llenar slots vacíos
+                for(let i = counts.G; i < positionLimits.G; i++) rowG.innerHTML += createEmptySlot('G');
+                for(let i = counts.D; i < positionLimits.D; i++) rowD.innerHTML += createEmptySlot('D');
+                for(let i = counts.M; i < positionLimits.M; i++) rowM.innerHTML += createEmptySlot('M');
+                for(let i = counts.F; i < positionLimits.F; i++) rowF.innerHTML += createEmptySlot('F');
+            }
+
+            function createEmptySlot(pos) {
+                return `<div class="player-slot">
+                            <div class="empty-slot"><ion-icon name="person-add-outline"></ion-icon></div>
+                            <span class="player-name">${pos}</span>
+                        </div>`;
+            }
+
+            // --- 4. LÓGICA DE GUARDAR EQUIPO ---
+
+            async function handleSubmitTeam() {
+                if (selectedPlayers.length !== MAX_PLAYERS) {
+                    alert(`Debes seleccionar ${MAX_PLAYERS} jugadores.`);
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.textContent = "Guardando...";
+                
+                // Crear el array de IDs
+                const playerIds = selectedPlayers.map(p => p.id_jugador);
+                const teamName = prompt("¡Equipo completo! Dale un nombre a tu equipo de evento:", "Equipo de Evento");
+
+                if (!teamName || teamName.trim().length < 3) {
+                    alert("Nombre de equipo no válido.");
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Crear Equipo";
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/fantasy/crear-equipo-evento', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            eventoId: eventoId,
+                            nombreEquipo: teamName,
+                            plantilla: playerIds,
+                            reglaClave: reglaClave // Array de 11 IDs
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const err = await response.json();
+                        throw new Error(err.error || 'Error del servidor');
+                    }
+
+                    alert("¡Equipo de evento creado con éxito!");
+                    window.location.href = 'eventos.html'; // Redirigir de vuelta
+
+                } catch (error) {
+                    alert(`Error al guardar: ${error.message}`);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Crear Equipo";
+                }
+            }
+            
+        </script>
+    </body>
+</html>

@@ -2340,3 +2340,201 @@ export async function getLeagueRankingTop10(id_liga_fantasy) {
     );
     return rows;
 }
+
+export async function getEventoActivo() {
+    const [rows] = await pool.query(
+        `SELECT id_evento, nombre, regla_clave, descripcion
+         FROM eventos
+         WHERE CURDATE() BETWEEN DATE(fecha_inicio) AND DATE(fecha_fin)
+         LIMIT 1`
+    );
+    return rows[0]; // Devuelve el evento o undefined
+}
+
+export async function getEventoRanking(id_evento) {
+    const [rows] = await pool.query(
+        `SELECT
+            u.username,
+            ee.nombre_equipo,
+            ee.puntos_totales
+         FROM equipo_evento ee
+         JOIN usuario u ON ee.id_usuario = u.id_usuario
+         WHERE ee.id_evento = ?
+         ORDER BY ee.puntos_totales DESC
+         LIMIT 10`, // Devuelve solo el Top 10
+        [id_evento]
+    );
+    return rows;
+}
+
+export async function getEquipoEventoUsuario(id_usuario, id_evento) {
+    const [rows] = await pool.query(
+        `SELECT id_equipo_evento FROM equipo_evento
+         WHERE id_usuario = ? AND id_evento = ?`,
+        [id_usuario, id_evento]
+    );
+    return rows[0];
+}
+
+export async function getAvailableEventPlayers(regla) {
+    let whereClause = ''; // Aquí se inyectará la regla
+
+    // (Asumo que la temporada del evento es la 1. Si no, tendrás que pasarla como parámetro)
+    const id_temporada = 1; 
+
+    // RQF1 / RQNF1: Filtramos la lista de jugadores
+    switch (regla) {
+        case 'U23':
+            // Jugadores de 23 años o menos (nacidos después de HOY - 24 años)
+            whereClause = ' j.fec_nac >= DATE_SUB(CURDATE(), INTERVAL 23 YEAR)';
+            break;
+        case 'GIGANTES':
+            whereClause = ' j.altura >= 190'; // Asume 190cm
+            break;
+        case 'SOLO_POR':
+            whereClause = ' j.posicion = "G"';
+            break;
+        // --- TÚ AÑADES EL RESTO DE REGLAS AQUÍ ---
+        // case 'CERO_GOLES':
+        //     whereClause = 'AND (sjf.total_goles IS NULL OR sjf.total_goles = 0)';
+        //     break;
+        // case 'SIN_ESTRELLAS':
+        //     whereClause = 'AND vjf.popularidad < 10';
+        //     break;
+        default:
+            // Si la regla no se reconoce, no devuelve jugadores.
+            console.error(`Regla de evento no reconocida: ${regla}`);
+            throw new Error(`Regla de evento no reconocida: ${regla}`);
+    }
+
+    // Esta es tu consulta base de 'available-players', pero con el WHERE dinámico
+    const sql = `
+        SELECT 
+            j.id_jugador, j.nombre AS nombre_jugador, j.posicion, j.url_imagen AS url_imagen_jugador,
+            e.id_equipo, e.nombre AS nombre_equipo, e.url_imagen AS img_equipo,
+            vjf.valor_actual, vjf.popularidad,
+            COALESCE(sjf.total_puntos_fantasy, 0) AS total_puntos_fantasy
+        FROM jugador j
+        JOIN valor_jugador_fantasy vjf ON j.id_jugador = vjf.id_jugador
+        LEFT JOIN (
+            -- Subconsulta para el equipo más reciente
+            SELECT pe.jugador, pe.equipo, ROW_NUMBER() OVER(PARTITION BY pe.jugador ORDER BY pe.id_plantilla DESC) as rn
+            FROM plantilla_equipos pe 
+        ) lta ON j.id_jugador = lta.jugador AND lta.rn = 1
+        LEFT JOIN equipo e ON lta.equipo = e.id_equipo
+        LEFT JOIN (
+            -- Subconsulta para los puntos totales de la temporada
+            SELECT pjj.id_jugador, SUM(pjj.puntos_fantasy) as total_puntos_fantasy
+            FROM puntos_jugador_jornada pjj
+            JOIN partido p ON pjj.id_partido = p.id_partido
+            
+            GROUP BY pjj.id_jugador
+        ) sjf ON j.id_jugador = sjf.id_jugador
+        WHERE 
+            
+            ${whereClause} -- <-- ¡LA MAGIA!
+    `;
+    
+    const [rows] = await pool.query(sql);
+    return rows;
+}
+
+
+export async function crearEquipoEventoCompleto(id_usuario, id_evento, nombreEquipo, plantillaIds, reglaClave) {
+    const conn = await pool.getConnection();
+    await conn.beginTransaction();
+
+    try {
+        // --- PASO 1: Validación de Backend (RQNF1) ---
+        // Volvemos a validar que los 11 IDs SÍ cumplen la regla.
+        let validationWhere = '';
+        switch (reglaClave) {
+            case 'U23':
+                validationWhere = 'AND j.fec_nac >= DATE_SUB(CURDATE(), INTERVAL 23 YEAR)';
+                break;
+            case 'GIGANTES':
+                validationWhere = 'AND j.altura >= 190';
+                break;
+            case 'SOLO_POR':
+                validationWhere = 'AND j.posicion = "G"';
+                break;
+            // ... (Añadir el resto de tus 10 reglas aquí) ...
+            default:
+                throw new Error("Regla de evento no reconocida.");
+        }
+        
+        const placeholders = plantillaIds.map(() => '?').join(',');
+        const [validationRows] = await conn.query(
+            `SELECT COUNT(j.id_jugador) as validCount FROM jugador j
+             WHERE j.id_jugador IN (${placeholders}) ${validationWhere}`,
+            [...plantillaIds]
+        );
+
+        if (validationRows[0].validCount !== plantillaIds.length || plantillaIds.length !== 11) {
+            throw new Error(`La plantilla no cumple con la regla del evento "${reglaClave}". (${validationRows[0].validCount}/11 válidos)`);
+        }
+
+        // --- PASO 2: Crear el equipo_evento ---
+        const [equipoResult] = await conn.query(
+            `INSERT INTO equipo_evento (id_usuario, id_evento, nombre_equipo) VALUES (?, ?, ?)`,
+            [id_usuario, id_evento, nombreEquipo]
+        );
+        const newEventTeamId = equipoResult.insertId;
+
+        // --- PASO 3: Crear la plantilla_evento (Bulk Insert) ---
+        const plantillaValues = plantillaIds.map(id_jugador => [newEventTeamId, id_jugador]);
+        await conn.query(
+            `INSERT INTO plantilla_evento (id_equipo_evento, id_jugador) VALUES ?`,
+            [plantillaValues]
+        );
+
+        // --- PASO 4: Commit ---
+        await conn.commit();
+        conn.release();
+        return { id_equipo_evento: newEventTeamId };
+
+    } catch (error) {
+        await conn.rollback();
+        conn.release();
+        console.error("Error en transacción crearEquipoEvento:", error);
+        throw error; // Re-lanzar para que app.js lo atrape
+    }
+}
+
+export async function getEquipoEventoUsuarioID(id_usuario, id_evento) {
+    const [rows] = await pool.query(
+        `SELECT id_equipo_evento FROM equipo_evento
+         WHERE id_usuario = ? AND id_evento = ?`,
+        [id_usuario, id_evento]
+    );
+    return rows[0]; // Devuelve { id_equipo_evento: 123 } o undefined
+}
+
+export async function getPlantillaEvento(id_equipo_evento) {
+    // Asumimos temporada 1 (ajusta si es dinámico)
+    const id_temporada = 1; 
+    
+    const [rows] = await pool.query(
+        `SELECT 
+            j.id_jugador, 
+            j.nombre AS nombre_jugador, 
+            j.posicion, 
+            j.url_imagen AS url_imagen_jugador,
+            e.nombre AS nombre_equipo,
+            1 AS es_titular, -- Asumimos que los 11 son titulares
+            0 AS es_capitan -- Asumimos que no hay capitán
+         FROM plantilla_evento pe
+         JOIN jugador j ON pe.id_jugador = j.id_jugador
+         LEFT JOIN (
+             -- Subconsulta para el equipo más reciente del jugador
+             SELECT pe_sub.jugador, pe_sub.equipo, 
+                    ROW_NUMBER() OVER(PARTITION BY pe_sub.jugador ORDER BY pe_sub.id_plantilla DESC) as rn
+             FROM plantilla_equipos pe_sub WHERE pe_sub.temporada = ?
+         ) lta ON j.id_jugador = lta.jugador AND lta.rn = 1
+         LEFT JOIN equipo e ON lta.equipo = e.id_equipo
+         WHERE pe.id_equipo_evento = ?
+         ORDER BY  FIELD(j.posicion, 'G', 'D', 'M', 'F')`,
+         [id_temporada, id_equipo_evento]
+    );
+    return rows; // Devuelve el array de 11 jugadores
+}
