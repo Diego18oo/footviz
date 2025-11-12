@@ -48,23 +48,23 @@ ids_para_scrapear_temporada = df_partidos_ayer['temporada'].unique()
 
 
 
-if len(df_partidos_futuros) > 0:
-    print("Entrando...")
-    for i in range(len(df_partidos_futuros)):
-        prematch_ref(engine, df_partidos_futuros.iloc[i] )
-        prematch_odds(engine, df_partidos_futuros.iloc[i])
-        insert_predicted_lineups(engine, df_partidos_futuros.iloc[i])
+#if len(df_partidos_futuros) > 0:
+    #print("Entrando...")
+    #for i in range(len(df_partidos_futuros)):
+        #prematch_ref(engine, df_partidos_futuros.iloc[i] )
+        #prematch_odds(engine, df_partidos_futuros.iloc[i])
+        #insert_predicted_lineups(engine, df_partidos_futuros.iloc[i])
  
-
-#actualizar_porcentaje_popularidad(engine)
-#actualizar_valor_mercado_fantasy(engine)
 update_fantasy_team_points(engine)
 update_fantasy_event_team_points(engine)
+actualizar_porcentaje_popularidad(engine)
+actualizar_valor_mercado_fantasy(engine)
 
-#df_partidos_predicciones = pd.read_sql(f"select distinct pu.id_partido from prediccion_usuario pu JOIN partido p on pu.id_partido = p.id_partido where p.fecha < '{today}'", engine)
 
-#for i in range(len(df_partidos_predicciones)):
-    #calcular_puntos_predicciones(engine, df_partidos_predicciones.iloc[i]['id_partido'])
+df_partidos_predicciones = pd.read_sql(f"select distinct pu.id_partido from prediccion_usuario pu JOIN partido p on pu.id_partido = p.id_partido where p.fecha < '{today}'", engine)
+
+for i in range(len(df_partidos_predicciones)):
+    calcular_puntos_predicciones(engine, df_partidos_predicciones.iloc[i]['id_partido'])
 
 #verifica que si haya partidos el dia de ayer
 if len(df_partidos_ayer) == 0:
@@ -96,12 +96,12 @@ else:
         #id_partido_actual = df_partidos_ayer.iloc[i]['id_partido']
         #procesar_puntos_partido(engine, id_partido_actual)
          
-    for i in range(len(ids_para_scrapear_temporada)):
-        liga_a_scrapear = ids_para_scrapear_temporada[i]
-        insert_tabla_posiciones(liga_a_scrapear, engine=engine,temporada=temporadas_ids
-        [liga_a_scrapear-1])   #actualiza la tabla de posiciones de todas las ligas
-        update_standings_evolution_graph(liga_a_scrapear,engine=engine, temporada=temporadas_ids[liga_a_scrapear-1])
-        print(f"Tabla {liga_a_scrapear} insertada correctamente")
+    #for i in range(len(ids_para_scrapear_temporada)):
+        #liga_a_scrapear = ids_para_scrapear_temporada[i]
+        #insert_tabla_posiciones(liga_a_scrapear, engine=engine,temporada=temporadas_ids
+        #[liga_a_scrapear-1])   #actualiza la tabla de posiciones de todas las ligas
+        #update_standings_evolution_graph(liga_a_scrapear,engine=engine, temporada=temporadas_ids[liga_a_scrapear-1])
+        #print(f"Tabla {liga_a_scrapear} insertada correctamente")
     
 #ultimos_partidos(engine, temporada = 4)
 #ultimos_partidos(engine, temporada = 5)

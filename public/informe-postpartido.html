@@ -368,6 +368,15 @@
                     });
                 }
 
+                function getRatingColor(rating) {
+                    if (rating >= 8.0) return '#23c16a'; // Verde brillante
+                    if (rating >= 7.5) return '#a0d369'; // Verde claro
+                    if (rating >= 6.5) return '#f5d34a'; // Amarillo
+                    if (rating >= 6.0) return '#f08241'; // Naranja
+                    if (rating > 0) return '#e55353';    // Rojo
+                    return '#9a9a9a'; // Gris si es 0 o null
+                }
+
                 function dibujarJugador(ctx, x, y, jugador, radio) {
                     const isLight = body.classList.contains('light-mode');
                     
@@ -393,6 +402,26 @@
                     ctx.shadowBlur = 4;
                     ctx.fillText(jugador.nombre, x, y + radio + 14);
                     ctx.shadowBlur = 0;
+
+                    if (jugador.rating) {
+                        const rating = parseFloat(jugador.rating).toFixed(1); // Asegurar 1 decimal
+                        const ratingWidth = 32;
+                        const ratingHeight = 16;
+                        
+                        // Posición de la caja (centrada, encima del círculo)
+                        const boxX = x - (ratingWidth / 2);
+                        const boxY = y - radio - ratingHeight - 3; // 3px de espacio
+
+                        // Dibujar la caja
+                        ctx.fillStyle = getRatingColor(rating);
+                        ctx.fillRect(boxX, boxY, ratingWidth, ratingHeight);
+                        
+                        // Dibujar el texto del rating
+                        ctx.fillStyle = 'black'; // Texto negro para que contraste
+                        ctx.font = 'bold 12px Poppins';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(rating, x, boxY + 12); // Ajuste vertical
+                    }
                 }
 
                 // RQF2
@@ -421,7 +450,8 @@
                             jugadores.push({
                                 id: data[`id${i}`],
                                 nombre: data[`nombre${i}`],
-                                imgUrl: data[`img${i}`]
+                                imgUrl: data[`img${i}`],
+                                rating: data[`rating${i}`]
                             });
                         }
 
@@ -462,7 +492,8 @@
                             jugadores.push({
                                 id: data[`id${i}`],
                                 nombre: data[`nombre${i}`],
-                                imgUrl: data[`img${i}`]
+                                imgUrl: data[`img${i}`],
+                                rating: data[`rating${i}`]
                             });
                         }
 

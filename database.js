@@ -128,7 +128,7 @@ export async function getEstadisticasOfensivas(temporada) {
             SUM(ejp.goles) AS total_goles,
             sj.disparos,
             sj.disparos_a_puerta,
-            sj.disparos_a_puerta / sj.disparos as porcentaje_disparos_a_puerta,
+            COALESCE(sj.disparos_a_puerta / sj.disparos, 0) as porcentaje_disparos_a_puerta,
             sj.disparos / SUM(ejp.minutos) * 100 as disparos_por_90,
             sj.goles_por_disparo,
             sj.distancia_promedio_de_disparos,
@@ -460,32 +460,99 @@ export async function getInfoPrePartido(partido) {
 export async function getPosiblesAlineaciones(partido) {
     const [rows] = await pool.query(`
         SELECT 
-            formacion_local, 
-            formacion_visitante,
-            j1.id_jugador as id1, j1.nombre as nombre1, j1.dorsal as dorsal1, j1.url_imagen as img1,
-            j2.id_jugador as id2, j2.nombre as nombre2, j2.dorsal as dorsal2 , j2.url_imagen as img2,
-            j3.id_jugador as id3, j3.nombre as nombre3, j3.dorsal as dorsal3, j3.url_imagen as img3,
-            j4.id_jugador as id4, j4.nombre as nombre4, j4.dorsal as dorsal4, j4.url_imagen as img4,
-            j5.id_jugador as id5, j5.nombre as nombre5, j5.dorsal as dorsal5, j5.url_imagen as img5,
-            j6.id_jugador as id6, j6.nombre as nombre6, j6.dorsal as dorsal6, j6.url_imagen as img6,
-            j7.id_jugador as id7, j7.nombre as nombre7, j7.dorsal as dorsal7, j7.url_imagen as img7,
-            j8.id_jugador as id8, j8.nombre as nombre8, j8.dorsal as dorsal8, j8.url_imagen as img8,
-            j9.id_jugador as id9, j9.nombre as nombre9, j9.dorsal as drosal9, j9.url_imagen as img9,
-            j10.id_jugador as id10, j10.nombre as nombre10, j10.dorsal as dorsal10, j10.url_imagen as img10,
-            j11.id_jugador as id11, j11.nombre as nombre11, j11.dorsal as dorsal11, j11.url_imagen as img11,
-            j12.id_jugador as id12, j12.nombre as nombre12, j12.dorsal as dorsal12, j12.url_imagen as img12,
-            j13.id_jugador as id13, j13.nombre as nombre13, j13.dorsal as dorsal13, j13.url_imagen as img13,
-            j14.id_jugador as id14, j14.nombre as nombre14, j14.dorsal as dorsal14, j14.url_imagen as img14,
-            j15.id_jugador as id15, j15.nombre as nombre15, j15.dorsal as dorsal15, j15.url_imagen as img15,
-            j16.id_jugador as id16, j16.nombre as nombre16, j16.dorsal as dorsal16, j16.url_imagen as img16,
-            j17.id_jugador as id17, j17.nombre as nombre17, j17.dorsal as dorsal17, j17.url_imagen as img17,
-            j18.id_jugador as id18, j18.nombre as nombre18, j18.dorsal as dorsal18, j18.url_imagen as img18,
-            j19.id_jugador as id19, j19.nombre as nombre19, j19.dorsal as dorsal19, j19.url_imagen as img19,
-            j20.id_jugador as id20, j20.nombre as nombre20, j20.dorsal as dorsal20, j20.url_imagen as img20,
-            j21.id_jugador as id21, j21.nombre as nombre21, j21.dorsal as dorsal21, j21.url_imagen as img21,
-            j22.id_jugador as id22, j22.nombre as nombre22, j22.dorsal as dorsal22, j22.url_imagen as img22
+            al.formacion_local, 
+            al.formacion_visitante,
             
+            -- Jugador 1
+            j1.id_jugador as id1, j1.nombre as nombre1, j1.dorsal as dorsal1, j1.url_imagen as img1,
+            ejp1.rating as rating1, -- <-- AÑADIDO
+            
+            -- Jugador 2
+            j2.id_jugador as id2, j2.nombre as nombre2, j2.dorsal as dorsal2 , j2.url_imagen as img2,
+            ejp2.rating as rating2, -- <-- AÑADIDO
+            
+            -- Jugador 3
+            j3.id_jugador as id3, j3.nombre as nombre3, j3.dorsal as dorsal3, j3.url_imagen as img3,
+            ejp3.rating as rating3, -- <-- AÑADIDO
+            
+            -- Jugador 4
+            j4.id_jugador as id4, j4.nombre as nombre4, j4.dorsal as dorsal4, j4.url_imagen as img4,
+            ejp4.rating as rating4, -- <-- AÑADIDO
+            
+            -- Jugador 5
+            j5.id_jugador as id5, j5.nombre as nombre5, j5.dorsal as dorsal5, j5.url_imagen as img5,
+            ejp5.rating as rating5, -- <-- AÑADIDO
+            
+            -- Jugador 6
+            j6.id_jugador as id6, j6.nombre as nombre6, j6.dorsal as dorsal6, j6.url_imagen as img6,
+            ejp6.rating as rating6, -- <-- AÑADIDO
+            
+            -- Jugador 7
+            j7.id_jugador as id7, j7.nombre as nombre7, j7.dorsal as dorsal7, j7.url_imagen as img7,
+            ejp7.rating as rating7, -- <-- AÑADIDO
+            
+            -- Jugador 8
+            j8.id_jugador as id8, j8.nombre as nombre8, j8.dorsal as dorsal8, j8.url_imagen as img8,
+            ejp8.rating as rating8, -- <-- AÑADIDO
+            
+            -- Jugador 9
+            j9.id_jugador as id9, j9.nombre as nombre9, j9.dorsal as drosal9, j9.url_imagen as img9,
+            ejp9.rating as rating9, -- <-- AÑADIDO
+            
+            -- Jugador 10
+            j10.id_jugador as id10, j10.nombre as nombre10, j10.dorsal as dorsal10, j10.url_imagen as img10,
+            ejp10.rating as rating10, -- <-- AÑADIDO
+            
+            -- Jugador 11
+            j11.id_jugador as id11, j11.nombre as nombre11, j11.dorsal as dorsal11, j11.url_imagen as img11,
+            ejp11.rating as rating11, -- <-- AÑADIDO
+            
+            -- Jugador 12
+            j12.id_jugador as id12, j12.nombre as nombre12, j12.dorsal as dorsal12, j12.url_imagen as img12,
+            ejp12.rating as rating12, -- <-- AÑADIDO
+            
+            -- Jugador 13
+            j13.id_jugador as id13, j13.nombre as nombre13, j13.dorsal as dorsal13, j13.url_imagen as img13,
+            ejp13.rating as rating13, -- <-- AÑADIDO
+            
+            -- Jugador 14
+            j14.id_jugador as id14, j14.nombre as nombre14, j14.dorsal as dorsal14, j14.url_imagen as img14,
+            ejp14.rating as rating14, -- <-- AÑADIDO
+            
+            -- Jugador 15
+            j15.id_jugador as id15, j15.nombre as nombre15, j15.dorsal as dorsal15, j15.url_imagen as img15,
+            ejp15.rating as rating15, -- <-- AÑADIDO
+            
+            -- Jugador 16
+            j16.id_jugador as id16, j16.nombre as nombre16, j16.dorsal as dorsal16, j16.url_imagen as img16,
+            ejp16.rating as rating16, -- <-- AÑADIDO
+            
+            -- Jugador 17
+            j17.id_jugador as id17, j17.nombre as nombre17, j17.dorsal as dorsal17, j17.url_imagen as img17,
+            ejp17.rating as rating17, -- <-- AÑADIDO
+            
+            -- Jugador 18
+            j18.id_jugador as id18, j18.nombre as nombre18, j18.dorsal as dorsal18, j18.url_imagen as img18,
+            ejp18.rating as rating18, -- <-- AÑADIDO
+            
+            -- Jugador 19
+            j19.id_jugador as id19, j19.nombre as nombre19, j19.dorsal as dorsal19, j19.url_imagen as img19,
+            ejp19.rating as rating19, -- <-- AÑADIDO
+            
+            -- Jugador 20
+            j20.id_jugador as id20, j20.nombre as nombre20, j20.dorsal as dorsal20, j20.url_imagen as img20,
+            ejp20.rating as rating20, -- <-- AÑADIDO
+            
+            -- Jugador 21
+            j21.id_jugador as id21, j21.nombre as nombre21, j21.dorsal as dorsal21, j21.url_imagen as img21,
+            ejp21.rating as rating21, -- <-- AÑADIDO
+            
+            -- Jugador 22
+            j22.id_jugador as id22, j22.nombre as nombre22, j22.dorsal as dorsal22, j22.url_imagen as img22,
+            ejp22.rating as rating22 -- <-- AÑADIDO
+                
         FROM alineaciones al
+        -- Joins de Jugador (como los tenías)
         JOIN jugador j1 on al.jugador1 = j1.id_jugador
         JOIN jugador j2 on al.jugador2 = j2.id_jugador
         JOIN jugador j3 on al.jugador3 = j3.id_jugador
@@ -509,7 +576,31 @@ export async function getPosiblesAlineaciones(partido) {
         JOIN jugador j21 on al.jugador21 = j21.id_jugador
         JOIN jugador j22 on al.jugador22 = j22.id_jugador
 
-        WHERE partido = ?;
+        -- Joins de Estadísticas (NUEVOS)
+        LEFT JOIN estadistica_jugador_partido ejp1 ON al.partido = ejp1.partido AND al.jugador1 = ejp1.jugador
+        LEFT JOIN estadistica_jugador_partido ejp2 ON al.partido = ejp2.partido AND al.jugador2 = ejp2.jugador
+        LEFT JOIN estadistica_jugador_partido ejp3 ON al.partido = ejp3.partido AND al.jugador3 = ejp3.jugador
+        LEFT JOIN estadistica_jugador_partido ejp4 ON al.partido = ejp4.partido AND al.jugador4 = ejp4.jugador
+        LEFT JOIN estadistica_jugador_partido ejp5 ON al.partido = ejp5.partido AND al.jugador5 = ejp5.jugador
+        LEFT JOIN estadistica_jugador_partido ejp6 ON al.partido = ejp6.partido AND al.jugador6 = ejp6.jugador
+        LEFT JOIN estadistica_jugador_partido ejp7 ON al.partido = ejp7.partido AND al.jugador7 = ejp7.jugador
+        LEFT JOIN estadistica_jugador_partido ejp8 ON al.partido = ejp8.partido AND al.jugador8 = ejp8.jugador
+        LEFT JOIN estadistica_jugador_partido ejp9 ON al.partido = ejp9.partido AND al.jugador9 = ejp9.jugador
+        LEFT JOIN estadistica_jugador_partido ejp10 ON al.partido = ejp10.partido AND al.jugador10 = ejp10.jugador
+        LEFT JOIN estadistica_jugador_partido ejp11 ON al.partido = ejp11.partido AND al.jugador11 = ejp11.jugador
+        LEFT JOIN estadistica_jugador_partido ejp12 ON al.partido = ejp12.partido AND al.jugador12 = ejp12.jugador
+        LEFT JOIN estadistica_jugador_partido ejp13 ON al.partido = ejp13.partido AND al.jugador13 = ejp13.jugador
+        LEFT JOIN estadistica_jugador_partido ejp14 ON al.partido = ejp14.partido AND al.jugador14 = ejp14.jugador
+        LEFT JOIN estadistica_jugador_partido ejp15 ON al.partido = ejp15.partido AND al.jugador15 = ejp15.jugador
+        LEFT JOIN estadistica_jugador_partido ejp16 ON al.partido = ejp16.partido AND al.jugador16 = ejp16.jugador
+        LEFT JOIN estadistica_jugador_partido ejp17 ON al.partido = ejp17.partido AND al.jugador17 = ejp17.jugador
+        LEFT JOIN estadistica_jugador_partido ejp18 ON al.partido = ejp18.partido AND al.jugador18 = ejp18.jugador
+        LEFT JOIN estadistica_jugador_partido ejp19 ON al.partido = ejp19.partido AND al.jugador19 = ejp19.jugador
+        LEFT JOIN estadistica_jugador_partido ejp20 ON al.partido = ejp20.partido AND al.jugador20 = ejp20.jugador
+        LEFT JOIN estadistica_jugador_partido ejp21 ON al.partido = ejp21.partido AND al.jugador21 = ejp21.jugador
+        LEFT JOIN estadistica_jugador_partido ejp22 ON al.partido = ejp22.partido AND al.jugador22 = ejp22.jugador
+
+        WHERE al.partido = ?;
         `, [partido])
     return rows[0]; 
      
