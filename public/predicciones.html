@@ -304,6 +304,7 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
             let pointsChartInstance = null;
+            const body = document.body;
             const imgLocal = document.getElementById('local-team-img-1');
             const imgVisitante = document.getElementById('visitante-team-img-1');
             const darkChartOptions = { 
@@ -368,12 +369,13 @@
 
                 // RQF4 Condición: Si no hay datos, mostrar placeholder
                 if (!historial || historial.length === 0) {
+                    console.log("No hay datos")
                     placeholder.style.display = 'block';
                     ctx.canvas.style.display = 'none';
                     
                     // Lógica de 1 de Agosto (opcional, pero como lo pediste)
                     const hoy = new Date();
-                    if (hoy.getMonth() == 7 && hoy.getDay() < 10) { // 7 es Agosto (0-11)
+                    if (hoy.getMonth() == 7 && hoy.getDate() < 10) { // 7 es Agosto (0-11)
                         placeholder.textContent = "La temporada de predicciones aún no ha comenzado.";
                     } else {
                         placeholder.textContent = "¡Empieza a predecir para ver tu historial de puntos!";
@@ -390,7 +392,7 @@
 
                 // Calcular puntos acumulados
                 historial.forEach(item => {
-                    totalAcumulado += parseInt(item.puntos_jornada, 10); // Suma los puntos de esta jornada
+                    totalAcumulado = parseInt(item.puntos_jornada, 10); // Suma los puntos de esta jornada
                     labels.push(`J${item.jornada}`);
                     cumulativeData.push(totalAcumulado); // Añade el total acumulado
                 });

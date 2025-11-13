@@ -5,7 +5,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import cookieParser from 'cookie-parser';
-import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail, getUsuarioData, getEquipoFantasyUsuario, getJugadoresFantasy, crearEquipoFantasyCompleto, getPlantillaFantasy, getDesglosePuntosFantasyJugador, getProximoPartido, realizarFichaje, actualizarPlantilla, getProximosPartidosDeEquipos, getMVPdeLaSemana, getPartidosRandom, getPlantillasDePredicciones, getEstadoDeForma, getPronosticoResultado, getPronosticoPrimerEquipoEnAnotar, getPronosticoPrimerJugadorEnAnotar, guardarPrediccionUsuario, getJornadaFromPartido, getMisPredicciones, getHistorialPredicciones, unirseLigaPorCodigo, crearLiga, getLeagueRanking, getMisLigas, getPublicLeagueIDs, getLeagueRankingTop10, getEquipoEventoUsuario, getEventoRanking, getEventoActivo, crearEquipoEventoCompleto, getAvailableEventPlayers, getEquipoEventoUsuarioID, getPlantillaEvento} from './database.js'
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail, getUsuarioData, getEquipoFantasyUsuario, getJugadoresFantasy, crearEquipoFantasyCompleto, getPlantillaFantasy, getDesglosePuntosFantasyJugador, getProximoPartido, realizarFichaje, actualizarPlantilla, getProximosPartidosDeEquipos, getMVPdeLaSemana, getPartidosRandom, getPlantillasDePredicciones, getEstadoDeForma, getPronosticoResultado, getPronosticoPrimerEquipoEnAnotar, getPronosticoPrimerJugadorEnAnotar, guardarPrediccionUsuario, getJornadaFromPartido, getMisPredicciones, getHistorialPredicciones, unirseLigaPorCodigo, crearLiga, getLeagueRanking, getMisLigas, getPublicLeagueIDs, getLeagueRankingTop10, getEquipoEventoUsuario, getEventoRanking, getEventoActivo, crearEquipoEventoCompleto, getAvailableEventPlayers, getEquipoEventoUsuarioID, getPlantillaEvento, getLogrosBase} from './database.js'
  
 
 const app = express()  
@@ -37,6 +37,47 @@ function authenticateToken(req, res, next) {
         next(); // Permite que la petición continúe a la ruta solicitada
     });
 }
+
+app.get("/api/fantasy/logros", authenticateToken, async (req, res) => {
+    try {
+        const userId = req.userId;
+        
+        // 1. Obtener la info estática de todos los logros (nombre, desc, unlocked, rarity, rule_key, target)
+        const logros = await getLogrosBase(userId);
+        
+        // 2. Obtener los datos dinámicos (progreso) que necesitaremos
+        // (Usamos Promise.all para hacerlos al mismo tiempo)
+        const [userData, equipoData] = await Promise.all([
+            getUsuarioData(userId),
+            getEquipoFantasyUsuario(userId)
+        ]);
+        
+        const equipoCount = equipoData ? 1 : 0; // El progreso es 0 (no tiene) o 1 (ya tiene)
+
+        // 3. Mapear los resultados para añadir 'current' (RQF2)
+        const logrosConProgreso = logros.map(logro => {
+            let currentProgress = 0;
+            
+            
+            
+            // Devolvemos el objeto final que el frontend espera
+            return {
+                id: logro.id_logro,
+                nombre: logro.nombre,
+                descripcion: logro.descripcion,
+                rarity: logro.rarity,
+                unlocked: logro.unlocked === 1 // Convertir a booleano
+                
+            };
+        });
+
+        res.status(200).json(logrosConProgreso);
+
+    } catch (error) {
+        console.error("Error al obtener logros:", error);
+        res.status(500).json({ error: "Error interno del servidor." });
+    }
+});
 
 app.post("/api/fantasy/crear-equipo-evento", authenticateToken, async (req, res) => {
     try {

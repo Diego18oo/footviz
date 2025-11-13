@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>FootViz - Mis Logros</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+        <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+        <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+
+        <style>
+            /* --- Estilos Base --- */
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Poppins', sans-serif;
+                background-color: #1a1a2e;
+                color: #e0e0e0;
+                padding: 20px;
+                transition: background-color 0.3s, color 0.3s;
+            }
+            .container { 
+                max-width: 900px; /* Ancho ideal para una lista */
+                margin: 0 auto; 
+            }
+            h2 { 
+                color: #ffffff; 
+                margin-bottom: 20px; 
+                padding-bottom: 10px;
+                border-bottom: 1px solid #2a2a4a;
+                font-size: 1.5rem;
+            }
+
+            /* --- Header --- */
+            .header {
+                display: flex; justify-content: space-between; align-items: center;
+                margin-bottom: 30px; padding-bottom: 20px;
+                border-bottom: 1px solid #2a2a4a;
+            }
+            .header h1 { font-size: 2rem; color: #ffffff; font-weight: 700; }
+            .return-btn {
+                background: none; border: none; color: #a0a0c0; font-size: 1.5rem; 
+                cursor: pointer; display: flex; align-items: center; gap: 5px; 
+                transition: color 0.2s; text-decoration: none;
+            }
+            .return-btn:hover { color: #4a69ff; }
+            /* (Quitamos el theme-toggle de esta página por simplicidad, puedes añadirlo si quieres) */
+
+            /* --- Tarjeta Principal --- */
+            .card {
+                background-color: #1e1e3f;
+                border-radius: 12px;
+                padding: 25px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                margin-bottom: 20px;
+            }
+
+            /* --- Lista de Logros --- */
+            #achievements-list {
+                display: flex;
+                flex-direction: column;
+                gap: 15px; /* Espacio entre cada logro */
+            }
+            .achievement-item {
+                display: flex;
+                align-items: center;
+                gap: 20px;
+                padding: 15px;
+                border-radius: 8px;
+                background-color: #2a2a4a; /* Fondo para logros bloqueados */
+                border: 1px solid #2a2a4a;
+                opacity: 0.7; /* Apagado si está bloqueado */
+                transition: all 0.3s ease;
+            }
+            /* RQF1: Resaltar desbloqueados */
+            .achievement-item.unlocked {
+                background-color: #1e1e3f;
+                border-color: #059669; /* Borde verde */
+                opacity: 1;
+                box-shadow: 0 0 10px rgba(5, 150, 105, 0.3);
+            }
+
+            /* RQF5: Icono (Pieza de rompecabezas) */
+            .achievement-icon {
+                font-size: 2.5rem;
+                color: #a0a0c0;
+                width: 50px;
+                text-align: center;
+            }
+            .achievement-item.unlocked .achievement-icon {
+                color: #059669; /* Icono verde */
+            }
+
+            /* RQF3: Info (Nombre y Descripción) */
+            .achievement-info {
+                flex-grow: 1;
+            }
+            .achievement-info h3 {
+                margin: 0 0 5px 0;
+                font-size: 1.1rem;
+                color: #ffffff;
+            }
+            .achievement-info p {
+                font-size: 0.9rem;
+                color: #a0a0c0;
+                line-height: 1.5;
+            }
+            .achievement-item.unlocked .achievement-info p {
+                color: #e0e0e0;
+            }
+
+            /* RQF2 y RQF4: Progreso y Rareza */
+            .achievement-progress {
+                width: 150px;
+                text-align: right;
+            }
+            .rarity { /* RQF4 */
+                font-size: 0.8rem;
+                font-weight: 600;
+                color: #f59e0b; /* Amarillo/Dorado */
+                margin-bottom: 8px;
+            }
+            .progress-text { /* RQF2 */
+                font-size: 0.8rem;
+                color: #a0a0c0;
+                margin-bottom: 5px;
+            }
+            .progress-bar {
+                height: 8px;
+                width: 100%;
+                background-color: #1a1a2e;
+                border-radius: 4px;
+                overflow: hidden;
+            }
+            .progress-bar-fill {
+                height: 100%;
+                width: 0%; /* Se actualiza con JS */
+                background-color: #4a69ff;
+                border-radius: 4px;
+                transition: width 0.5s;
+            }
+            /* Ocultar progreso si ya está desbloqueado */
+            .achievement-item.unlocked .progress-bar,
+            .achievement-item.unlocked .progress-text {
+                display: none;
+            }
+            .achievement-item.unlocked .rarity {
+                margin-bottom: 0; /* Ajustar espacio si no hay barra */
+            }
+
+            /* --- Modo Claro (Placeholder) --- */
+            body.light-mode { background-color: #f4f4f9; color: #333; }
+            body.light-mode .header { border-bottom-color: #e0e0e0; }
+            body.light-mode .header h1, body.light-mode h2 { color: #1a1a2e; }
+            body.light-mode .return-btn { color: #666; }
+            body.light-mode .card { background-color: #ffffff; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); }
+            body.light-mode .achievement-item { background-color: #e9e9f3; border-color: #e9e9f3; }
+            body.light-mode .achievement-item.unlocked { background-color: #ffffff; border-color: #059669; }
+            body.light-mode .achievement-icon { color: #888; }
+            body.light-mode .achievement-item.unlocked .achievement-icon { color: #059669; }
+            body.light-mode .achievement-info h3 { color: #1a1a2e; }
+            body.light-mode .achievement-info p { color: #555; }
+            body.light-mode .progress-text { color: #555; }
+            body.light-mode .progress-bar { background-color: #d1d1d1; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+
+            <header class="header">
+                
+                <h1>Mis Logros</h1>
+                <div style="width: 42px;"></div> 
+            </header>
+
+            <main>
+                <div class="card">
+                    <h2>Todos los Logros</h2>
+                    
+                    <div id="achievements-list">
+                        </div>
+                </div>
+            </main>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                
+                // --- LÓGICA DE CARGA ---
+                async function loadAchievements() {
+                    const listContainer = document.getElementById('achievements-list');
+                    listContainer.innerHTML = "<p>Cargando logros...</p>";
+
+                    try {
+                        // El endpoint debe devolver un array con TODOS los logros,
+                        // incluyendo el estado de desbloqueo del usuario,
+                        // la rareza, y el progreso actual.
+                        const response = await fetch('/api/fantasy/logros');
+                        
+                        if (response.status === 401 || response.status === 403) {
+                            alert("Sesión expirada.");
+                            window.location.href = '/login.html';
+                            return;
+                        }
+                        if (!response.ok) throw new Error('Error al cargar logros.');
+
+                        const logros = await response.json();
+                        
+                        // JSON esperado:
+                        // [
+                        //   { id: 1, nombre: "Primeros Pasos", desc: "...", icono: "rocket-outline", rarity: 80.5, unlocked: true, current: 1, target: 1 },
+                        //   { id: 2, nombre: "Visionario", desc: "Acierta 10 predicciones", icono: "eye-outline", rarity: 15.2, unlocked: false, current: 3, target: 10 }
+                        // ]
+                        
+                        listContainer.innerHTML = ""; // Limpiar "Cargando..."
+                        
+                        if (logros.length === 0) {
+                            listContainer.innerHTML = "<p>No hay logros disponibles.</p>";
+                            return;
+                        }
+
+                        // Ordenar: Desbloqueados primero, luego por rareza
+                        logros.sort((a, b) => {
+                            if (a.unlocked !== b.unlocked) {
+                                return a.unlocked ? -1 : 1; // Desbloqueados van arriba
+                            }
+                            return a.rarity - b.rarity; // Los más raros (número bajo) van arriba
+                        });
+
+                        logros.forEach(logro => {
+                            const logroHTML = createAchievementHTML(logro);
+                            listContainer.innerHTML += logroHTML;
+                        });
+
+                    } catch (error) {
+                        console.error("Error al cargar logros:", error);
+                        listContainer.innerHTML = "<p style='color: #dc2626;'>Error al cargar los logros.</p>";
+                    }
+                }
+
+                // --- FUNCIÓN PARA CREAR EL HTML DE CADA LOGRO ---
+                function createAchievementHTML(logro) {
+                    // RQF1: Aplicar clase si está desbloqueado
+                    const unlockedClass = logro.unlocked ? 'unlocked' : '';
+                    
+                    // RQF2: Calcular progreso
+                    const progressPercent = (logro.target > 0) ? (logro.current / logro.target) * 100 : 0;
+                    const progressText = (logro.target > 1) ? `${logro.current} / ${logro.target}` : '';
+                    
+                    // RQF4: Formatear rareza
+                    const rarityText = `Desbloqueado por ${logro.rarity}% de los jugadores`;
+
+                    return `
+                        <div class="achievement-item ${unlockedClass}">
+                            <div class="achievement-icon">
+                                <ion-icon name="${logro.icono || 'ribbon-outline'}"></ion-icon>
+                            </div>
+                            
+                            <div class="achievement-info">
+                                <h3>${logro.nombre}</h3>
+                                <p>${logro.descripcion}</p>
+                            </div>
+                            
+                            <div class="achievement-progress">
+                                <p class="rarity">${rarityText}</p>
+                                <p class="progress-text">${progressText}</p>
+                                <div class="progress-bar">
+                                    <div class="progress-bar-fill" style="width: ${progressPercent}%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // --- LÓGICA DE TEMA (Placeholder) ---
+                // (Tu lógica de tema iría aquí)
+                
+                // --- Carga Inicial ---
+                loadAchievements();
+            });
+        </script>
+        
+
+    </body>
+</html>

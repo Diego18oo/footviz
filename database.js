@@ -2629,3 +2629,36 @@ export async function getPlantillaEvento(id_equipo_evento) {
     );
     return rows; // Devuelve el array de 11 jugadores
 }
+
+export async function getLogrosBase(id_usuario) {
+    // Primero, contamos el total de usuarios con equipo para el cálculo de rareza
+    const [totalUsersRows] = await pool.query('SELECT COUNT(id_usuario) AS total FROM equipo_fantasy');
+    const totalUsers = totalUsersRows[0].total > 0 ? totalUsersRows[0].total : 1; // Evita división por cero
+
+    const sql = `
+        SELECT
+            l.id_logro,
+            l.nombre,
+            l.descripcion,
+            
+            -- RQF1/RQNF1: Revisa si ESTE usuario tiene el logro
+            (CASE WHEN lu_user.id_usuario IS NOT NULL THEN 1 ELSE 0 END) AS unlocked,
+            
+            -- RQF4: Calcula la rareza (qué % de usuarios totales lo tiene)
+            (SELECT COUNT(id_usuario) FROM logro_usuario lu_all WHERE lu_all.id_logro = l.id_logro) * 100 / 24 AS rarity
+
+            -- RQF5 (Icono): Hardcodeado porque no está en la BD
+            
+            
+        FROM 
+            logro l
+        LEFT JOIN 
+            -- Join para el estado 'unlocked' DE ESTE USUARIO
+            logro_usuario lu_user ON l.id_logro = lu_user.id_logro AND lu_user.id_usuario = 18
+        ORDER BY
+            unlocked DESC, rarity ASC;
+    `;
+    
+    const [rows] = await pool.query(sql, [totalUsers, id_usuario]);
+    return rows;
+}
