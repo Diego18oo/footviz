@@ -4,12 +4,11 @@ from dotenv import load_dotenv
 from sqlalchemy.dialects.mysql import insert
 from scrape_sofa import get_sofascore_api_data, init_driver, get_all_urls_fbref
 from datetime import datetime, timedelta
-from funciones import liga_fbref_fixtures, ligas_ids, temporadas_ids, insert_tabla_posiciones, insert_update_partidos, insert_estadistica_partido, insert_update_plantilla_equipos, insert_mapa_de_calor, insert_mapa_de_disparos, insert_estadistica_jugador, update_standings_evolution_graph, ultimos_partidos, update_fecha_partidos, prematch_odds, postmatch_odss, pending_odds, insert_confirmed_lineups, prematch_ref, insert_predicted_lineups, extract_img_url, transfer_to_database, procesar_puntos_partido, actualizar_valor_mercado_fantasy, actualizar_porcentaje_popularidad, update_fantasy_team_points, calcular_puntos_predicciones, update_fantasy_event_team_points
+from funciones import liga_fbref_fixtures, ligas_ids, temporadas_ids, insert_tabla_posiciones, insert_update_partidos, insert_estadistica_partido, insert_update_plantilla_equipos, insert_mapa_de_calor, insert_mapa_de_disparos, insert_estadistica_jugador, update_standings_evolution_graph, ultimos_partidos, update_fecha_partidos, prematch_odds, postmatch_odss, pending_odds, insert_confirmed_lineups, prematch_ref, insert_predicted_lineups, extract_img_url, transfer_to_database, procesar_puntos_partido, actualizar_valor_mercado_fantasy, actualizar_porcentaje_popularidad, update_fantasy_team_points, calcular_puntos_predicciones, update_fantasy_event_team_points, calcular_xp_fin_de_jornada, ejecutar_procesos_fin_de_jornada
 import pandas as pd
 
 load_dotenv()
 
-# --- 2. CONSTRUIR LA URL DE LA BASE DE DATOS DE FORMA SEGURA ---
 db_user = os.getenv('DB_USER')
 db_password = os.getenv('DB_PASSWORD')
 db_host = os.getenv('DB_HOST')
@@ -54,17 +53,14 @@ ids_para_scrapear_temporada = df_partidos_ayer['temporada'].unique()
         #prematch_ref(engine, df_partidos_futuros.iloc[i] )
         #prematch_odds(engine, df_partidos_futuros.iloc[i])
         #insert_predicted_lineups(engine, df_partidos_futuros.iloc[i])
- 
-update_fantasy_team_points(engine)
-update_fantasy_event_team_points(engine)
-actualizar_porcentaje_popularidad(engine)
-actualizar_valor_mercado_fantasy(engine)
+
+ejecutar_procesos_fin_de_jornada(engine, 11)
+
+#actualizar_porcentaje_popularidad(engine)
+#actualizar_valor_mercado_fantasy(engine)
 
 
-df_partidos_predicciones = pd.read_sql(f"select distinct pu.id_partido from prediccion_usuario pu JOIN partido p on pu.id_partido = p.id_partido where p.fecha < '{today}'", engine)
 
-for i in range(len(df_partidos_predicciones)):
-    calcular_puntos_predicciones(engine, df_partidos_predicciones.iloc[i]['id_partido'])
 
 #verifica que si haya partidos el dia de ayer
 if len(df_partidos_ayer) == 0:

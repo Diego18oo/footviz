@@ -693,6 +693,9 @@
             }
 
             function  handleSwap(player1_id, player2_id) {
+                const fechaHoy = new Date();
+                const diasNoPermitidos = [0,1,5,6];
+                const diaHoy = fechaHoy.getDay();
                 const player1 = miPlantilla.find(p => p.id_jugador === player1_id);
                 const player2 = miPlantilla.find(p => p.id_jugador === player2_id);
 
@@ -701,9 +704,7 @@
                     return;
                 }
 
-                // --- 👇 BLOQUE DE CÓDIGO ELIMINADO 👇 ---
-                // (Aquí había un 'if (jugadorEntrante.puntos_ultima_jornada_equipo > 0)'... ¡se fue!)
-                // --- 👆 FIN DE LA ELIMINACIÓN 👆 ---
+                
 
 
                 // 1. Crea una copia temporal de la plantilla para probar el cambio
@@ -716,13 +717,16 @@
                 [tempP1.es_titular, tempP2.es_titular] = [tempP2.es_titular, tempP1.es_titular];
 
                 if (isFormationValid(tempPlantilla)) {
-                    // ¡Válido! Aplica el cambio
                     [player1.es_titular, player2.es_titular] = [player2.es_titular, player1.es_titular];
-
-                    if(player1.puntos_ultima_jornada_equipo > 0 || player2.puntos_ultima_jornada_equipo > 0 ){
-                        alert("Cambio invalido, solo pueden entrar jugadores que no han jugado");
-                        return;
+                    console.log(diaHoy);
+                    if (diasNoPermitidos.includes(diaHoy)){
+                        if(player1.puntos_ultima_jornada_equipo > 0 || player2.puntos_ultima_jornada_equipo > 0 ){
+                            alert("Cambio invalido, solo pueden entrar jugadores que no han jugado");
+                            return;
+                        }
                     }
+
+                    
                     
                     if (player1.es_capitan && player1.es_titular === 0) player1.es_capitan = 0;
                     if (player2.es_capitan && player2.es_titular === 0) player2.es_capitan = 0;

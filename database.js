@@ -2654,11 +2654,33 @@ export async function getLogrosBase(id_usuario) {
             logro l
         LEFT JOIN 
             -- Join para el estado 'unlocked' DE ESTE USUARIO
-            logro_usuario lu_user ON l.id_logro = lu_user.id_logro AND lu_user.id_usuario = 18
+            logro_usuario lu_user ON l.id_logro = lu_user.id_logro AND lu_user.id_usuario = ?
         ORDER BY
             unlocked DESC, rarity ASC;
     `;
     
     const [rows] = await pool.query(sql, [totalUsers, id_usuario]);
     return rows;
+}
+
+
+export async function otorgarLogro(id_usuario, id_logro) {
+    try {
+        // 'INSERT IGNORE' es la clave:
+        // Intenta insertar. Si la fila ya existe (duplicado), no hace nada y no da error.
+        const [result] = await pool.query(
+            'INSERT IGNORE INTO logro_usuario (id_logro, id_usuario, fecha_desbloqueo) VALUES (?, ?, NOW())',
+            [id_logro, id_usuario]
+        );
+        
+        if (result.affectedRows > 0) {
+            console.log(`¡LOGRO DESBLOQUEADO! Usuario ${id_usuario} obtuvo el logro ${id_logro}`);
+            // (Aquí podrías también añadir una llamada para el logro "GOAT")
+            // await checkLogroGOAT(id_usuario); 
+        }
+        return result.affectedRows > 0; // Devuelve true si el logro era nuevo
+        
+    } catch (error) {
+        console.error("Error al otorgar logro:", error);
+    }
 }

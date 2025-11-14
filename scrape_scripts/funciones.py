@@ -29,7 +29,57 @@ cloudinary.config(
 
 ligas_ids = [17, 8, 23, 35, 34] 
 temporadas_ids = [76986, 77559, 76457, 77333, 77356]
+XP_RANKING_RULES = {
+    'Global': [
+        (1, 200),
+        (10, 100),
+        (25, 50),
+        (50, 15),
+        (75, 5),
+        (100, 2),
+    ],
+    'Local': [
+        (1, 150),
+        (10, 80),
+        (25, 45),
+        (50, 12),
+        (75, 4),
+        (100, 2),
+    ],
+    'Eventos': [
+        (1, 250),
+        (10, 125),
+        (25, 70),
+        (50, 20),
+        (75, 6),
+        (100, 3),
+    ]
+}
 
+# Reglas de Nivel (XP necesaria)
+# (XP, Nivel) - IMPORTANTE: Ordenado de MAYOR a MENOR
+XP_LEVELS = [
+    (50000, 50),
+    (40000, 45),
+    (30000, 40),
+    (20000, 35),
+    (15000, 30),
+    (10000, 25),
+    (7500, 20),
+    (5000, 18),
+    (3000, 15),
+    (1500, 12),
+    (1000, 10),
+    (500, 9),
+    (300, 8),
+    (200, 7),
+    (150, 6),
+    (100, 5),
+    (70, 4),
+    (50, 3),
+    (20, 2),
+    (10, 1),
+]
 liga_fbref = [
     '9/Premier-League',
     '12/La-Liga',
@@ -2416,7 +2466,7 @@ def update_fantasy_team_points(engine):
         count_updated = len(update_data)
 
     print(f"✅ Actualización completada. Se sumaron puntos a {count_updated} equipos fantasy.")
-    return
+    return df_puntos_jornada
 
 def calcular_puntos_predicciones(engine, id_partido):
     """
@@ -2703,4 +2753,407 @@ def update_fantasy_event_team_points(engine):
         count_updated = len(update_data)
 
     print(f"✅ Actualización completada. Se sumaron puntos a {count_updated} equipos de evento.")
+    return df_puntos_jornada
+
+
+def get_ranking_xp(percentile, category):
+    """
+    Devuelve la XP correspondiente a un percentil y categoría.
+    """
+    rules = XP_RANKING_RULES.get(category)
+    if not rules:
+        return 0
+    print(percentile, category)
+    for (perc_limit, xp_points) in rules:
+        if percentile <= perc_limit:
+            print(xp_points)
+            return xp_points
+    return 0 # Por si acaso
+
+
+def get_update_levels_sql():
+    """
+    Construye una consulta SQL 'CASE' para actualizar todos los niveles
+    basado en la lista XP_LEVELS.
+    """
+    case_sql = "UPDATE usuario SET nivel = CASE\n"
+    for (xp_needed, level) in XP_LEVELS:
+        case_sql += f"    WHEN xp_total >= {xp_needed} THEN {level}\n"
+    
+    # Nivel 0 o 1 por defecto para los que no llegan a 10 XP
+    case_sql += "    ELSE 1\n" 
+    case_sql += "END;"
+    return text(case_sql)
+
+
+def calcular_xp_fin_de_jornada(engine, jornada_actual):
+    """
+    Calcula y actualiza la XP y Nivel para todos los usuarios
+    basado en la jornada actual.
+    """
+    
+    print(f"--- Iniciando cálculo de XP para la Jornada {jornada_actual} ---")
+    
+    # --- A. OBTENER DATOS BASE ---
+    
+    # 1. Todos los usuarios y su país (para ranking local)
+    df_usuarios = pd.read_sql("SELECT id_usuario, pais_id FROM usuario", engine)
+    
+    # 2. Puntos de predicción de esta jornada
+    df_predicciones = pd.read_sql(
+        text("SELECT id_usuario, SUM(puntos_obtenidos) as xp_prediccion FROM prediccion_usuario WHERE jornada = :jornada GROUP BY id_usuario"),
+        engine,
+        params={"jornada": jornada_actual}
+    )
+    
+    # 3. Puntos de ranking Global/Local (de equipo_fantasy)
+    df_global_local = pd.read_sql(
+        text("SELECT id_usuario, puntos_totales FROM equipo_fantasy"),
+        engine
+    )
+    
+    # 4. Puntos de ranking de Eventos
+    df_eventos = pd.read_sql(
+        text("SELECT id_usuario, id_evento, puntos_totales FROM equipo_evento"),
+        engine
+    )
+
+    # --- B. INICIALIZAR XP GANADA ---
+    
+    # Creamos un DataFrame final para acumular la XP
+    df_xp_final = df_usuarios.copy()
+    df_xp_final['xp_ganada_total'] = 0
+    
+    # --- C. ACUMULAR XP DE PREDICCIONES ---
+    
+    df_xp_final = pd.merge(df_xp_final, df_predicciones, on='id_usuario', how='left')
+    df_xp_final['xp_prediccion'] = df_xp_final['xp_prediccion'].fillna(0)
+    df_xp_final['xp_ganada_total'] += df_xp_final['xp_prediccion']
+    
+    print(f"Calculada XP de predicciones. Total: {df_xp_final['xp_prediccion'].sum()} XP")
+
+    # --- D. ACUMULAR XP DE RANKING GLOBAL ---
+    
+    df_global_ranking = pd.merge(df_usuarios, df_global_local, on='id_usuario', how='inner')
+    total_global = len(df_global_ranking)
+    
+    if total_global > 0:
+        # 'min' maneja empates (ej. 2 jugadores en 1er lugar, ambos son rank 1)
+        df_global_ranking['rank'] = df_global_ranking['puntos_totales'].rank(ascending=False, method='min')
+        df_global_ranking['percentil'] = (df_global_ranking['rank'] / total_global) * 100
+        df_global_ranking['xp_global'] = df_global_ranking['percentil'].apply(lambda p: get_ranking_xp(p, 'Global'))
+        
+        # Sumar al total
+        df_xp_final = pd.merge(df_xp_final, df_global_ranking[['id_usuario', 'xp_global']], on='id_usuario', how='left')
+        df_xp_final['xp_global'] = df_xp_final['xp_global'].fillna(0)
+        df_xp_final['xp_ganada_total'] += df_xp_final['xp_global']
+        print(f"Calculada XP de ranking Global. Total: {df_xp_final['xp_global'].sum()} XP")
+        
+    # --- E. ACUMULAR XP DE RANKING LOCAL ---
+    
+    # Reutilizamos df_global_ranking que ya tiene los puntos
+    df_local_ranking = df_global_ranking.copy()
+    
+    if total_global > 0:
+        # Rankear DENTRO de cada grupo de país
+        df_local_ranking['rank_local'] = df_local_ranking.groupby('pais_id')['puntos_totales'].rank(ascending=False, method='min')
+        
+        # Obtener el tamaño de cada grupo
+        group_sizes = df_local_ranking.groupby('pais_id')['id_usuario'].transform('count')
+        
+        df_local_ranking['percentil_local'] = (df_local_ranking['rank_local'] / group_sizes) * 100
+        df_local_ranking['xp_local'] = df_local_ranking['percentil_local'].apply(lambda p: get_ranking_xp(p, 'Local'))
+        
+        # Sumar al total
+        df_xp_final = pd.merge(df_xp_final, df_local_ranking[['id_usuario', 'xp_local']], on='id_usuario', how='left')
+        df_xp_final['xp_local'] = df_xp_final['xp_local'].fillna(0)
+        df_xp_final['xp_ganada_total'] += df_xp_final['xp_local']
+        print(f"Calculada XP de ranking Local. Total: {df_xp_final['xp_local'].sum()} XP")
+        
+    # --- F. ACUMULAR XP DE RANKING EVENTOS ---
+    
+    if not df_eventos.empty:
+        # Rankear DENTRO de cada grupo de evento
+        df_eventos['rank_evento'] = df_eventos.groupby('id_evento')['puntos_totales'].rank(ascending=False, method='min')
+        event_sizes = df_eventos.groupby('id_evento')['id_usuario'].transform('count')
+        df_eventos['percentil_evento'] = (df_eventos['rank_evento'] / event_sizes) * 100
+        df_eventos['xp_evento'] = df_eventos['percentil_evento'].apply(lambda p: get_ranking_xp(p, 'Eventos'))
+        
+        # Un usuario puede estar en varios eventos, así que sumamos toda la XP de eventos por usuario
+        df_xp_eventos_total = df_eventos.groupby('id_usuario')['xp_evento'].sum().reset_index()
+
+        # Sumar al total
+        df_xp_final = pd.merge(df_xp_final, df_xp_eventos_total, on='id_usuario', how='left')
+        df_xp_final['xp_evento'] = df_xp_final['xp_evento'].fillna(0)
+        df_xp_final['xp_ganada_total'] += df_xp_final['xp_evento']
+        print(f"Calculada XP de Eventos. Total: {df_xp_final['xp_evento'].sum()} XP")
+
+    # --- G. ACTUALIZAR XP_TOTAL EN LA BD ---
+    
+    # Filtramos solo usuarios que ganaron algo para no actualizar a todos
+    df_actualizar = df_xp_final[df_xp_final['xp_ganada_total'] > 0]
+    
+    if not df_actualizar.empty:
+        # Convertir a lista de diccionarios para el bulk update
+        data_para_actualizar = df_actualizar.apply(
+            lambda row: {
+                'u_id': int(row['id_usuario']), 
+                'xp_ganada': int(row['xp_ganada_total'])
+            }, axis=1
+        ).tolist()
+        
+        # Preparar el bulk update
+        meta = MetaData()
+        meta.reflect(bind=engine)
+        tabla_usuario = meta.tables['usuario']
+        
+        stmt = update(tabla_usuario).where(
+            tabla_usuario.c.id_usuario == bindparam('u_id')
+        ).values(
+            xp_total = tabla_usuario.c.xp_total + bindparam('xp_ganada')
+        )
+        
+        with engine.begin() as conn:
+            conn.execute(stmt, data_para_actualizar)
+            
+        print(f"Se actualizó la XP_TOTAL de {len(data_para_actualizar)} usuarios.")
+        
+    else:
+        print("No se generó XP nueva esta jornada.")
+
+    # --- H. ACTUALIZAR NIVELES DE TODOS LOS USUARIOS ---
+    
+    sql_update_niveles = get_update_levels_sql()
+    
+    with engine.begin() as conn:
+        conn.execute(sql_update_niveles)
+    df_usuarios_actualizados = pd.read_sql("SELECT id_usuario, nivel FROM usuario", engine)
+    print("Se actualizaron los NIVELES de todos los usuarios.")
+    print(f"--- Proceso de XP para Jornada {jornada_actual} completado ---")
+
+    return df_usuarios_actualizados
+
+
+def otorgar_logros_y_revisar_goat(engine, lista_logros_a_insertar):
+    """
+    Inserta una lista de logros en la BD usando 'INSERT IGNORE' y
+    luego revisa si alguno de los usuarios afectados ganó el logro 'GOAT'.
+    """
+    if not lista_logros_a_insertar:
+        print("No hay nuevos logros para otorgar.")
+        return
+
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    tabla_logro_usuario = meta.tables['logro_usuario']
+
+    # 1. Preparar datos para la inserción
+    # lista_logros_a_insertar es una lista de tuplas: [(id_usuario, id_logro), ...]
+    # Quitamos duplicados por si acaso (ej. 2 jugadores con 2+ asistencias)
+    logros_unicos = list(set(lista_logros_a_insertar))
+    
+    data_para_insertar = [
+        {"id_usuario": u_id, "id_logro": l_id} for (u_id, l_id) in logros_unicos
+    ]
+    
+    # 2. Construir el INSERT IGNORE
+    # 'IGNORE' es la clave: si el usuario ya tiene el logro (UQ), 
+    # la consulta simplemente lo ignora sin dar error.
+    stmt = insert(tabla_logro_usuario).prefix_with('IGNORE')
+
+    with engine.begin() as conn:
+        conn.execute(stmt, data_para_insertar)
+        
+    print(f"✅ Se procesaron {len(data_para_insertar)} logros.")
+
+    # --- 3. REVISAR LOGRO "GOAT" (ID 7) ---
+    # Obtenemos solo los IDs de los usuarios que acaban de ganar algo
+    usuarios_afectados = list(set([u_id for (u_id, l_id) in logros_unicos]))
+    
+    if not usuarios_afectados:
+        return
+
+    # Convertir lista a string para la consulta SQL 'IN'
+    ids_str = ", ".join(map(str, usuarios_afectados))
+
+    # Contar cuántos logros ÚNICOS (sin contar el 7) tiene cada usuario afectado
+    sql_goat_check = text(f"""
+        SELECT id_usuario, COUNT(DISTINCT id_logro) as total_logros
+        FROM logro_usuario
+        WHERE id_usuario IN ({ids_str}) AND id_logro != 10
+        GROUP BY id_usuario
+    """)
+    
+    df_conteo_logros = pd.read_sql(sql_goat_check, engine)
+    
+    # Filtrar los que tienen 6 logros (todos menos GOAT)
+    df_goat_ganadores = df_conteo_logros[df_conteo_logros['total_logros'] == 8]
+
+    if not df_goat_ganadores.empty:
+        logros_goat = [
+            {"id_usuario": int(row.id_usuario), "id_logro": 10}
+            for row in df_goat_ganadores.itertuples()
+        ]
+        
+        # Insertar el logro GOAT (usando el mismo INSERT IGNORE)
+        with engine.begin() as conn:
+            conn.execute(stmt, logros_goat)
+        print(f"🏆 ¡{len(logros_goat)} usuarios han ganado el logro 'GOAT'!")
+
+    return
+
+
+def check_logros_visionario(df_puntos_jornada):
+    logros = []
+    
+    # Unir con equipo_fantasy para obtener id_usuario
+    # Asumo que tu función de puntos puede devolver 'id_equipo_fantasy' y 'id_usuario'
+    
+    # Logro 3: >= 50 puntos
+    df_50 = df_puntos_jornada[df_puntos_jornada['total_jornada_points'] >= 50]
+    for id_usuario in df_50['id_usuario']:
+        logros.append((int(id_usuario), 3))
+
+    # Logro 4: >= 100 puntos
+    df_100 = df_puntos_jornada[df_puntos_jornada['total_jornada_points'] >= 100]
+    for id_usuario in df_100['id_usuario']:
+        logros.append((int(id_usuario), 4))
+        
+    return logros
+
+def check_logro_capitan_lider(engine, jornada_actual):
+    sql = text(f"""
+        SELECT
+            ef.id_usuario
+        FROM
+            plantilla_fantasy pf
+        JOIN
+            equipo_fantasy ef ON pf.id_equipo_fantasy = ef.id_equipo_fantasy
+        JOIN
+            puntos_jugador_jornada pjj ON pf.id_jugador = pjj.id_jugador
+        WHERE
+            pf.es_capitan = 1
+            AND pjj.jornada = :jornada
+            AND pjj.puntos_fantasy >= 20
+        GROUP BY
+            ef.id_usuario
+    """)
+    df = pd.read_sql(sql, engine, params={"jornada": jornada_actual})
+    return [(int(row.id_usuario), 1) for row in df.itertuples()]
+
+
+def check_logro_repartiendo_juego(engine, jornada_actual):
+    sql = text(f"""
+        SELECT
+            ef.id_usuario
+        FROM
+            plantilla_fantasy pf
+        JOIN
+            equipo_fantasy ef ON pf.id_equipo_fantasy = ef.id_equipo_fantasy
+        JOIN
+            puntos_jugador_jornada pjj ON pf.id_jugador = pjj.id_jugador
+        JOIN
+            estadistica_jugador_partido ejp ON ejp.jugador = pjj.id_jugador AND ejp.partido = pjj.id_partido
+        WHERE
+            pf.es_titular = 1
+            AND pjj.jornada = :jornada
+            AND ejp.asistencias >= 2
+        GROUP BY
+            ef.id_usuario
+    """)
+    df = pd.read_sql(sql, engine, params={"jornada": jornada_actual})
+    return [(int(row.id_usuario), 6) for row in df.itertuples()]
+
+def check_logro_hombre_jornada(engine, jornada_actual):
+    # 1. Encontrar el puntaje MÁXIMO de la jornada
+    max_puntos_sql = text("SELECT MAX(puntos_fantasy) FROM puntos_jugador_jornada WHERE jornada = :jornada")
+    
+    with engine.connect() as conn:
+        max_puntos = conn.execute(max_puntos_sql, {"jornada": jornada_actual}).scalar()
+        
+    if max_puntos is None or max_puntos == 0:
+        return []
+
+    # 2. Encontrar TODOS los usuarios que tienen a CUALQUIERA de los jugadores
+    #    que obtuvieron ese puntaje máximo (puede haber empates)
+    sql = text(f"""
+        SELECT
+            ef.id_usuario
+        FROM
+            plantilla_fantasy pf
+        JOIN
+            equipo_fantasy ef ON pf.id_equipo_fantasy = ef.id_equipo_fantasy
+        JOIN
+            puntos_jugador_jornada pjj ON pf.id_jugador = pjj.id_jugador
+        WHERE
+            pjj.jornada = :jornada
+            AND pjj.puntos_fantasy = :max_puntos
+        GROUP BY
+            ef.id_usuario
+    """)
+    df = pd.read_sql(sql, engine, params={"jornada": jornada_actual, "max_puntos": max_puntos})
+    return [(int(row.id_usuario), 5) for row in df.itertuples()]
+
+
+def check_logro_coleccionista(df_usuarios_actualizados):
+    # df_usuarios_actualizados es el DataFrame de usuarios con su nuevo nivel
+    df_nivel_25 = df_usuarios_actualizados[df_usuarios_actualizados['nivel'] >= 25]
+    return [(int(row.id_usuario), 2) for row in df_nivel_25.itertuples()]
+
+
+def ejecutar_procesos_fin_de_jornada(engine, jornada_actual):
+    
+    # --- 1. CÁLCULO DE PUNTOS DE PREDICCIONES (Tu script) ---
+    print("Calculando puntos de predicciones...")
+    # (Aquí pones tu lógica para encontrar los id_partido de la jornada)
+    df_partidos_jornada = pd.read_sql(
+        text("SELECT id_partido FROM partido WHERE jornada = :jornada"),
+        engine,
+        params={"jornada": jornada_actual}
+    )
+    for id_partido in df_partidos_jornada['id_partido']:
+        calcular_puntos_predicciones(engine, id_partido)
+        
+     
+    # --- 2. CÁLCULO DE PUNTOS FANTASY (Tus scripts) ---
+    # (¡Asegúrate de que devuelvan los DataFrames!)
+    print("Calculando puntos de equipos fantasy...")
+    df_puntos_global = update_fantasy_team_points(engine) # Asume que esta función usa la jornada correcta
+    df_puntos_evento = update_fantasy_event_team_points(engine) # Asume que esta función usa la jornada correcta
+    
+    # (Combinamos los dataframes de puntos. Ajusta 'id_usuario' según sea necesario)
+    df_puntos_jornada = pd.concat([df_puntos_global, df_puntos_evento])
+    
+    
+    # --- 3. CÁLCULO DE LOGROS ---
+    print("Calculando logros de la jornada...")
+    lista_logros_a_insertar = []
+
+    # Logros de puntos de equipo
+    lista_logros_a_insertar.extend( check_logros_visionario(df_puntos_jornada) )
+    
+    # Logros de jugador
+    lista_logros_a_insertar.extend( check_logro_capitan_lider(engine, jornada_actual) )
+    lista_logros_a_insertar.extend( check_logro_repartiendo_juego(engine, jornada_actual) )
+    lista_logros_a_insertar.extend( check_logro_hombre_jornada(engine, jornada_actual) )
+    
+
+    # --- 4. CÁLCULO DE XP Y NIVEL (Tu script) ---
+    print("Calculando XP y Niveles...")
+    df_usuarios_con_nivel = calcular_xp_fin_de_jornada(engine, jornada_actual)
+    
+    
+    # --- 5. LOGRO DE NIVEL ---
+    print("Calculando logros de Nivel...")
+    lista_logros_a_insertar.extend( check_logro_coleccionista(df_usuarios_con_nivel) )
+    
+    
+    # --- 6. INSERCIÓN FINAL DE LOGROS ---
+    if lista_logros_a_insertar:
+        print("Otorgando logros...")
+        otorgar_logros_y_revisar_goat(engine, lista_logros_a_insertar)
+    else:
+        print("No se generaron nuevos logros esta jornada.")
+        
+    print("--- ¡PROCESO DE JORNADA COMPLETADO! ---")
     return
