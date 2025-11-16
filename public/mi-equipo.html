@@ -286,24 +286,21 @@
         </div>
 
         <script>
-            // --- VARIABLES GLOBALES DE ESTADO ---
-            let miPlantilla = []; // Los 15 jugadores del usuario
-            let allAvailablePlayers = []; // TODOS los jugadores de la BD (para fichajes)
-            let transferFilteredPlayers = []; // Lista filtrada para el modal de fichajes
+            let miPlantilla = []; 
+            let allAvailablePlayers = []; 
+            let transferFilteredPlayers = []; 
             let currentPlayerIdInModal = null;
             let draggedPlayerId = null;
             let playerToSell = null;
             let transferCurrentPage = 1;
             const transferPlayersPerPage = 10;
 
-            // --- ELEMENTOS DEL DOM ---
             const saveChangesButton = document.getElementById('save-team-changes-btn');
             const playerModal = document.getElementById('player-info-modal');
             const transferModal = document.getElementById('transfer-modal');
             const pitchDisplay = document.getElementById('pitch');
             const benchDisplay = document.getElementById('bench');
             
-            // Elementos del modal de fichajes
             const transferTBody = document.getElementById('transfer-player-list-body');
             const transferPosFilter = document.getElementById('transfer-position-filter');
             const transferTeamFilter = document.getElementById('transfer-team-filter');
@@ -311,9 +308,8 @@
             const transferPrevButton = document.getElementById('transfer-prev-page');
             const transferNextButton = document.getElementById('transfer-next-page');
             const transferPageNumbers = document.getElementById('transfer-page-numbers');
-            // --- Lógica Principal ---
+            
             async function loadTeamData() {
-                console.log("Cargando datos de Mi Equipo...");
                 try {
                     const response = await fetch('/api/fantasy/mi-equipo');
                     if (response.status === 401 || response.status === 403) {
@@ -324,24 +320,17 @@
                     if (!response.ok) throw new Error('Error al cargar datos del equipo.');
 
                     const data = await response.json(); 
-                    miPlantilla = data.plantillaConDetalles; // <-- GUARDA LA PLANTILLA GLOBALMENTE
+                    miPlantilla = data.plantillaConDetalles; 
 
-                    // Poblar Header
                     document.getElementById('username-display').textContent = data.userInfo.username;
                     document.getElementById('user-level').textContent = data.userInfo.nivel;
                     document.getElementById('user-xp').textContent = data.userInfo.xp_total;
 
-                    // Poblar Estado del Equipo
                     document.getElementById('budget-remaining').textContent = `${data.equipoInfo.presupuesto_restante} M`;
                     document.getElementById('transfers-remaining').textContent = data.equipoInfo.fichajes_jornada_restantes;
-                    // ... (lógica del deadline) ...
 
-                    // Renderizar Campo y Banca
                     renderPitchAndBench(miPlantilla);
 
-                    // ... (poblar fichas y próximos partidos) ...
-                    // renderChips(data.fichas);
-                    // renderFixtures(data.proximosPartidos);
 
                 } catch (error) {
                     console.error("Error en loadTeamData:", error);
@@ -350,17 +339,15 @@
 
             async function initializeTransferModal(positionToBuy, maxBudget) {
                 try {
-                    // 1. Cargar jugadores SIEMPRE, o al menos, si está vacío
                     if (allAvailablePlayers.length === 0) {
                         console.log("Cargando lista de jugadores por primera vez...");
                         const response = await fetch('/api/fantasy/available-players'); 
                         if (!response.ok) throw new Error('Error al cargar jugadores');
                         allAvailablePlayers = await response.json();
-                        console.log("Jugadores cargados:", allAvailablePlayers); // Confirmar
-                        populateTransferTeamFilter(); // Poblar el filtro de equipos
+                        console.log("Jugadores cargados:", allAvailablePlayers); 
+                        populateTransferTeamFilter(); 
                     }
 
-                    // 2. Mover el filtrado AQUÍ, *después* de que el await haya terminado
                     console.log(`Filtrando por: pos=${positionToBuy}, maxBudget=${maxBudget}`);
                     
                     transferFilteredPlayers = allAvailablePlayers.filter(p =>
@@ -369,15 +356,13 @@
                         !miPlantilla.find(mp => mp.id_jugador === p.id_jugador) 
                     );
                     
-                    console.log("Jugadores filtrados:", transferFilteredPlayers); // Este es el log clave
+                    console.log("Jugadores filtrados:", transferFilteredPlayers); 
 
-                    // 3. El resto de la función (se queda igual)
                     transferPosFilter.innerHTML = `<option value="${positionToBuy}">${positionToBuy}</option>`;
                     transferPosFilter.disabled = true;
                     transferTeamFilter.value = "ALL";
                     transferSearchInput.value = "";
                     
-                    // 4. Mostrar la primera página de la lista FILTRADA
                     displayTransferPage(1); 
 
                 } catch (error) {
@@ -413,14 +398,12 @@
                 updateTransferPageNumbers();
             }
 
-            // 3. Funciones de paginación (copiadas y adaptadas para el modal)
             function updateTransferPaginationButtons() {
                 const totalPages = Math.ceil(transferFilteredPlayers.length / transferPlayersPerPage);
                 transferPrevButton.disabled = transferCurrentPage === 1;
                 transferNextButton.disabled = transferCurrentPage === totalPages;
             }
             function updateTransferPageNumbers() {
-                // (Esta es una versión simplificada de la paginación, puedes copiar la compleja si quieres)
                 const totalPages = Math.ceil(transferFilteredPlayers.length / transferPlayersPerPage);
                 transferPageNumbers.textContent = `Pág ${transferCurrentPage} de ${totalPages}`;
             }
@@ -432,7 +415,6 @@
                 if (transferCurrentPage < totalPages) displayTransferPage(transferCurrentPage + 1);
             });
 
-            // 4. Función para poblar el filtro de equipos del modal
             function populateTransferTeamFilter() {
                 const teams = new Map();
                 allAvailablePlayers.forEach(player => {
@@ -449,7 +431,6 @@
                 });
             }
 
-            // 5. Función para ejecutar el fichaje (el POST final)
             async function executeTransfer(playerToBuyId) {
                 if (!playerToSell) return;
                 const playerToBuy = allAvailablePlayers.find(p => p.id_jugador === playerToBuyId);
@@ -485,9 +466,9 @@
                     alert("Error al realizar el fichaje: " + error.message);
                 }
             }
-            // --- Funciones Auxiliares ---
+
+            //RQF1
             function renderPitchAndBench(plantilla) {
-                // Limpiar campo y banca
                 document.getElementById('pitch-row-F').innerHTML = '';
                 document.getElementById('pitch-row-M').innerHTML = '';
                 document.getElementById('pitch-row-D').innerHTML = '';
@@ -507,13 +488,13 @@
                     document.getElementById('bench').innerHTML += slotHTML;
                 });
                 
-                addSlotClickListeners(); // Añadir listeners para modal
-                addDragListeners();      // Añadir listeners para drag/drop
+                addSlotClickListeners(); 
+                addDragListeners();      
             }
 
             function createPlayerSlotHTML(player) {
                 const now = new Date();
-                const dayOfWeek = now.getDay(); // 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
+                const dayOfWeek = now.getDay(); 
                 const allowedDays = [2, 3, 4, 5];
                 let currentGameweekPoints = player.puntos_ultima_jornada_equipo || 0;
                 if (allowedDays.includes(dayOfWeek)) {
@@ -525,7 +506,6 @@
                     captainBadge = '<span class="captain-badge">C</span>';
                 }
                 
-                // ✅ Añadimos draggable="true"
                 return `
                     <div class="player-slot" data-player-id="${player.id_jugador}" data-position="${player.posicion}" draggable="true"> 
                         ${captainBadge}
@@ -536,15 +516,15 @@
                 `;
             }
 
+            //RQF7
             function renderChips(fichasUsuario) {
                 const chipsList = document.getElementById('chips-list');
-                chipsList.innerHTML = ''; // Limpiar
-                // Aquí necesitarías una tabla 'ficha' con nombre y descripción
+                chipsList.innerHTML = ''; 
                 fichasUsuario.forEach(ficha => {
                     const button = document.createElement('button');
-                    button.id = `chip-${ficha.id_ficha}`; // Asumiendo que tienes un ID
-                    button.textContent = ficha.nombre; // Asumiendo que tienes un nombre
-                    button.disabled = ficha.jornada_uso !== null; // Deshabilitar si ya se usó
+                    button.id = `chip-${ficha.id_ficha}`; 
+                    button.textContent = ficha.nombre; 
+                    button.disabled = ficha.jornada_uso !== null; 
                     button.onclick = () => activateChip(ficha.id_ficha);
                     chipsList.appendChild(button);
                 });
@@ -552,8 +532,7 @@
 
             
 
-            // --- Funciones para el Modal ---
-
+            //RQF4
             function openPlayerModal(playerId) {
                 currentPlayerIdInModal = playerId;
                 const player = miPlantilla.find(p => p.id_jugador === playerId);
@@ -601,7 +580,6 @@
                 const makeCaptainBtn = document.getElementById('modal-make-captain-btn');
                 const substituteBtn = document.getElementById('modal-substitute-btn');
 
-                // ¿Se puede hacer capitán?
                 if (player.es_titular && !player.es_capitan) {
                     makeCaptainBtn.disabled = false;
                     makeCaptainBtn.textContent = "Hacer Capitán";
@@ -613,7 +591,6 @@
                     makeCaptainBtn.textContent = "Debe ser titular";
                 }
 
-                // Lógica de sustitución
                 substituteBtn.textContent = player.es_titular ? "Mover a la Banca" : "Mover a Titulares";
 
                 playerModal.style.display = 'flex';
@@ -673,7 +650,7 @@
                     
                     slot.addEventListener('dragend', (e) => {
                         e.currentTarget.style.opacity = '1';
-                        draggedPlayerId = null; // Resetea el ID
+                        draggedPlayerId = null; 
                     });
                 });
             }
@@ -688,10 +665,10 @@
                         positions[p.posicion]++;
                     }
                 });
-                // Tus reglas: 1 POR, 3 DEF, 2 CEN, 1 DEL
                 return positions['G'] == 1 && positions['D'] >= 3 && positions['M'] >= 2 && positions['F'] >= 1;
             }
 
+            //RQF2
             function  handleSwap(player1_id, player2_id) {
                 const fechaHoy = new Date();
                 const diasNoPermitidos = [0,1,5,6];
@@ -707,10 +684,7 @@
                 
 
 
-                // 1. Crea una copia temporal de la plantilla para probar el cambio
                 const tempPlantilla = JSON.parse(JSON.stringify(miPlantilla)); 
-                // ... (el resto de tu función handleSwap para validar la formación se queda igual) ...
-                // ...
                 const tempP1 = tempPlantilla.find(p => p.id_jugador === player1_id);
                 const tempP2 = tempPlantilla.find(p => p.id_jugador === player2_id);
 
@@ -757,15 +731,14 @@
             }
 
             function handleSubstitute() {
-                // --- VALIDACIÓN DE DÍA Y HORA (Esta se queda) ---
                 const now = new Date();
-                const dayOfWeek = now.getDay(); // 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
-                const allowedDays = [2, 3, 4]; // Martes, Miércoles, Jueves
+                const dayOfWeek = now.getDay(); 
+                const allowedDays = [2, 3, 4]; 
 
                 if (!allowedDays.includes(dayOfWeek)) {
                     alert("¡Mercado cerrado!\n\nLas sustituciones solo se pueden hacer los martes, miércoles y jueves antes de la fecha límite.");
                     closePlayerModal();
-                    return; // Detiene la acción
+                    return; 
                 }
 
                 if (dayOfWeek === 4 && (now.getHours() >= 23 && now.getMinutes() >= 59)) {
@@ -773,13 +746,11 @@
                     closePlayerModal();
                     return;
                 }
-                // --- FIN DE VALIDACIÓN DE DÍA Y HORA ---
                 
 
                 const player1_id = currentPlayerIdInModal;
                 const player1 = miPlantilla.find(p => p.id_jugador === currentPlayerIdInModal);
 
-                // Encuentra un jugador para intercambiar
                 const player2 = miPlantilla.find(p => 
                     p.posicion === player1.posicion && 
                     p.es_titular !== player1.es_titular
@@ -790,98 +761,86 @@
                     return;
                 }
                 
-                // Llama a la función de swap que tiene la validación de formación
                 handleSwap(player1.id_jugador, player2.id_jugador);
                 closePlayerModal();
             }
             
             
-            
+            //RQF5
             function handleMakeCaptain() {
                 const lastCaptainChange = localStorage.getItem('lastCaptainChange');
-                const now = new Date().getTime(); // Momento actual en milisegundos
-
+                const now = new Date().getTime(); 
                 if (lastCaptainChange) {
                     const lastChangeTime = parseInt(lastCaptainChange);
-                    const hoursPassed = (now - lastChangeTime) / (1000 * 60 * 60); // Horas desde el último cambio
+                    const hoursPassed = (now - lastChangeTime) / (1000 * 60 * 60); 
 
+                    //RQF6
                     if (hoursPassed < 24) {
                         alert(`Puedes cambiar de capitán solo una vez cada 24 horas. Faltan ${ (24 - hoursPassed).toFixed(1) } horas.`);
                         closePlayerModal();
                         return;
                     }
                 }
-                // --- 👆 FIN DE VALIDACIÓN 👆 ---
 
                 const newCaptainId = currentPlayerIdInModal;
                 const newCaptain = miPlantilla.find(p => p.id_jugador === newCaptainId);
-
-                // --- 👇 VALIDACIÓN REGLA 3 (Jugador ya ha jugado) 👇 ---
+                //RQNF3
                 if (newCaptain.puntos_ultima_jornada_equipo > 0) {
                     alert('No puedes hacer capitán a un jugador que ya ha jugado esta jornada.');
                     closePlayerModal();
                     return;
                 }
-                // --- 👆 FIN DE VALIDACIÓN 👆 ---
 
 
-                // 1. Quitar capitanazgo al capitán anterior (si existe)
                 const oldCaptain = miPlantilla.find(p => p.es_capitan === 1);
                 if (oldCaptain) {
                     oldCaptain.es_capitan = 0;
                 }
 
-                // 2. Asignar capitanazgo al nuevo jugador
                 newCaptain.es_capitan = 1;
 
                 console.log(`Nuevo capitán: ${newCaptain.nombre_jugador}`);
 
-                // 3. Volver a dibujar todo y cerrar
                 renderPitchAndBench(miPlantilla);
                 closePlayerModal();
-                showSaveChangesButton(); // Mostrar botón de guardar
-
-                // --- 👇 GUARDAR EL MOMENTO DEL CAMBIO (Regla 2) 👇 ---
-                // Si todas las validaciones pasaron y el cambio se hizo, guardamos la fecha/hora actual
+                showSaveChangesButton(); 
+               
                 localStorage.setItem('lastCaptainChange', now.toString());
             }
             
+            // RQF3
             function handleTransfer() {
                 const now = new Date();
-                const dayOfWeek = now.getDay(); // 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
-                const allowedDays = [2, 3, 4]; // Martes, Miércoles, Jueves
-
-                // 1. Validar que sea un día permitido
+                const dayOfWeek = now.getDay(); 
+                const allowedDays = [2, 3, 4]; 
                 if (!allowedDays.includes(dayOfWeek)) {
                     alert("¡Mercado de fichajes cerrado!\n\nSolo puedes realizar fichajes los martes, miércoles y jueves.");
                     closePlayerModal();
-                    return; // Detiene la acción
+                    return; 
                 }
-
-                // 2. Validar la hora límite del Jueves
+                //RQNF2
                 if (dayOfWeek === 4 && (now.getHours() >= 23 && now.getMinutes() >= 59)) {
                     alert("¡Mercado de fichajes cerrado!\n\nLa fecha límite (jueves 11:59 PM) ya ha pasado.");
                     closePlayerModal();
                     return;
                 }
                 const playerId = currentPlayerIdInModal;
-                playerToSell = miPlantilla.find(p => p.id_jugador === playerId); // Usa miPlantilla
+                playerToSell = miPlantilla.find(p => p.id_jugador === playerId); 
 
                 if (!playerToSell) return;
 
-                // Lógica de fichajes (RQF3)
                 const fichajesRestantesElement = document.getElementById('transfers-remaining');
                 const fichajesRestantes = parseInt(fichajesRestantesElement.textContent);
+                //RQNF4
                 if (fichajesRestantes <= 0) {
                     if (!confirm(`Ya no te quedan fichajes. ¿Deseas hacer este fichaje con un costo de -5 puntos?`)) {
                         return;
                     }
                 }
 
-                // ✅ CORRECCIÓN: Lee el presupuesto desde el DOM
                 const budgetElement = document.getElementById('budget-remaining');
                 const currentBudget = parseFloat(budgetElement.textContent.replace(' M', ''));
-                const presupuestoDisponible = currentBudget + parseFloat(playerToSell.precio_compra); // Asumimos que playerToSell tiene valor_actual
+                const presupuestoDisponible = currentBudget + parseFloat(playerToSell.precio_compra); 
                 console.log(playerToSell);
                 document.getElementById('transfer-sell-player-name').textContent = playerToSell.nombre_jugador;
                 document.getElementById('transfer-current-budget').textContent = `$${presupuestoDisponible.toFixed(1)}M`;
@@ -889,7 +848,6 @@
                 closePlayerModal(); 
                 transferModal.style.display = 'flex';
                 
-                // Llama a la función que cargará los jugadores en el modal
                 initializeTransferModal(playerToSell.posicion, presupuestoDisponible);
             }
             
@@ -898,12 +856,10 @@
                 const selectedTeamId = transferTeamFilter.value;
                 const searchTerm = transferSearchInput.value.toLowerCase().trim();
                 
-                // Calcula el presupuesto disponible DE NUEVO
                 const budgetElement = document.getElementById('budget-remaining');
                 const currentBudget = parseFloat(budgetElement.textContent.replace(' M', ''));
                 const maxBudget = currentBudget + parseFloat(playerToSell.precio_compra);
 
-                // Filtra la lista COMPLETA de jugadores
                 transferFilteredPlayers = allAvailablePlayers.filter(p =>
                     p.posicion === positionToBuy && 
                     p.valor_actual <= maxBudget && 
@@ -912,10 +868,9 @@
                     (searchTerm === "" || p.nombre_jugador.toLowerCase().includes(searchTerm))
                 );
 
-                displayTransferPage(1); // Muestra la página 1 de los nuevos resultados
+                displayTransferPage(1); 
             }
 
-            // AÑADE ESTOS LISTENERS (puedes ponerlos al final del script)
             transferTeamFilter.addEventListener('change', applyTransferFilters);
             transferSearchInput.addEventListener('input', applyTransferFilters);
 
@@ -943,7 +898,6 @@
                     alert("Error al guardar cambios. Inténtalo de nuevo.");
                 }
             }
-            // --- Inicializar la Carga de Datos ---
             loadTeamData();
 
         </script>

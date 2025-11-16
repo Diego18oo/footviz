@@ -213,7 +213,7 @@
         
 
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener('DOMContentLoaded', async function() {
                 const tbody = document.querySelector("#tabla-partidos tbody");
                 const ligaSelect = document.getElementById('liga');
                 const jornadaSelect = document.getElementById('jornada');
@@ -239,7 +239,7 @@
                     localStorage.setItem('theme', newTheme);
                     applyTheme(newTheme);
                 });
-                
+                const endpoints = { "premierleague": "1", "laliga": "2", "seriea": "3", "bundesliga": "4", "ligueone": "5" };
                 function actualizarJornadas(ligaSeleccionada) {
                     const jornadasPorLiga = { "premierleague": 38, "laliga": 38, "seriea": 38, "bundesliga": 34, "ligueone": 34 };
                     const maxJornadas = jornadasPorLiga[ligaSeleccionada];
@@ -318,17 +318,47 @@
                             
                 }
 
-                actualizarJornadas(liga.value); 
-                cargarPartidos(liga.value, jornada.value);   
+                const ligaActual = ligaSelect.value;
+                const temporadaIdActual = endpoints[ligaActual];
 
-                liga.addEventListener("change", function(){
+                actualizarJornadas(ligaActual); 
+                try {
+                // 3. Buscar la última jornada completada
+                    const res = await fetch(`/api/fantasy/ultima-jornada-completada/${temporadaIdActual}`);
+                    if (!res.ok) throw new Error('No se pudo obtener la última jornada.');
+                    const data = await res.json();
+                    const ultimaJornada = data.ultima_jornada;
+
+                    // 4. Seleccionar esa jornada en el dropdown
+                    jornadaSelect.value = ultimaJornada;
+                    
+                    // 5. Cargar los partidos de esa jornada
+                    await cargarPartidos(ligaActual, ultimaJornada);
+
+                } catch (error) {
+                    console.error("Error al cargar la jornada por defecto:", error);
+                    // Si todo falla, cargar la jornada 1
+                    await cargarPartidos(ligaActual, "1");
+                }  
+
+                ligaSelect.addEventListener("change", async function(){
                     actualizarJornadas(this.value);
-                    cargarPartidos(this.value, jornada.value);
+                    const nuevoTemporadaId = endpoints[this.value];
+                    
+                    // Al cambiar de liga, también buscamos la última jornada de ESA liga
+                    try {
+                        const res = await fetch(`/api/fantasy/ultima-jornada-completada/${nuevoTemporadaId}`);
+                        const data = await res.json();
+                        jornadaSelect.value = data.ultima_jornada;
+                        await cargarPartidos(this.value, jornadaSelect.value);
+                    } catch (e) {
+                        await cargarPartidos(this.value, "1"); // Fallback
+                    }
                 });
 
                 // RQF2
                 jornada.addEventListener("change", function(){
-                    cargarPartidos(liga.value, this.value);     
+                    cargarPartidos(ligaSelect.value, this.value);    
                 });
             });
             

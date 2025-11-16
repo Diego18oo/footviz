@@ -15,11 +15,12 @@ from scrape_sofa import get_sofascore_api_data, init_driver, get_all_teams_stats
 #from scrape import links_totales 
 from datetime import datetime, timedelta
 from rapidfuzz import process, fuzz
-
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 
 fbref = ls.Fbref()
-# --- 1. CONFIGURACIÓN DE CLOUDINARY ---
-# Pega aquí tus credenciales
+
 cloudinary.config(
   cloud_name = "donni11al",
   api_key = "725784717463829",
@@ -56,8 +57,6 @@ XP_RANKING_RULES = {
     ]
 }
 
-# Reglas de Nivel (XP necesaria)
-# (XP, Nivel) - IMPORTANTE: Ordenado de MAYOR a MENOR
 XP_LEVELS = [
     (50000, 50),
     (40000, 45),
@@ -193,8 +192,6 @@ nombre_map = {
     "Toulouse" : "Toulouse"
 }
 
-# --- 2. FUNCIÓN REUTILIZABLE PARA SUBIR IMÁGENES ---
-# --- LA NUEVA FUNCIÓN BASADA EN SELENIUM ---
 def upload_image_from_url(driver, image_url, public_id):
     """
     Usa un driver de Selenium para navegar a una URL de imagen,
@@ -205,13 +202,10 @@ def upload_image_from_url(driver, image_url, public_id):
         return None
         
     try:
-        # 1. Navegamos a la URL de la imagen con el driver que ya tenemos
         driver.get(image_url)
-        # Una pequeña pausa para asegurar que cargue
-        time.sleep(1)
+        wait = WebDriverWait(driver, 5)
+        wait.until(EC.presence_of_element_located((By.TAG_NAME, 'img')))
 
-        # 2. Truco mágico: Usamos JavaScript para leer la imagen como Base64
-        # Esto es necesario porque Selenium no puede "descargar" imágenes directamente
         script = """
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -222,17 +216,19 @@ def upload_image_from_url(driver, image_url, public_id):
         ctx.drawImage(img, 0, 0);
         return canvas.toDataURL('image/png');
         """
-        # La página de la imagen de SofaScore es un <img> dentro de un <body>
         base64_image_data = driver.execute_script(script)
 
         if not base64_image_data:
-            raise Exception("No se pudo extraer la imagen de la página.")
+            print("Intento 1 falló, reintentando con sleep...")
+            time.sleep(2) 
+            base64_image_data = driver.execute_script(script)
+            if not base64_image_data:
+                raise Exception("No se pudo extraer la imagen (img tag no lista).")
 
-        # 3. Subimos la imagen en formato Base64 a Cloudinary
         upload_result = cloudinary.uploader.upload(
-            base64_image_data, # Cloudinary entiende Base64 directamente
+            base64_image_data, 
             public_id=public_id,
-            folder="footviz",
+            folder="footviz/stadiums",
             overwrite=True
         )
         
@@ -664,16 +660,13 @@ def insert_jugador(engine, data_jugador, conn, tabla_jugador):
             fecnac = None
         dorsal_raw = data_jugador['player'].get('jerseyNumber')
         
-        # 2. Limpiar el valor
-        dorsal_final = None  # Empezamos asumiendo que será NULL
+        dorsal_final = None  
         
-        # Comprobamos que no sea None Y que no sea un string vacío
+
         if dorsal_raw is not None and dorsal_raw != '':
             try:
-                # Intentamos convertirlo a entero
                 dorsal_final = int(dorsal_raw)
             except ValueError:
-                # Si falla (ej: es "N/A" o algo raro), lo dejamos como None
                 print(f"Valor de dorsal no válido '{dorsal_raw}' para {data_jugador['player']['name']}. Se usará NULL.")
                 dorsal_final = None
         insert_jugador_stmt = insert(tabla_jugador).values(
@@ -1977,12 +1970,12 @@ def extract_img_url(engine, df, driver):
     arreglo_url = []
     for i in range(len(df)):
         url_img = df.iloc[i]['url_imagen']
-        nombre_equipo = df.iloc[i]['nombre']
-        cloudinary_public_id = f"teams/team_{nombre_equipo}"
-        print(f"Procesando imagen para el equipo {nombre_equipo}...")
+        nombre_estadio = df.iloc[i]['nombre']
+        cloudinary_public_id = f"footviz/stadiums/stadium_{nombre_estadio}"
+        print(f"Procesando imagen para el estadio {nombre_estadio}...")
         new_cloudinary_url = upload_image_from_url(driver, url_img, cloudinary_public_id)
         final_image_url = new_cloudinary_url if new_cloudinary_url else "URL_DE_IMAGEN_POR_DEFECTO.PNG"
-        print(f"Resultado para {nombre_equipo}: {final_image_url}")
+        print(f"Resultado para {nombre_estadio}: {final_image_url}")
         
         arreglo_url.append(final_image_url)
         
@@ -1992,18 +1985,16 @@ def extract_img_url(engine, df, driver):
 def transfer_to_database(engine, arreglo_url, df):
     meta = MetaData()
     meta.reflect(bind=engine)
-    tabla_entrenador = meta.tables['jugador']
+    tabla_estadio = meta.tables['estadio']
 
     with engine.begin() as conn: 
         for i in range(len(arreglo_url)):
-            insert_url_stmt = insert(tabla_entrenador).values(
-                id_jugador = df.iloc[i]['id_jugador'],
-                url_imagen = arreglo_url[i]
-            )
+            
 
-            update_url_stmt = insert_url_stmt.on_duplicate_key_update(
-                url_imagen = insert_url_stmt.inserted.url_imagen
-            )
+            update_url_stmt = update(tabla_estadio).where(
+                tabla_estadio.c.id_estadio == df.iloc[i]['id_estadio']
+                
+            ).values(url_imagen = arreglo_url[i])
 
             conn.execute(update_url_stmt)
             print("Url actualizada exitosamente")
@@ -2022,9 +2013,7 @@ def procesar_puntos_partido(engine, id_partido):
     meta.reflect(bind=engine)
     tabla_puntos = meta.tables['puntos_jugador_jornada']
 
-    # --- 1. OBTENER DATOS (3 Consultas en total) ---
 
-    # Obtener info del partido (1 consulta)
     df_partido = pd.read_sql(f'SELECT jornada FROM partido WHERE id_partido = {id_partido}', engine)
     
     if df_partido.empty:
@@ -2032,7 +2021,6 @@ def procesar_puntos_partido(engine, id_partido):
         return
     jornada = df_partido['jornada'].iloc[0]
 
-    # Obtener TODOS los jugadores de campo con sus stats (1 consulta)
     sql_jugadores = f"""
         SELECT j.id_jugador, j.posicion, s.* FROM estadistica_jugador_partido s
         JOIN jugador j ON s.jugador = j.id_jugador
@@ -2041,7 +2029,6 @@ def procesar_puntos_partido(engine, id_partido):
     df_jugadores = pd.read_sql(sql_jugadores, engine)
     print(f"Hubo {len(df_jugadores)} jugadores de campo en el partido")
 
-    # Obtener TODOS los porteros con sus stats (1 consulta)
     sql_porteros = f"""
         SELECT j.id_jugador, j.posicion, s.* FROM estadistica_jugador_portero s
         JOIN jugador j ON s.jugador = j.id_jugador
@@ -2050,67 +2037,51 @@ def procesar_puntos_partido(engine, id_partido):
     df_porteros = pd.read_sql(sql_porteros, engine)
     print(f"Hubo {len(df_porteros)} porteros en el partido")
 
-    # --- 2. CALCULAR MVP (Una sola vez, en memoria) ---
     
-    # Concatenar ratings de ambos dataframes
     ratings_jug = df_jugadores[['id_jugador', 'rating']] if not df_jugadores.empty else pd.DataFrame(columns=['id_jugador', 'rating'])
     ratings_por = df_porteros[['id_jugador', 'rating']] if not df_porteros.empty else pd.DataFrame(columns=['id_jugador', 'rating'])
     all_ratings = pd.concat([ratings_jug, ratings_por], ignore_index=True)
 
     id_mvp = None
     if not all_ratings.empty:
-        # Encontrar el id_jugador con el rating máximo
         id_mvp = all_ratings.loc[all_ratings['rating'].idxmax()]['id_jugador']
         print(f"El mvp del partido fue: {id_mvp}")
 
-    # Lista para guardar todos los datos a insertar
     data_para_insertar = []
 
-    # --- 3. PROCESAR JUGADORES (Vectorizado) ---
     if not df_jugadores.empty:
-        # Empezar con una Serie de ceros
         puntos = pd.Series(0, index=df_jugadores.index, dtype=int)
 
-        # Minutos
         minutos_jug = df_jugadores['minutos'].fillna(0)
         puntos += (minutos_jug > 59) * 2
         puntos += ((minutos_jug > 0) & (minutos_jug <= 59)) * 1
 
-        # Goles (usando np.select para lógica condicional)
         goles_jug = df_jugadores['goles'].fillna(0)
         condiciones_goles = [
             (df_jugadores['posicion'] == 'D'),
             (df_jugadores['posicion'] == 'M')
         ]
         puntos_por_gol = [
-            goles_jug * 6, # Puntos para Defensas
-            goles_jug * 5  # Puntos para Medios
+            goles_jug * 6, 
+            goles_jug * 5  
         ]
-        # El default es 4 puntos (para delanteros u otros)
         puntos += np.select(condiciones_goles, puntos_por_gol, default=goles_jug * 4)
 
-        # Asistencias
         puntos += df_jugadores['asistencias'].fillna(0) * 3
 
-        # Tarjetas
         puntos -= df_jugadores['tarjeta_amarilla'].fillna(0) * 1
         puntos -= df_jugadores['tarjeta_roja'].fillna(0) * 3
 
-        # Recuperaciones
         recuperaciones = df_jugadores['intercepciones'].fillna(0) + df_jugadores['despejes'].fillna(0)
-        puntos += (recuperaciones // 3) * 1  # Suma 1 por cada 3 recuperaciones
-
-        # Autogoles
+        puntos += (recuperaciones // 3) * 1  
         puntos -= df_jugadores['autogoles'].fillna(0) * 3
 
-        # MVP
+        
         if id_mvp is not None:
             puntos += (df_jugadores['id_jugador'] == id_mvp) * 3
 
-        # Asignar puntos finales al DataFrame
         df_jugadores['puntos_fantasy'] = puntos
 
-        # Preparar datos para inserción en lote
         for row in df_jugadores.itertuples():
             data_para_insertar.append({
                 'id_jugador': int(row.id_jugador),
@@ -2119,39 +2090,29 @@ def procesar_puntos_partido(engine, id_partido):
                 'puntos_fantasy': int(row.puntos_fantasy)
             })
 
-    # --- 4. PROCESAR PORTEROS (Vectorizado) ---
     if not df_porteros.empty:
         puntos_p = pd.Series(0, index=df_porteros.index, dtype=int)
 
-        # Minutos
         minutos_por = df_porteros['minutos'].fillna(0)
         puntos_p += (minutos_por > 59) * 2
         puntos_p += ((minutos_por > 0) & (minutos_por <= 59)) * 1
 
-        # Goles
         puntos_p += df_porteros['goles'].fillna(0) * 10
 
-        # Asistencias
         puntos_p += df_porteros['asistencias'].fillna(0) * 3
         
-        # Penales atajados
         puntos_p += df_porteros['penales_atajados'].fillna(0) * 6
 
-        # Atajadas
-        puntos_p += (df_porteros['atajadas'].fillna(0) // 3) * 1 # Suma 1 por cada 3 atajadas
+        puntos_p += (df_porteros['atajadas'].fillna(0) // 3) * 1 
 
-        # Tarjetas
         puntos_p -= df_porteros['tarjeta_amarilla'].fillna(0) * 1
         puntos_p -= df_porteros['tarjeta_roja'].fillna(0) * 3
 
-        # MVP
         if id_mvp is not None:
             puntos_p += (df_porteros['id_jugador'] == id_mvp) * 3
 
-        # Asignar al DF
         df_porteros['puntos_fantasy'] = puntos_p
 
-        # Añadir a la lista de inserción
         for row in df_porteros.itertuples():
             data_para_insertar.append({
                 'id_jugador': int(row.id_jugador),
@@ -2160,17 +2121,14 @@ def procesar_puntos_partido(engine, id_partido):
                 'puntos_fantasy': int(row.puntos_fantasy)
             })
 
-    # --- 5. INSERTAR EN LOTE (Una sola transacción) ---
     if data_para_insertar:
         stmt = insert(tabla_puntos)
         
-        # Define la parte ON DUPLICATE KEY UPDATE
         update_stmt = stmt.on_duplicate_key_update(
             jornada = stmt.inserted.jornada,
             puntos_fantasy = stmt.inserted.puntos_fantasy
         )
         
-        # Ejecuta la inserción en lote
         with engine.begin() as conn:
             conn.execute(update_stmt, data_para_insertar)
             
@@ -2186,20 +2144,14 @@ def actualizar_valor_mercado_fantasy(engine):
     basado en la fórmula: V = Vbase + (W1*Rendimiento) + (W2*Popularidad)
     """
     
-    # --- 1. Definir Constantes ---
     W1_RENDIMIENTO = 0.75
     W2_POPULARIDAD = 0.25
-    DIVISOR_VALOR_BASE = 15000000.0  # Usamos float para asegurar división decimal
+    DIVISOR_VALOR_BASE = 15000000.0  
 
     meta = MetaData()
     meta.reflect(bind=engine)
     tabla_valor_fantasy = meta.tables['valor_jugador_fantasy']
 
-    # --- 2. Crear la consulta SQL para obtener TODOS los datos ---
-    # Esta consulta une las 3 tablas necesarias:
-    # 1. jugador (para Vbase = valor_mercado / DIVISOR)
-    # 2. valor_jugador_fantasy (para Popularidad)
-    # 3. puntos_jugador_jornada (para calcular AVG(puntos_fantasy) como Rendimiento)
     
     sql_query = text(f"""
         SELECT
@@ -2223,60 +2175,41 @@ def actualizar_valor_mercado_fantasy(engine):
             ) r ON j.id_jugador = r.id_jugador
     """)
 
-    # --- 3. Ejecutar consulta y cargar en Pandas ---
     df_data = pd.read_sql(sql_query, engine)
     
     if df_data.empty:
         print("No se encontraron jugadores para actualizar.")
         return
  
-    # --- 4. Limpiar datos (por si acaso) ---
-    # COALESCE en SQL ya debería haber hecho esto, pero es una buena práctica
     df_data['valor_mercado'] = df_data['valor_mercado'].fillna(0)
     df_data['popularidad'] = df_data['popularidad'].fillna(0)
     df_data['rendimiento'] = df_data['rendimiento'].fillna(0)
 
-    # --- 5. Calcular el nuevo valor (Vectorizado) ---
     
-    # Vbase = Valor inicial del jugador
     v_base = df_data['valor_mercado'] / DIVISOR_VALOR_BASE
     
-    # Rendimiento ponderado (W1 * Rendimiento)
     rendimiento_pond = W1_RENDIMIENTO * df_data['rendimiento']
     
-    # Popularidad ponderada (W2 * Popularidad)
     popularidad_pond = W2_POPULARIDAD * df_data['popularidad']
     
-    # Vjugador = Vbase + (W1 * Rendimiento) + (W2 * Popularidad)
     v_jugador_nuevo = v_base + rendimiento_pond + popularidad_pond
     
-    # Asignamos el valor nuevo al DataFrame
-    # Redondeamos a 2 decimales, como lo pide tu tabla DECIMAL(5,2)
     df_data['valor_actual_nuevo'] = round(v_jugador_nuevo, 2)
 
-    # --- 6. Preparar datos para la inserción en lote ---
     data_para_insertar = []
     for row in df_data.itertuples():
-        # ¡Importante! Convertimos a float, no a int, 
-        # para no perder los decimales de tu columna DECIMAL(5,2)
         data_para_insertar.append({
             'id_jugador': int(row.id_jugador),
             'valor_actual': float(row.valor_actual_nuevo)
-            # No necesitamos pasar 'popularidad' aquí, 
-            # ya que solo estamos actualizando 'valor_actual'
         }) 
 
-    # --- 7. Ejecutar la actualización en lote ---
     if data_para_insertar:
         stmt = insert(tabla_valor_fantasy)
         
-        # Define la parte ON DUPLICATE KEY UPDATE
-        # Esto solo actualizará 'valor_actual' si el 'id_jugador' ya existe
         update_stmt = stmt.on_duplicate_key_update(
             valor_actual = stmt.inserted.valor_actual
         )
         
-        # Ejecuta la inserción en lote
         with engine.begin() as conn:
             conn.execute(update_stmt, data_para_insertar)
             
@@ -2313,7 +2246,6 @@ def actualizar_porcentaje_popularidad(engine):
     
     data_para_actualizar = []
     
-    # Iteramos sobre la Serie (id_jugador es 'index', popularidad es 'valor')
     for id_jugador, popularidad in df_popularidad.items():
         data_para_actualizar.append({
             'id_jugador': int(id_jugador),
@@ -2425,39 +2357,31 @@ def update_fantasy_team_points(engine):
     
     count_updated = 0
     
-    # Usamos una transacción para asegurar que todas las actualizaciones
-    # se completen con éxito.
     with engine.begin() as conn:
-        # 1. Ejecutar la consulta masiva para obtener los puntos de la jornada de todos
         try:
             df_puntos_jornada = pd.read_sql(text(sql_gameweek_points), conn)
         except Exception as e:
             print(f"Error al calcular los puntos de la jornada: {e}")
-            return # Salir de la función si la consulta falla
-
+            return 
         if df_puntos_jornada.empty:
             print("No se encontraron puntos de jornada para actualizar.")
             return
 
         print(f"Se calcularon puntos para {len(df_puntos_jornada)} equipos.")
 
-        # 2. Preparar los datos para una actualización masiva (bulk update)
-        # Esto es mucho más eficiente que un bucle 'for' con N consultas
         update_data = [
             {
                 'id_val': int(row.id_equipo_fantasy), 
                 'puntos_val': int(row.total_jornada_points)
             }
             for row in df_puntos_jornada.itertuples()
-            if row.total_jornada_points > 0 # Solo actualizar si hay puntos que sumar
+            if row.total_jornada_points > 0 
         ]
 
         if not update_data:
             print("No hay equipos con nuevos puntos para actualizar.")
             return
 
-        # 3. Construir y ejecutar la actualización masiva
-        # Sumamos los nuevos puntos a los puntos totales existentes
         update_stmt = tabla_equipo_fantasy.update(). \
             where(tabla_equipo_fantasy.c.id_equipo_fantasy == text(':id_val')). \
             values(puntos_totales = tabla_equipo_fantasy.c.puntos_totales + text(':puntos_val'))
@@ -2465,7 +2389,7 @@ def update_fantasy_team_points(engine):
         conn.execute(update_stmt, update_data)
         count_updated = len(update_data)
 
-    print(f"✅ Actualización completada. Se sumaron puntos a {count_updated} equipos fantasy.")
+    print(f"Actualización completada. Se sumaron puntos a {count_updated} equipos fantasy.")
     return df_puntos_jornada
 
 def calcular_puntos_predicciones(engine, id_partido):
@@ -2476,9 +2400,7 @@ def calcular_puntos_predicciones(engine, id_partido):
     
     print(f"--- Iniciando cálculo de puntos para el partido {id_partido} ---")
 
-    # --- 1. OBTENER LA "HOJA DE RESPUESTAS" (Resultados Reales) ---
     
-    # Primero, obtenemos el resultado (quién ganó) y los IDs de los equipos
     sql_match_results = text(f"""
         SELECT
             p.equipo_local,
@@ -2490,7 +2412,6 @@ def calcular_puntos_predicciones(engine, id_partido):
         WHERE p.id_partido = :id_partido
     """)
     
-    # Segundo, obtenemos el primer gol (jugador y equipo)
     sql_first_goal = text(f"""
         SELECT
             jugador,
@@ -2511,13 +2432,11 @@ def calcular_puntos_predicciones(engine, id_partido):
         df_match = pd.read_sql(sql_match_results, conn, params={"id_partido": id_partido})
         df_first_goal = pd.read_sql(sql_first_goal, conn, params={"id_partido": id_partido})
 
-    # --- 2. PROCESAR LA "HOJA DE RESPUESTAS" ---
 
     if df_match.empty:
         print(f"Error: No se encontraron datos de partido/estadísticas para {id_partido}. Saltando.")
         return
 
-    # Determinar ganador real
     goles_local = df_match['goles_local'].iloc[0]
     goles_visitante = df_match['goles_visitante'].iloc[0]
     
@@ -2528,14 +2447,11 @@ def calcular_puntos_predicciones(engine, id_partido):
     else:
         actual_winner = 'E'
 
-    # Determinar primer gol (si hubo)
     if df_first_goal.empty:
-        # Partido fue 0-0
         print("Partido sin goles (0-0).")
         actual_first_team_id = None
         actual_first_player_id = None
     else:
-        # Hubo goles
         actual_first_player_id = int(df_first_goal['jugador'].iloc[0])
         es_local = df_first_goal['es_local'].iloc[0]
         
@@ -2546,7 +2462,6 @@ def calcular_puntos_predicciones(engine, id_partido):
 
     print(f"Resultados Reales: Ganador={actual_winner}, 1er Equipo={actual_first_team_id}, 1er Jugador={actual_first_player_id}")
 
-    # --- 3. OBTENER TODAS LAS PREDICCIONES DE USUARIOS ---
     
     sql_predictions = text("""
         SELECT id_prediccion, id_usuario, resultado_predicho, 
@@ -2564,41 +2479,32 @@ def calcular_puntos_predicciones(engine, id_partido):
 
     print(f"Se encontraron {len(df_predictions)} predicciones para calificar.")
 
-    # --- 4. CALIFICAR CADA PREDICCIÓN ---
     
     data_para_actualizar = []
     
     for row in df_predictions.itertuples():
         puntos = 0
         
-        # +3 por adivinar ganador
         if row.resultado_predicho == actual_winner:
             puntos += 3
             
-        # +2 por primer equipo en anotar
-        # Esto funciona aunque sea 0-0, ya que (None == None) es True
         if row.primer_equipo_anotar_id == actual_first_team_id:
             puntos += 2
             
-        # +5 por primer jugador en anotar
-        # Esto también funciona para 0-0
         if row.primer_jugador_anotar_id == actual_first_player_id:
             puntos += 5
             
-        # Preparamos los datos para la actualización masiva
         data_para_actualizar.append({
             'p_id': row.id_prediccion,
             'puntos': puntos
         })
 
-    # --- 5. ACTUALIZAR PUNTOS EN LA BD (Bulk Update) ---
     
     if data_para_actualizar:
         meta = MetaData()
         meta.reflect(bind=engine)
         tabla_predicciones = meta.tables['prediccion_usuario']
         
-        # Preparamos un "bulk update"
         stmt = update(tabla_predicciones).where(
             tabla_predicciones.c.id_prediccion == bindparam('p_id')
         ).values(
@@ -2670,11 +2576,9 @@ def update_fantasy_event_team_points(engine):
             SELECT
                 pe.id_equipo_evento,
                 
-                -- --- 👇 LÓGICA DE PUNTOS MODIFICADA 👇 ---
                 -- Simplemente toma los puntos. No hay 'es_titular' ni 'es_capitan'.
                 -- Todos los 11 jugadores suman puntos.
                 COALESCE(pjj.puntos_fantasy, 0) AS calculated_points
-                -- --- 👆 FIN DE LA MODIFICACIÓN 👆 ---
                 
             FROM
                 plantilla_evento pe -- <-- MODIFICADO
@@ -2712,15 +2616,12 @@ def update_fantasy_event_team_points(engine):
     
     count_updated = 0
     
-    # Usamos una transacción para asegurar que todas las actualizaciones
-    # se completen con éxito.
     with engine.begin() as conn:
-        # 1. Ejecutar la consulta masiva para obtener los puntos de la jornada de todos
         try:
             df_puntos_jornada = pd.read_sql(text(sql_gameweek_points), conn)
         except Exception as e:
             print(f"Error al calcular los puntos de la jornada: {e}")
-            return # Salir de la función si la consulta falla
+            return 
 
         if df_puntos_jornada.empty:
             print("No se encontraron puntos de jornada para actualizar.")
@@ -2728,23 +2629,19 @@ def update_fantasy_event_team_points(engine):
 
         print(f"Se calcularon puntos para {len(df_puntos_jornada)} equipos.")
 
-        # 2. Preparar los datos para una actualización masiva (bulk update)
-        # Esto es mucho más eficiente que un bucle 'for' con N consultas
         update_data = [
             {
                 'id_val': int(row.id_equipo_evento), 
                 'puntos_val': int(row.total_jornada_points)
             }
             for row in df_puntos_jornada.itertuples()
-            if row.total_jornada_points > 0 # Solo actualizar si hay puntos que sumar
+            if row.total_jornada_points > 0 
         ]
 
         if not update_data:
             print("No hay equipos con nuevos puntos para actualizar.")
             return
 
-        # 3. Construir y ejecutar la actualización masiva
-        # Sumamos los nuevos puntos a los puntos totales existentes
         update_stmt = tabla_equipo_evento.update(). \
             where(tabla_equipo_evento.c.id_equipo_evento == text(':id_val')). \
             values(puntos_totales = tabla_equipo_evento.c.puntos_totales + text(':puntos_val'))
@@ -2752,7 +2649,7 @@ def update_fantasy_event_team_points(engine):
         conn.execute(update_stmt, update_data)
         count_updated = len(update_data)
 
-    print(f"✅ Actualización completada. Se sumaron puntos a {count_updated} equipos de evento.")
+    print(f"Actualización completada. Se sumaron puntos a {count_updated} equipos de evento.")
     return df_puntos_jornada
 
 
@@ -2768,8 +2665,7 @@ def get_ranking_xp(percentile, category):
         if percentile <= perc_limit:
             print(xp_points)
             return xp_points
-    return 0 # Por si acaso
-
+    return 0 
 
 def get_update_levels_sql():
     """
@@ -2780,7 +2676,6 @@ def get_update_levels_sql():
     for (xp_needed, level) in XP_LEVELS:
         case_sql += f"    WHEN xp_total >= {xp_needed} THEN {level}\n"
     
-    # Nivel 0 o 1 por defecto para los que no llegan a 10 XP
     case_sql += "    ELSE 1\n" 
     case_sql += "END;"
     return text(case_sql)
@@ -2794,37 +2689,29 @@ def calcular_xp_fin_de_jornada(engine, jornada_actual):
     
     print(f"--- Iniciando cálculo de XP para la Jornada {jornada_actual} ---")
     
-    # --- A. OBTENER DATOS BASE ---
     
-    # 1. Todos los usuarios y su país (para ranking local)
     df_usuarios = pd.read_sql("SELECT id_usuario, pais_id FROM usuario", engine)
     
-    # 2. Puntos de predicción de esta jornada
     df_predicciones = pd.read_sql(
         text("SELECT id_usuario, SUM(puntos_obtenidos) as xp_prediccion FROM prediccion_usuario WHERE jornada = :jornada GROUP BY id_usuario"),
         engine,
         params={"jornada": jornada_actual}
     )
     
-    # 3. Puntos de ranking Global/Local (de equipo_fantasy)
     df_global_local = pd.read_sql(
         text("SELECT id_usuario, puntos_totales FROM equipo_fantasy"),
         engine
     )
     
-    # 4. Puntos de ranking de Eventos
     df_eventos = pd.read_sql(
         text("SELECT id_usuario, id_evento, puntos_totales FROM equipo_evento"),
         engine
     )
 
-    # --- B. INICIALIZAR XP GANADA ---
     
-    # Creamos un DataFrame final para acumular la XP
     df_xp_final = df_usuarios.copy()
     df_xp_final['xp_ganada_total'] = 0
     
-    # --- C. ACUMULAR XP DE PREDICCIONES ---
     
     df_xp_final = pd.merge(df_xp_final, df_predicciones, on='id_usuario', how='left')
     df_xp_final['xp_prediccion'] = df_xp_final['xp_prediccion'].fillna(0)
@@ -2832,69 +2719,54 @@ def calcular_xp_fin_de_jornada(engine, jornada_actual):
     
     print(f"Calculada XP de predicciones. Total: {df_xp_final['xp_prediccion'].sum()} XP")
 
-    # --- D. ACUMULAR XP DE RANKING GLOBAL ---
     
     df_global_ranking = pd.merge(df_usuarios, df_global_local, on='id_usuario', how='inner')
     total_global = len(df_global_ranking)
     
     if total_global > 0:
-        # 'min' maneja empates (ej. 2 jugadores en 1er lugar, ambos son rank 1)
         df_global_ranking['rank'] = df_global_ranking['puntos_totales'].rank(ascending=False, method='min')
         df_global_ranking['percentil'] = (df_global_ranking['rank'] / total_global) * 100
         df_global_ranking['xp_global'] = df_global_ranking['percentil'].apply(lambda p: get_ranking_xp(p, 'Global'))
         
-        # Sumar al total
         df_xp_final = pd.merge(df_xp_final, df_global_ranking[['id_usuario', 'xp_global']], on='id_usuario', how='left')
         df_xp_final['xp_global'] = df_xp_final['xp_global'].fillna(0)
         df_xp_final['xp_ganada_total'] += df_xp_final['xp_global']
         print(f"Calculada XP de ranking Global. Total: {df_xp_final['xp_global'].sum()} XP")
         
-    # --- E. ACUMULAR XP DE RANKING LOCAL ---
     
-    # Reutilizamos df_global_ranking que ya tiene los puntos
     df_local_ranking = df_global_ranking.copy()
     
     if total_global > 0:
-        # Rankear DENTRO de cada grupo de país
         df_local_ranking['rank_local'] = df_local_ranking.groupby('pais_id')['puntos_totales'].rank(ascending=False, method='min')
         
-        # Obtener el tamaño de cada grupo
         group_sizes = df_local_ranking.groupby('pais_id')['id_usuario'].transform('count')
         
         df_local_ranking['percentil_local'] = (df_local_ranking['rank_local'] / group_sizes) * 100
         df_local_ranking['xp_local'] = df_local_ranking['percentil_local'].apply(lambda p: get_ranking_xp(p, 'Local'))
         
-        # Sumar al total
         df_xp_final = pd.merge(df_xp_final, df_local_ranking[['id_usuario', 'xp_local']], on='id_usuario', how='left')
         df_xp_final['xp_local'] = df_xp_final['xp_local'].fillna(0)
         df_xp_final['xp_ganada_total'] += df_xp_final['xp_local']
         print(f"Calculada XP de ranking Local. Total: {df_xp_final['xp_local'].sum()} XP")
         
-    # --- F. ACUMULAR XP DE RANKING EVENTOS ---
     
     if not df_eventos.empty:
-        # Rankear DENTRO de cada grupo de evento
         df_eventos['rank_evento'] = df_eventos.groupby('id_evento')['puntos_totales'].rank(ascending=False, method='min')
         event_sizes = df_eventos.groupby('id_evento')['id_usuario'].transform('count')
         df_eventos['percentil_evento'] = (df_eventos['rank_evento'] / event_sizes) * 100
         df_eventos['xp_evento'] = df_eventos['percentil_evento'].apply(lambda p: get_ranking_xp(p, 'Eventos'))
         
-        # Un usuario puede estar en varios eventos, así que sumamos toda la XP de eventos por usuario
         df_xp_eventos_total = df_eventos.groupby('id_usuario')['xp_evento'].sum().reset_index()
 
-        # Sumar al total
         df_xp_final = pd.merge(df_xp_final, df_xp_eventos_total, on='id_usuario', how='left')
         df_xp_final['xp_evento'] = df_xp_final['xp_evento'].fillna(0)
         df_xp_final['xp_ganada_total'] += df_xp_final['xp_evento']
         print(f"Calculada XP de Eventos. Total: {df_xp_final['xp_evento'].sum()} XP")
 
-    # --- G. ACTUALIZAR XP_TOTAL EN LA BD ---
     
-    # Filtramos solo usuarios que ganaron algo para no actualizar a todos
     df_actualizar = df_xp_final[df_xp_final['xp_ganada_total'] > 0]
     
     if not df_actualizar.empty:
-        # Convertir a lista de diccionarios para el bulk update
         data_para_actualizar = df_actualizar.apply(
             lambda row: {
                 'u_id': int(row['id_usuario']), 
@@ -2902,7 +2774,6 @@ def calcular_xp_fin_de_jornada(engine, jornada_actual):
             }, axis=1
         ).tolist()
         
-        # Preparar el bulk update
         meta = MetaData()
         meta.reflect(bind=engine)
         tabla_usuario = meta.tables['usuario']
@@ -2921,7 +2792,6 @@ def calcular_xp_fin_de_jornada(engine, jornada_actual):
     else:
         print("No se generó XP nueva esta jornada.")
 
-    # --- H. ACTUALIZAR NIVELES DE TODOS LOS USUARIOS ---
     
     sql_update_niveles = get_update_levels_sql()
     
@@ -2947,36 +2817,26 @@ def otorgar_logros_y_revisar_goat(engine, lista_logros_a_insertar):
     meta.reflect(bind=engine)
     tabla_logro_usuario = meta.tables['logro_usuario']
 
-    # 1. Preparar datos para la inserción
-    # lista_logros_a_insertar es una lista de tuplas: [(id_usuario, id_logro), ...]
-    # Quitamos duplicados por si acaso (ej. 2 jugadores con 2+ asistencias)
     logros_unicos = list(set(lista_logros_a_insertar))
     
     data_para_insertar = [
         {"id_usuario": u_id, "id_logro": l_id} for (u_id, l_id) in logros_unicos
     ]
     
-    # 2. Construir el INSERT IGNORE
-    # 'IGNORE' es la clave: si el usuario ya tiene el logro (UQ), 
-    # la consulta simplemente lo ignora sin dar error.
     stmt = insert(tabla_logro_usuario).prefix_with('IGNORE')
 
     with engine.begin() as conn:
         conn.execute(stmt, data_para_insertar)
         
-    print(f"✅ Se procesaron {len(data_para_insertar)} logros.")
+    print(f"Se procesaron {len(data_para_insertar)} logros.")
 
-    # --- 3. REVISAR LOGRO "GOAT" (ID 7) ---
-    # Obtenemos solo los IDs de los usuarios que acaban de ganar algo
     usuarios_afectados = list(set([u_id for (u_id, l_id) in logros_unicos]))
     
     if not usuarios_afectados:
         return
 
-    # Convertir lista a string para la consulta SQL 'IN'
     ids_str = ", ".join(map(str, usuarios_afectados))
 
-    # Contar cuántos logros ÚNICOS (sin contar el 7) tiene cada usuario afectado
     sql_goat_check = text(f"""
         SELECT id_usuario, COUNT(DISTINCT id_logro) as total_logros
         FROM logro_usuario
@@ -2986,7 +2846,6 @@ def otorgar_logros_y_revisar_goat(engine, lista_logros_a_insertar):
     
     df_conteo_logros = pd.read_sql(sql_goat_check, engine)
     
-    # Filtrar los que tienen 6 logros (todos menos GOAT)
     df_goat_ganadores = df_conteo_logros[df_conteo_logros['total_logros'] == 8]
 
     if not df_goat_ganadores.empty:
@@ -2995,10 +2854,9 @@ def otorgar_logros_y_revisar_goat(engine, lista_logros_a_insertar):
             for row in df_goat_ganadores.itertuples()
         ]
         
-        # Insertar el logro GOAT (usando el mismo INSERT IGNORE)
         with engine.begin() as conn:
             conn.execute(stmt, logros_goat)
-        print(f"🏆 ¡{len(logros_goat)} usuarios han ganado el logro 'GOAT'!")
+        print(f"{len(logros_goat)} usuarios han ganado el logro 'GOAT'")
 
     return
 
@@ -3006,15 +2864,11 @@ def otorgar_logros_y_revisar_goat(engine, lista_logros_a_insertar):
 def check_logros_visionario(df_puntos_jornada):
     logros = []
     
-    # Unir con equipo_fantasy para obtener id_usuario
-    # Asumo que tu función de puntos puede devolver 'id_equipo_fantasy' y 'id_usuario'
     
-    # Logro 3: >= 50 puntos
     df_50 = df_puntos_jornada[df_puntos_jornada['total_jornada_points'] >= 50]
     for id_usuario in df_50['id_usuario']:
         logros.append((int(id_usuario), 3))
 
-    # Logro 4: >= 100 puntos
     df_100 = df_puntos_jornada[df_puntos_jornada['total_jornada_points'] >= 100]
     for id_usuario in df_100['id_usuario']:
         logros.append((int(id_usuario), 4))
@@ -3065,7 +2919,6 @@ def check_logro_repartiendo_juego(engine, jornada_actual):
     return [(int(row.id_usuario), 6) for row in df.itertuples()]
 
 def check_logro_hombre_jornada(engine, jornada_actual):
-    # 1. Encontrar el puntaje MÁXIMO de la jornada
     max_puntos_sql = text("SELECT MAX(puntos_fantasy) FROM puntos_jugador_jornada WHERE jornada = :jornada")
     
     with engine.connect() as conn:
@@ -3074,8 +2927,6 @@ def check_logro_hombre_jornada(engine, jornada_actual):
     if max_puntos is None or max_puntos == 0:
         return []
 
-    # 2. Encontrar TODOS los usuarios que tienen a CUALQUIERA de los jugadores
-    #    que obtuvieron ese puntaje máximo (puede haber empates)
     sql = text(f"""
         SELECT
             ef.id_usuario
@@ -3096,16 +2947,13 @@ def check_logro_hombre_jornada(engine, jornada_actual):
 
 
 def check_logro_coleccionista(df_usuarios_actualizados):
-    # df_usuarios_actualizados es el DataFrame de usuarios con su nuevo nivel
     df_nivel_25 = df_usuarios_actualizados[df_usuarios_actualizados['nivel'] >= 25]
     return [(int(row.id_usuario), 2) for row in df_nivel_25.itertuples()]
 
 
 def ejecutar_procesos_fin_de_jornada(engine, jornada_actual):
     
-    # --- 1. CÁLCULO DE PUNTOS DE PREDICCIONES (Tu script) ---
     print("Calculando puntos de predicciones...")
-    # (Aquí pones tu lógica para encontrar los id_partido de la jornada)
     df_partidos_jornada = pd.read_sql(
         text("SELECT id_partido FROM partido WHERE jornada = :jornada"),
         engine,
@@ -3115,40 +2963,33 @@ def ejecutar_procesos_fin_de_jornada(engine, jornada_actual):
         calcular_puntos_predicciones(engine, id_partido)
         
      
-    # --- 2. CÁLCULO DE PUNTOS FANTASY (Tus scripts) ---
-    # (¡Asegúrate de que devuelvan los DataFrames!)
     print("Calculando puntos de equipos fantasy...")
-    df_puntos_global = update_fantasy_team_points(engine) # Asume que esta función usa la jornada correcta
-    df_puntos_evento = update_fantasy_event_team_points(engine) # Asume que esta función usa la jornada correcta
+    df_puntos_global = update_fantasy_team_points(engine) 
+    df_puntos_evento = update_fantasy_event_team_points(engine) 
     
-    # (Combinamos los dataframes de puntos. Ajusta 'id_usuario' según sea necesario)
     df_puntos_jornada = pd.concat([df_puntos_global, df_puntos_evento])
     
     
-    # --- 3. CÁLCULO DE LOGROS ---
     print("Calculando logros de la jornada...")
     lista_logros_a_insertar = []
 
-    # Logros de puntos de equipo
     lista_logros_a_insertar.extend( check_logros_visionario(df_puntos_jornada) )
     
-    # Logros de jugador
     lista_logros_a_insertar.extend( check_logro_capitan_lider(engine, jornada_actual) )
     lista_logros_a_insertar.extend( check_logro_repartiendo_juego(engine, jornada_actual) )
     lista_logros_a_insertar.extend( check_logro_hombre_jornada(engine, jornada_actual) )
     
 
-    # --- 4. CÁLCULO DE XP Y NIVEL (Tu script) ---
     print("Calculando XP y Niveles...")
     df_usuarios_con_nivel = calcular_xp_fin_de_jornada(engine, jornada_actual)
     
     
-    # --- 5. LOGRO DE NIVEL ---
     print("Calculando logros de Nivel...")
     lista_logros_a_insertar.extend( check_logro_coleccionista(df_usuarios_con_nivel) )
     
+    print("Asignando piezas de rompecabezas por nivel...")
+    asignar_piezas_rompecabezas(engine, df_usuarios_con_nivel)
     
-    # --- 6. INSERCIÓN FINAL DE LOGROS ---
     if lista_logros_a_insertar:
         print("Otorgando logros...")
         otorgar_logros_y_revisar_goat(engine, lista_logros_a_insertar)
@@ -3156,4 +2997,87 @@ def ejecutar_procesos_fin_de_jornada(engine, jornada_actual):
         print("No se generaron nuevos logros esta jornada.")
         
     print("--- ¡PROCESO DE JORNADA COMPLETADO! ---")
+    return
+
+
+def asignar_piezas_rompecabezas(engine, df_usuarios_con_nivel):
+    """
+    Otorga piezas de rompecabezas basado en el nivel del usuario.
+    RQF5: Piezas de rompecabezas.
+    """
+    print("Revisando recompensas de piezas de rompecabezas...")
+
+    
+    hitos = {
+        4: 'Pieza 1 (Sup-Izq)',
+        8: 'Pieza 2 (Sup-Der)',
+        12: 'Pieza 3 (Inf-Izq)',
+        25: 'Pieza 4 (Inf-Der)'
+    }
+    
+    niveles_hito = list(hitos.keys())
+
+    df_candidatos = df_usuarios_con_nivel[
+        df_usuarios_con_nivel['nivel'].isin(niveles_hito)
+    ].copy()
+
+    if df_candidatos.empty:
+        print("Ningún usuario alcanzó un nuevo hito de nivel para piezas.")
+        return
+
+    print(f"Encontrados {len(df_candidatos)} usuarios en niveles de hito.")
+
+   
+    sql_estadios = text("""
+        SELECT 
+            u.id_usuario, 
+            e.id_estadio
+        FROM usuario u
+        JOIN equipo e ON u.equipo_favorito_id = e.id_equipo
+        WHERE u.id_usuario = ANY(:user_ids)
+    """)
+    
+    df_estadios_fav = pd.read_sql(
+        sql_estadios, 
+        engine, 
+        params={'user_ids': df_candidatos['id_usuario'].tolist()}
+    )
+    
+    df_candidatos = pd.merge(df_candidatos, df_estadios_fav, on='id_usuario', how='inner')
+
+    data_para_insertar = []
+    
+    df_piezas = pd.read_sql("SELECT id_pieza, nombre, id_estadio FROM pieza_rompecabezas", engine)
+    
+    for row in df_candidatos.itertuples():
+        for nivel_hito in niveles_hito:
+            if row.nivel >= nivel_hito:
+                nombre_pieza_buscada = hitos[nivel_hito]
+                
+                pieza_encontrada = df_piezas[
+                    (df_piezas['id_estadio'] == row.id_estadio) &
+                    (df_piezas['nombre'] == nombre_pieza_buscada)
+                ]
+                
+                if not pieza_encontrada.empty:
+                    id_pieza = int(pieza_encontrada.iloc[0]['id_pieza'])
+                    data_para_insertar.append({
+                        'id_pieza': id_pieza,
+                        'id_usuario': int(row.id_usuario)
+                    })
+
+    if not data_para_insertar:
+        print("No se encontraron piezas válidas para asignar.")
+        return
+
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    tabla_piezas_usuario = meta.tables['pieza_rompecabezas_usuario']
+
+    stmt = insert(tabla_piezas_usuario).prefix_with('IGNORE')
+
+    with engine.begin() as conn:
+        conn.execute(stmt, data_para_insertar)
+        
+    print(f"Se procesaron {len(data_para_insertar)} asignaciones de piezas de rompecabezas.")
     return

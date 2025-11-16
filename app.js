@@ -5,7 +5,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import cookieParser from 'cookie-parser';
-import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail, getUsuarioData, getEquipoFantasyUsuario, getJugadoresFantasy, crearEquipoFantasyCompleto, getPlantillaFantasy, getDesglosePuntosFantasyJugador, getProximoPartido, realizarFichaje, actualizarPlantilla, getProximosPartidosDeEquipos, getMVPdeLaSemana, getPartidosRandom, getPlantillasDePredicciones, getEstadoDeForma, getPronosticoResultado, getPronosticoPrimerEquipoEnAnotar, getPronosticoPrimerJugadorEnAnotar, guardarPrediccionUsuario, getJornadaFromPartido, getMisPredicciones, getHistorialPredicciones, unirseLigaPorCodigo, crearLiga, getLeagueRanking, getMisLigas, getPublicLeagueIDs, getLeagueRankingTop10, getEquipoEventoUsuario, getEventoRanking, getEventoActivo, crearEquipoEventoCompleto, getAvailableEventPlayers, getEquipoEventoUsuarioID, getPlantillaEvento, getLogrosBase, otorgarLogro} from './database.js'
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail, getUsuarioData, getEquipoFantasyUsuario, getJugadoresFantasy, crearEquipoFantasyCompleto, getPlantillaFantasy, getDesglosePuntosFantasyJugador, getProximoPartido, realizarFichaje, actualizarPlantilla, getProximosPartidosDeEquipos, getMVPdeLaSemana, getPartidosRandom, getPlantillasDePredicciones, getEstadoDeForma, getPronosticoResultado, getPronosticoPrimerEquipoEnAnotar, getPronosticoPrimerJugadorEnAnotar, guardarPrediccionUsuario, getJornadaFromPartido, getMisPredicciones, getHistorialPredicciones, unirseLigaPorCodigo, crearLiga, getLeagueRanking, getMisLigas, getPublicLeagueIDs, getLeagueRankingTop10, getEquipoEventoUsuario, getEventoRanking, getEventoActivo, crearEquipoEventoCompleto, getAvailableEventPlayers, getEquipoEventoUsuarioID, getPlantillaEvento, getLogrosBase, otorgarLogro, getStatsParaPoisson, getPuzzleDelUsuario, getUltimaJornadaCompletada} from './database.js'
  
 
 const app = express()  
@@ -16,57 +16,80 @@ app.use(cookieParser());
 const JWT_SECRET = process.env.JWT_SECRET || 'tu_super_secreto_de_desarrollo';
 
 function authenticateToken(req, res, next) {
-    // 1. Obtener el token de la cookie
     const token = req.cookies.authToken;
 
-    // Si no hay token, el usuario no está autenticado
     if (!token) {
-        return res.sendStatus(401); // 401 Unauthorized
+        return res.sendStatus(401); 
     }
 
-    // 2. Verificar la firma del token
     jwt.verify(token, JWT_SECRET, (err, decodedPayload) => {
         if (err) {
-            // Si el token es inválido o ha caducado
-            return res.sendStatus(403); // 403 Forbidden
+            return res.sendStatus(403); 
         }
 
-        // 3. ¡Token válido! Guardamos el ID del usuario en el objeto `req`
-        // para que las rutas posteriores sepan quién es.
         req.userId = decodedPayload.userId;
-        next(); // Permite que la petición continúe a la ruta solicitada
+        next(); 
     });
 }
+
+app.get("/api/fantasy/mi-rompecabezas", authenticateToken, async (req, res) => {
+    try {
+        const puzzleData = await getPuzzleDelUsuario(req.userId);
+        res.status(200).json(puzzleData);
+    } catch (error) {
+        console.error("Error al obtener rompecabezas del usuario:", error);
+        res.status(500).json({ error: "Error interno del servidor." });
+    }
+});
+
+app.get("/api/fantasy/ultima-jornada-completada/:temporada_id", async (req, res) => {
+    try {
+        const { temporada_id } = req.params;
+        const ultima_jornada = await getUltimaJornadaCompletada(temporada_id);
+        res.status(200).json({ ultima_jornada: ultima_jornada });
+    } catch (error) {
+        console.error("Error al obtener última jornada:", error);
+        res.status(500).json({ error: "Error interno del servidor." });
+    }
+});
+
+app.get("/api/fantasy/partido-probabilidades/:id", async (req, res) => {
+    try {
+        const partidoId = req.params.id;
+        const stats = await getStatsParaPoisson(partidoId);
+        res.status(200).json(stats);
+    } catch (error) {
+        console.error("Error al obtener estadísticas de Poisson:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
 
 app.get("/api/fantasy/logros", authenticateToken, async (req, res) => {
     try {
         const userId = req.userId;
         
-        // 1. Obtener la info estática de todos los logros (nombre, desc, unlocked, rarity, rule_key, target)
+        
         const logros = await getLogrosBase(userId);
         
-        // 2. Obtener los datos dinámicos (progreso) que necesitaremos
-        // (Usamos Promise.all para hacerlos al mismo tiempo)
+        
         const [userData, equipoData] = await Promise.all([
             getUsuarioData(userId),
             getEquipoFantasyUsuario(userId)
         ]);
         
-        const equipoCount = equipoData ? 1 : 0; // El progreso es 0 (no tiene) o 1 (ya tiene)
+        const equipoCount = equipoData ? 1 : 0; 
 
-        // 3. Mapear los resultados para añadir 'current' (RQF2)
         const logrosConProgreso = logros.map(logro => {
             let currentProgress = 0;
             
             
             
-            // Devolvemos el objeto final que el frontend espera
             return {
                 id: logro.id_logro,
                 nombre: logro.nombre,
                 descripcion: logro.descripcion,
                 rarity: logro.rarity,
-                unlocked: logro.unlocked === 1 // Convertir a booleano
+                unlocked: logro.unlocked === 1 
                 
             };
         });
@@ -82,10 +105,8 @@ app.get("/api/fantasy/logros", authenticateToken, async (req, res) => {
 app.post("/api/fantasy/crear-equipo-evento", authenticateToken, async (req, res) => {
     try {
         const userId = req.userId;
-        // Recibimos los 4 datos clave del frontend
         const { eventoId, nombreEquipo, plantilla, reglaClave } = req.body; 
         console.log(reglaClave);
-        // Validación simple
         if (!eventoId || !nombreEquipo || !plantilla || !reglaClave) {
             return res.status(400).json({ error: "Faltan datos (eventoId, nombreEquipo, plantilla, reglaClave)." });
         }
@@ -93,13 +114,12 @@ app.post("/api/fantasy/crear-equipo-evento", authenticateToken, async (req, res)
             return res.status(400).json({ error: "La plantilla de evento debe tener 11 jugadores." });
         }
 
-        // Validación de Nivel (RQNF2)
+        // RQNF2
         const user = await getUsuarioData(userId);
         if (user.nivel < 5) {
             return res.status(403).json({ error: "Debes ser nivel 5 o superior para crear un equipo." });
         }
 
-        // Llamar a la función de DB que hace la transacción y validación final
         const nuevoEquipo = await crearEquipoEventoCompleto(
             userId, 
             eventoId, 
@@ -115,7 +135,7 @@ app.post("/api/fantasy/crear-equipo-evento", authenticateToken, async (req, res)
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(409).json({ error: "Ya tienes un equipo para este evento." });
         }
-        // Devolvemos el error de validación de la BD (RQNF1)
+        // RQNF1
         if (error.message.includes("La plantilla no cumple")) {
             return res.status(400).json({ error: error.message });
         }
@@ -125,13 +145,13 @@ app.post("/api/fantasy/crear-equipo-evento", authenticateToken, async (req, res)
 
 app.get("/api/fantasy/available-event-players", authenticateToken, async (req, res) => {
     try {
-        const { regla } = req.query; // (ej. "U23")
+        const { regla } = req.query; 
         
         if (!regla) {
             return res.status(400).json({ error: "Falta el parámetro 'regla' del evento." });
         }
         
-        // RQNF2: Validar Nivel 5
+        // RQNF2
         const user = await getUsuarioData(req.userId);
         if (user.nivel < 5) {
             return res.status(403).json({ error: "Debes ser nivel 5 o superior para participar." });
@@ -161,23 +181,19 @@ app.get("/api/fantasy/evento-actual", authenticateToken, async (req, res) => {
     try {
         const evento = await getEventoActivo();
         if (!evento) {
-            // No es un error, es que no hay evento
             return res.status(200).json(null); 
         }
         
-        // Antes de devolver el evento, verificamos si el usuario YA TIENE un equipo
         const equipoExistente = await getEquipoEventoUsuario(req.userId, evento.id_evento);
-        let plantilla = []; // Por defecto, array vacío
+        let plantilla = []; 
         if (equipoExistente) {
-            // ¡Sí tiene equipo! Vamos a buscar su plantilla
             plantilla = await getPlantillaEvento(equipoExistente.id_equipo_evento);
         }
-        // Añadimos un campo 'usuario_inscrito' al objeto
         const eventoConInfo = {
-            ...evento, // { id_evento, nombre, regla_clave, ... }
+            ...evento, 
             usuario_inscrito: (equipoExistente ? true : false),
             equipo_id: (equipoExistente ? equipoExistente.id_equipo_evento : null),
-            plantilla: plantilla // 👈 Enviamos la plantilla (vacía o llena)
+            plantilla: plantilla 
         };
         
         res.status(200).json(eventoConInfo);
@@ -193,35 +209,33 @@ app.post("/api/fantasy/crear-liga", authenticateToken, async (req, res) => {
         const { nombre } = req.body;
         const ID_LOGRO_PRESIDENTE = 2;
 
-        // 1. Validar RQF3 (Nivel 5)
+        // RQF3
         const user = await getUsuarioData(userId);
         if (user.nivel < 5) {
             return res.status(403).json({ error: "Debes ser nivel 5 o superior para crear una liga." });
         }
 
-        // 2. Obtener el equipo fantasy del usuario (para auto-unirlo)
         const equipo = await getEquipoFantasyUsuario(userId);
         if (!equipo) {
             return res.status(400).json({ error: "Debes tener un equipo para crear una liga." });
         }
 
-        // 3. Generar un código único (RQNF3)
+        // RQNF3
         let codigoUnico = null;
         let intentos = 0;
         while (codigoUnico === null && intentos < 5) {
-            const nuevoCodigo = crypto.randomBytes(4).toString('hex').toUpperCase(); // 8 caracteres
+            const nuevoCodigo = crypto.randomBytes(4).toString('hex').toUpperCase(); 
             try {
-                // Intentar crear la liga. Esto fallará si el código ya existe.
                 const nuevaLiga = await crearLiga(nombre, userId, nuevoCodigo, equipo.id_equipo_fantasy);
                 otorgarLogro(userId, ID_LOGRO_PRESIDENTE);
-                codigoUnico = nuevoCodigo; // Éxito
+                codigoUnico = nuevoCodigo; 
                 res.status(201).json({ message: "¡Liga creada con éxito!", codigo: nuevoCodigo });
             } catch (error) {
-                if (error.code === 'ER_DUP_ENTRY') { // El código de 8 dígitos ya existe
+                if (error.code === 'ER_DUP_ENTRY') { 
                     console.warn("Colisión de código de invitación, generando uno nuevo...");
                     intentos++;
                 } else {
-                    throw error; // Lanzar otro tipo de error
+                    throw error; 
                 }
             }
         }
@@ -246,20 +260,18 @@ app.post("/api/fantasy/unirse-liga", authenticateToken, async (req, res) => {
             return res.status(400).json({ error: "El código debe tener 8 caracteres." });
         }
 
-        // 1. Obtener el equipo fantasy del usuario
         const equipo = await getEquipoFantasyUsuario(userId);
         if (!equipo) {
             return res.status(400).json({ error: "Debes tener un equipo para unirte a una liga." });
         }
 
-        // 2. Llamar a la función de la BD (valida código, límite, etc.)
         await unirseLigaPorCodigo(codigo, equipo.id_equipo_fantasy);
         otorgarLogro(userId, ID_LOGRO_BIENVENIDO);
         res.status(200).json({ message: "¡Te has unido a la liga con éxito!" });
 
     } catch (error) {
         console.error("Error al unirse a liga:", error);
-        // Devolver errores específicos de la BD (RQNF4, RQNF2)
+        // RQNF4, RQNF2
         if (error.message.includes("Código no válido") || error.message.includes("La liga está llena") || error.code === 'ER_DUP_ENTRY') {
             const userMessage = error.code === 'ER_DUP_ENTRY' ? "Ya eres miembro de esta liga." : error.message;
             return res.status(400).json({ error: userMessage });
@@ -281,7 +293,6 @@ app.get("/api/fantasy/liga/:id/ranking", authenticateToken, async (req, res) => 
 
 app.get("/api/fantasy/mis-ligas", authenticateToken, async (req, res) => {
     try {
-        // 1. Obtener los datos del usuario y su equipo
         const userData = await getUsuarioData(req.userId);
         const equipoData = await getEquipoFantasyUsuario(req.userId);
 
@@ -289,7 +300,6 @@ app.get("/api/fantasy/mis-ligas", authenticateToken, async (req, res) => {
             return res.status(404).json({ error: "El usuario no ha creado un equipo fantasy." });
         }
 
-        // 2. Buscar las ligas
         const ligas = await getMisLigas(userData.id_usuario, userData.pais_id, equipoData.id_equipo_fantasy);
         res.status(200).json(ligas);
         
@@ -300,14 +310,11 @@ app.get("/api/fantasy/mis-ligas", authenticateToken, async (req, res) => {
 });
 
 app.get("/api/fantasy/user-info", authenticateToken, async (req, res) => {
-    // Gracias al middleware, ahora tenemos acceso a req.userId
     const userId = req.userId;
 
     try {
-        // Llama a funciones de database.js pasándoles el userId
         const userInfo = await getUsuarioData(userId);
 
-        // Devuelve los datos específicos de ESE usuario
         res.status(200).json(userInfo);
     } catch (error) {
         console.error(`Error al obtener dashboard para usuario ${userId}:`, error);
@@ -328,7 +335,7 @@ app.get("/api/fantasy/historial-predicciones", authenticateToken, async (req, re
 app.get("/api/fantasy/mis-predicciones", authenticateToken, async (req, res) => {
     try {
         const userId = req.userId;
-        const { jornada } = req.query; // Esperamos ?jornada=11
+        const { jornada } = req.query; 
 
         if (!jornada) {
             return res.status(400).json({ error: "Falta el número de jornada." });
@@ -353,13 +360,11 @@ app.post("/api/fantasy/guardar-prediccion", authenticateToken, async (req, res) 
             return res.status(400).json({ error: "Falta el ID del partido." });
         }
 
-        // 1. Obtener la jornada del partido (necesaria para la tabla)
         const partidoInfo = await getJornadaFromPartido(id_partido);
         if (!partidoInfo) {
             return res.status(404).json({ error: "El partido no existe." });
         }
 
-        // 2. Preparar el objeto de datos para la BD
         const prediccion = {
             id_usuario: userId,
             id_partido: id_partido,
@@ -369,7 +374,6 @@ app.post("/api/fantasy/guardar-prediccion", authenticateToken, async (req, res) 
             primer_jugador_anotar_id: primer_jugador_anotar_id
         };
 
-        // 3. Llamar a la función de la BD (que usa ON DUPLICATE KEY UPDATE)
         await guardarPrediccionUsuario(prediccion);
 
         res.status(200).json({ message: "Predicción guardada con éxito." });
@@ -482,23 +486,19 @@ app.get("/api/fantasy/proximos-partidos",  async (req, res) => {
 
 app.post("/api/fantasy/actualizar-plantilla", authenticateToken, async (req, res) => {
     try {
-        const userId = req.userId; // Gracias al middleware
-        const { plantilla } = req.body; // El array de {id_jugador, es_titular, es_capitan}
+        const userId = req.userId; 
+        const { plantilla } = req.body; 
 
-        // Validación simple
         if (!plantilla || plantilla.length !== 15) {
             return res.status(400).json({ error: "Datos de plantilla inválidos." });
         }
 
-        // 1. Obtener el id_equipo_fantasy del usuario
-        // (getEquipoFantasyUsuario solo necesita el userId según tu schema)
         const equipo = await getEquipoFantasyUsuario(userId); 
 
         if (!equipo) {
             return res.status(404).json({ error: "No se encontró el equipo fantasy del usuario." });
         }
         
-        // 2. Llamar a la función de la BD para actualizar
         await actualizarPlantilla(equipo.id_equipo_fantasy, plantilla);
 
         res.status(200).json({ message: "¡Plantilla actualizada con éxito!" });
@@ -515,26 +515,23 @@ app.post("/api/fantasy/hacer-fichaje", authenticateToken, async (req, res) => {
         const userId = req.userId;
         const { jugadorSaleId, jugadorEntraId } = req.body;
 
-        // 1. Obtener el equipo fantasy del usuario
         const equipo = await getEquipoFantasyUsuario(userId);
         if (!equipo) {
             return res.status(404).json({ error: "No se encontró el equipo fantasy." });
         }
         
-        // 2. Llamar a la función de la BD que hace la transacción
         await realizarFichaje(
             equipo.id_equipo_fantasy, 
             jugadorSaleId, 
             jugadorEntraId,
             equipo.fichajes_jornada_restantes,
-            equipo.id_temporada // Pasamos la temporada del equipo
+            equipo.id_temporada 
         );
 
         res.status(200).json({ message: "Fichaje realizado con éxito." });
 
     } catch (error) {
         console.error("Error al hacer fichaje:", error);
-        // Devolver errores de validación al usuario
         if (error.message.includes("Presupuesto") || error.message.includes("Límite")) {
              return res.status(400).json({ error: error.message });
         }
@@ -575,18 +572,14 @@ app.get("/api/fantasy/player-details/:id",  async (req, res) => {
 });
 
 app.get("/api/fantasy/mi-equipo", authenticateToken, async (req, res) => {
-    // Gracias al middleware, ahora tenemos acceso a req.userId
     const userId = req.userId;
 
     try {
-        // Llama a funciones de database.js pasándoles el userId
         const userInfo = await getUsuarioData(userId);
         const equipoInfo = await getEquipoFantasyUsuario(userId);
         const plantillaConDetalles = await getPlantillaFantasy(userId);
-        //const ligasData = await getLigasUsuario(userId);
-        // ... obtener el resto de los datos (partidos, etc.)
+        
 
-        // Devuelve los datos específicos de ESE usuario
         res.status(200).json({userInfo, equipoInfo, plantillaConDetalles});
     } catch (error) {
         console.error(`Error al obtener dashboard para usuario ${userId}:`, error);
@@ -596,17 +589,14 @@ app.get("/api/fantasy/mi-equipo", authenticateToken, async (req, res) => {
 
 app.post("/api/fantasy/crear-equipo", authenticateToken, async (req, res) => {
     try {
-        // 1. Obtenemos el ID del usuario desde el token verificado
         const userId = req.userId;
         const userData = await getUsuarioData(userId);
         if (!userData || !userData.pais_id) {
             return res.status(400).json({ error: "No se pudo encontrar el país del usuario." });
         }
         const paisId = userData.pais_id;
-        // 2. Obtenemos los datos enviados desde el frontend
         const { nombreEquipo, presupuestoRestante, plantilla } = req.body;
 
-        // 3. Validaciones de backend 
         if (!nombreEquipo || nombreEquipo.trim().length < 3) {
             return res.status(400).json({ error: "El nombre del equipo es muy corto." });
         }
@@ -616,16 +606,13 @@ app.post("/api/fantasy/crear-equipo", authenticateToken, async (req, res) => {
         if (presupuestoRestante < 0) {
             return res.status(400).json({ error: "El presupuesto no puede ser negativo." });
         }
-        
-        // 4. Llamamos a la nueva función en database.js para que haga la magia
-        // Le pasamos los datos y el ID del usuario
+  
         const nuevoEquipo = await crearEquipoFantasyCompleto(userId, nombreEquipo, presupuestoRestante, plantilla, paisId);
 
         res.status(201).json({ message: "Equipo creado con éxito", equipoId: nuevoEquipo.id_equipo_fantasy });
 
     } catch (error) {
         console.error("Error al crear equipo fantasy:", error);
-        // Manejamos errores comunes, como "equipo ya existe"
         if (error.code === 'ER_DUP_ENTRY') {
              return res.status(409).json({ error: "Ya has creado un equipo para esta temporada." });
         }
@@ -649,26 +636,22 @@ app.get("/api/fantasy/available-players", authenticateToken, async (req, res) =>
 });
 
 app.get("/api/fantasy-dashboard", authenticateToken, async (req, res) => {
-    // Gracias al middleware, ahora tenemos acceso a req.userId
     const userId = req.userId;
     console.log(`Usuario ${userId} está pidiendo su dashboard.`);
 
     try {
-        // Llama a funciones de database.js pasándoles el userId
         const userData = await getUsuarioData(userId);
         const equipoData = await getEquipoFantasyUsuario(userId);
         const plantillaConDetalles = await getPlantillaFantasy(userId);
         const historialPredicciones = await getHistorialPredicciones(userId);
-        //const ligasData = await getLigasUsuario(userId);
-        // ... obtener el resto de los datos (partidos, etc.)
+        const puzzleData = await getPuzzleDelUsuario(userId);
         const { globalLeagueId, localLeagueId, localLeagueName } = await getPublicLeagueIDs(userData.pais_id);
 
         const [globalRanking, localRanking] = await Promise.all([
             getLeagueRankingTop10(globalLeagueId),
             getLeagueRankingTop10(localLeagueId)
         ]);
-        // Devuelve los datos específicos de ESE usuario
-        res.status(200).json({userData, equipoData, plantillaConDetalles, globalRanking,localRanking, localLeagueName, historialPredicciones});
+        res.status(200).json({userData, equipoData, plantillaConDetalles, globalRanking,localRanking, localLeagueName, historialPredicciones, puzzleData});
     } catch (error) {
         console.error(`Error al obtener dashboard para usuario ${userId}:`, error);
         res.status(500).json({ error: "Error interno al obtener datos del dashboard" });
@@ -677,39 +660,44 @@ app.get("/api/fantasy-dashboard", authenticateToken, async (req, res) => {
 
 app.post("/api/login", async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, remember } = req.body;
 
-        // 1. Buscar al usuario en la BD por su email
         const user = await findUserByEmail(email);
 
-        // Si el usuario no existe, las credenciales son inválidas
         if (!user) {
             return res.status(401).json({ error: "Credenciales inválidas" });
         }
 
-        // 2. Comparar la contraseña enviada con el hash guardado en la BD
         const isMatch = await bcrypt.compare(password, user.hashed_password);
 
-        // Si la comparación falla, las credenciales son inválidas
         if (!isMatch) {
             return res.status(401).json({ error: "Credenciales inválidas" });
         }
 
-        // 1. Crear el "payload" (la información dentro de la credencial)
+        const cookieOptions = {
+            httpOnly: true, 
+            secure: process.env.NODE_ENV === "production", 
+            sameSite: "strict" 
+        };
+        let tokenExpiration;
+
+        if (remember === "on") {
+            tokenExpiration = '30d';
+            cookieOptions.maxAge = 30 * 24 * 60 * 60 * 1000; 
+        } else {
+            tokenExpiration = '3h';
+        }
         const payload = { userId: user.id_usuario };
 
-        // 2. Firmar el token con tu secreto y ponerle una caducidad (ej. 1 hora)
         const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
 
-        // 3. Enviar el token en una cookie segura
         res.cookie('authToken', token, {
-            httpOnly: true, // El navegador no permite a JS leer esta cookie (seguridad XSS)
-            secure: process.env.NODE_ENV === 'production', // Solo enviar por HTTPS en producción
-            sameSite: 'strict', // Protección CSRF
-            maxAge: 3600000 // Tiempo de vida de la cookie en milisegundos (1 hora)
+            httpOnly: true, 
+            secure: process.env.NODE_ENV === 'production', 
+            sameSite: 'strict', 
+            maxAge: 3600000 
         });
 
-        // 4. Enviar respuesta de éxito (sin el token en el cuerpo)
         res.status(200).json({ message: "Login exitoso", userId: user.id_usuario });
 
     } catch (error) {
@@ -733,7 +721,6 @@ app.post("/api/registrar-usuario", async (req, res) => {
             return res.status(409).json({ error: "El correo ya está en uso." });
         } 
         
-        // Hashea la contraseña ANTES de guardarla
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(contrasenia, saltRounds);
 
@@ -846,7 +833,7 @@ app.get("/api/info-club/:id", async(req, res) => {
             return res.status(404).json({ error: "No hay suficiente informacion del club" });
         }
 
-        res.json(infoClub[0]); // devuelves solo el club, no array
+        res.json(infoClub[0]); 
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Error al obtener estadísticas del club" });
@@ -855,14 +842,14 @@ app.get("/api/info-club/:id", async(req, res) => {
 
 app.get("/api/estadisticas-portero/:id", async(req, res) => {
     try {
-        const { id } = req.params; // ejemplo: /estadisticas-jugador/45
+        const { id } = req.params; 
         const estadisticas_jugador = await getEstadisticasPortero(id);
 
         if (estadisticas_jugador.length === 0) {
             return res.status(404).json({ error: "No hay suficiente informacion del jugador" });
         }
 
-        res.json(estadisticas_jugador[0]); // devuelves solo el jugador, no array
+        res.json(estadisticas_jugador[0]); 
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Error al obtener estadísticas del jugador" });
@@ -1294,14 +1281,14 @@ app.get("/api/buscar-jugadores", async (req, res) => {
 
 app.get("/api/estadisticas-jugador/:id", async(req, res) => {
     try {
-        const { id } = req.params; // ejemplo: /estadisticas-jugador/45
+        const { id } = req.params; 
         const estadisticas_jugador = await getStatsJugador(id);
 
         if (estadisticas_jugador.length === 0) {
             return res.status(404).json({ error: "No hay suficiente informacion del jugador" });
         }
 
-        res.json(estadisticas_jugador[0]); // devuelves solo el jugador, no array
+        res.json(estadisticas_jugador[0]); 
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Error al obtener estadísticas del jugador" });

@@ -161,6 +161,47 @@
             body.light-mode .achievement-info p { color: #555; }
             body.light-mode .progress-text { color: #555; }
             body.light-mode .progress-bar { background-color: #d1d1d1; }
+            #puzzle-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr; /* 2x2 grid */
+                grid-template-rows: 1fr 1fr;
+                height: 650px; /* Puedes ajustar esta altura */
+                border-radius: 8px;
+                overflow: hidden;
+                border: 1px solid #2a2a4a;
+                
+                /* El JS pondrá la imagen completa del estadio aquí como fondo */
+                background-size: cover;
+                background-position: center;
+            }
+
+            .puzzle-piece {
+                width: 100%;
+                height: 100%;
+                /* El JS pondrá la imagen de la PIEZA aquí */
+                background-size: cover; 
+                transition: all 0.5s ease-in-out;
+            }
+
+            /* RQF1/RQF2: Estilo para las piezas bloqueadas */
+            .puzzle-piece.locked {
+                /* Usamos un fondo oscuro translúcido para "tapar" el estadio de fondo */
+                background-image: none !important; /* Ignora la imagen de la pieza */
+                background-color: rgba(26, 26, 46, 0.8);
+                backdrop-filter: blur(4px); /* Efecto "borroso" */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 2.5rem;
+                color: rgba(255, 255, 255, 0.3);
+            }
+            /* --- 👆 FIN DE NUEVOS ESTILOS 👆 --- */
+
+            /* ... (tus estilos de modo claro) ... */
+            body.light-mode .puzzle-piece.locked {
+                background-color: rgba(255, 255, 255, 0.7);
+                color: rgba(0, 0, 0, 0.3);
+            }
         </style>
     </head>
     <body>
@@ -173,6 +214,10 @@
             </header>
 
             <main>
+                <div class="card" id="puzzle-card">
+                    <h2>Mi Rompecabezas de Estadio</h2>
+                    <div id="puzzle-container"></div>
+                </div>
                 <div class="card">
                     <h2>Todos los Logros</h2>
                     
@@ -185,15 +230,12 @@
         <script>
             document.addEventListener('DOMContentLoaded', () => {
                 
-                // --- LÓGICA DE CARGA ---
                 async function loadAchievements() {
                     const listContainer = document.getElementById('achievements-list');
                     listContainer.innerHTML = "<p>Cargando logros...</p>";
 
                     try {
-                        // El endpoint debe devolver un array con TODOS los logros,
-                        // incluyendo el estado de desbloqueo del usuario,
-                        // la rareza, y el progreso actual.
+                        
                         const response = await fetch('/api/fantasy/logros');
                         
                         if (response.status === 401 || response.status === 403) {
@@ -205,25 +247,19 @@
 
                         const logros = await response.json();
                         
-                        // JSON esperado:
-                        // [
-                        //   { id: 1, nombre: "Primeros Pasos", desc: "...", icono: "rocket-outline", rarity: 80.5, unlocked: true, current: 1, target: 1 },
-                        //   { id: 2, nombre: "Visionario", desc: "Acierta 10 predicciones", icono: "eye-outline", rarity: 15.2, unlocked: false, current: 3, target: 10 }
-                        // ]
                         
-                        listContainer.innerHTML = ""; // Limpiar "Cargando..."
+                        listContainer.innerHTML = ""; 
                         
                         if (logros.length === 0) {
                             listContainer.innerHTML = "<p>No hay logros disponibles.</p>";
                             return;
                         }
 
-                        // Ordenar: Desbloqueados primero, luego por rareza
                         logros.sort((a, b) => {
                             if (a.unlocked !== b.unlocked) {
-                                return a.unlocked ? -1 : 1; // Desbloqueados van arriba
+                                return a.unlocked ? -1 : 1; 
                             }
-                            return a.rarity - b.rarity; // Los más raros (número bajo) van arriba
+                            return a.rarity - b.rarity; 
                         });
 
                         logros.forEach(logro => {
@@ -235,18 +271,19 @@
                         console.error("Error al cargar logros:", error);
                         listContainer.innerHTML = "<p style='color: #dc2626;'>Error al cargar los logros.</p>";
                     }
+
+                    
                 }
 
-                // --- FUNCIÓN PARA CREAR EL HTML DE CADA LOGRO ---
                 function createAchievementHTML(logro) {
-                    // RQF1: Aplicar clase si está desbloqueado
+                    // RQF1
                     const unlockedClass = logro.unlocked ? 'unlocked' : '';
                     
-                    // RQF2: Calcular progreso
+                    // RQF2
                     const progressPercent = (logro.target > 0) ? (logro.current / logro.target) * 100 : 0;
                     const progressText = (logro.target > 1) ? `${logro.current} / ${logro.target}` : '';
                     
-                    // RQF4: Formatear rareza
+                    // RQF4
                     const rarityText = `Desbloqueado por ${logro.rarity}% de los jugadores`;
 
                     return `
@@ -271,10 +308,49 @@
                     `;
                 }
 
-                // --- LÓGICA DE TEMA (Placeholder) ---
-                // (Tu lógica de tema iría aquí)
-                
-                // --- Carga Inicial ---
+                async function loadPuzzle() {
+                    const container = document.getElementById('puzzle-container');
+                    if (!container) return;
+
+                    try {
+                        const response = await fetch('/api/fantasy/mi-rompecabezas');
+                        if (response.status === 401) { window.location.href = '/login.html'; return; }
+                        if (!response.ok) throw new Error('Error al cargar rompecabezas');
+
+                        const puzzleData = await response.json(); 
+
+                        if (!puzzleData || !puzzleData.piezas || puzzleData.piezas.length === 0) {
+                            container.innerHTML = "<p style='text-align:center; opacity: 0.6; padding-top: 50px;'>Elige un equipo favorito en tu perfil.</p>";
+                            container.style.height = '150px';
+                            container.style.display = 'flex';
+                            container.style.alignItems = 'center';
+                            container.style.justifyContent = 'center';
+                            return;
+                        }
+
+                        container.style.backgroundImage = `url(${puzzleData.estadio_url_completa})`;
+
+                        // RQF5
+                        puzzleData.piezas.forEach(pieza => {
+                            const pieceDiv = document.createElement('div');
+                            pieceDiv.className = 'puzzle-piece';
+
+                            if (pieza.desbloqueado) { 
+                                pieceDiv.style.backgroundImage = `url(${pieza.url_imagen})`;
+                            } else {
+                                pieceDiv.classList.add('locked');
+                                pieceDiv.innerHTML = `<ion-icon name="lock-closed-outline"></ion-icon>`;
+                            }
+                            container.appendChild(pieceDiv);
+                        });
+
+                    } catch (error) {
+                        console.error("Error cargando rompecabezas:", error);
+                        container.innerHTML = "<p style='color: #dc2626; text-align:center; padding-top: 50px;'>Error al cargar rompecabezas.</p>";
+                    }
+                }
+
+                loadPuzzle();
                 loadAchievements();
             });
         </script>

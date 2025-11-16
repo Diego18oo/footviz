@@ -522,6 +522,7 @@
                                         callbacks: {
                                             label: function(context) {
                                                 const dataset = context.dataset;
+                                                
                                                 const statName = context.chart.data.labels[context.dataIndex];
                                                 const realValue = dataset.customStats[statName];
                                                 return `${dataset.label} - ${statName}: ${realValue}`; 

@@ -142,6 +142,27 @@
                 color: #7a99ff;
                 text-decoration: underline;
             }
+            .input-group input:focus ~ ion-icon {color: #4a69ff;}
+
+            /* --- 👇 AÑADE ESTOS ESTILOS NUEVOS 👇 --- */
+            .options-group {
+                display: flex;
+                align-items: center;
+                justify-content: flex-start; /* Alinea a la izquierda */
+                gap: 8px;
+                margin-bottom: 25px;
+                margin-top: -10px; /* Sube un poco */
+            }
+            .options-group label {
+                font-size: 0.9rem;
+                color: #a0a0c0;
+                cursor: pointer;
+            }
+            .options-group input[type="checkbox"] {
+                width: 15px;
+                height: 15px;
+                cursor: pointer;
+            }
 
         </style>
     </head>
@@ -158,6 +179,10 @@
                     <input type="password" name="password" required>
                     <label>Password</label>
                     <ion-icon name="lock-closed-outline"></ion-icon>
+                </div>
+                <div class="options-group">
+                    <input type="checkbox" name="remember" id="remember">
+                    <label for="remember">Recordarme</label>
                 </div>
                 <button type="submit">Iniciar Sesion</button>
                 <div class="register-link">

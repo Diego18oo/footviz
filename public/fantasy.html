@@ -247,12 +247,46 @@
             color: #a0a0c0;
             text-align: center;
         }
+        #puzzle-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2x2 grid */
+            grid-template-rows: 1fr 1fr;
+            height: 300px; /* Misma altura que tenías en la <img> */
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #2a2a4a;
+            
+            /* El JS pondrá la imagen completa del estadio aquí como fondo */
+            background-size: cover;
+            background-position: center;
+        }
+
+        .puzzle-piece {
+            width: 100%;
+            height: 100%;
+            /* El JS pondrá la imagen de la PIEZA aquí */
+            background-size: cover; 
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        /* RQF1/RQF2: Estilo para las piezas bloqueadas */
+        .puzzle-piece.locked {
+            /* Usamos un fondo oscuro translúcido para "tapar" el estadio de fondo */
+            background-color: rgba(26, 26, 46, 0.8);
+            backdrop-filter: blur(4px); /* Efecto "borroso" */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: rgba(255, 255, 255, 0.3);
+        }
         </style>
     </head>
     <body>
         <div class="dashboard-container">
 
             <header class="fantasy-header">
+                
                 <div class="user-profile-summary">
                     <div class="user-level-xp"> 
                         <div>Nivel <strong id="user-level">--</strong></div>
@@ -260,6 +294,7 @@
                     </div>
                     <h2 id="username-display">Cargando...</h2>
                 </div>
+                <h2 style="font-size: 50px; cursor: pointer;" onclick="window.location.href='index.html'" >FootViz</h2>
                 <div class="user-icons">
                     <ion-icon name="trophy-outline" title="Mis Logros" onclick="window.location.href='logros.html'" > </ion-icon>
                     <ion-icon name="person-circle-outline" title="Mi Perfil" id="user-profile-btn"></ion-icon>
@@ -278,7 +313,9 @@
 
             <div class="main-left-column">
                 <section id="stadium-banner" class="card">
-                    <img src="placeholder-stadium.jpg" alt="Banner Estadio">
+                    <h2>Piezas de Rompecabezas</h2>
+                    <div id="puzzle-container">
+                    </div>
                 </section>
                 <section id="my-team-section" class="card">
                     <h3>Mi Equipo</h3> 
@@ -288,6 +325,7 @@
                     <div id="team-controls" style="margin-top: 15px; text-align: center;">
                         <span>Presupuesto: <strong id="budget-remaining">-- M</strong></span> |
                         <span>Fichajes Restantes: <strong id="transfers-remaining">--</strong></span>
+                        
                         <p>Deadline: <strong id="deadline-timer">Jueves 23:59 (hora centro de Mexico)</strong></p> 
                         <button onclick="window.location.href='mi-equipo.html'" id="manage-team-button">Gestionar Equipo</button>
                     </div>
@@ -359,13 +397,16 @@
             presupuestoRestante = document.getElementById('budget-remaining');
             fichajesRestantes = document.getElementById('transfers-remaining');
             let pointsChartInstance = null;
+
+            //RQF3
             function renderLeagueTable(tbodyId, rankingData, currentUserId) {
                 console.log(rankingData, currentUserId);
                 const tbody = document.getElementById(tbodyId);
                 if (!tbody) return;
                 
-                tbody.innerHTML = ""; // Limpiar cualquier placeholder
+                tbody.innerHTML = ""; 
 
+                // RQNF2
                 if (!rankingData || rankingData.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="3" style="opacity: 0.6;">No hay datos.</td></tr>`;
                     return;
@@ -373,7 +414,6 @@
 
                 rankingData.forEach((entry, index) => {
                     const rank = index + 1;
-                    // Resaltar al usuario actual
                     const isCurrentUser = entry.id_usuario === currentUserId;
                     
                     const tr = document.createElement('tr');
@@ -391,19 +431,48 @@
                 });
             }
 
+            //RQF7
+            function renderPuzzle(puzzleData) {
+                const container = document.getElementById('puzzle-container');
+                if (!container) return;
+
+                if (!puzzleData || !puzzleData.piezas || puzzleData.piezas.length === 0) {
+                    container.innerHTML = "<p style='text-align:center; opacity: 0.6;'>Elige un equipo favorito en tu perfil para empezar el rompecabezas.</p>";
+                    container.style.height = '150px'; 
+                    container.style.display = 'flex';
+                    container.style.alignItems = 'center';
+                    container.style.justifyContent = 'center';
+                    return;
+                }
+
+                container.style.backgroundImage = `url(${puzzleData.estadio_url_completa})`;
+
+                puzzleData.piezas.forEach(pieza => {
+                    const pieceDiv = document.createElement('div');
+                    pieceDiv.className = 'puzzle-piece';
+
+                    if (pieza.desbloqueado) {
+                        pieceDiv.style.backgroundImage = `url(${pieza.url_imagen})`;
+                    } else {
+                        pieceDiv.classList.add('locked');
+                        pieceDiv.innerHTML = `<ion-icon name="lock-closed-outline"></ion-icon>`;
+                    }
+                    container.appendChild(pieceDiv);
+                });
+            }
+
+            //RQF8
             function renderPointsGraph(historial) {
                 const ctx = document.getElementById('points-chart').getContext('2d');
                 const placeholder = document.getElementById('points-graph-placeholder');
 
-                // RQF4 Condición: Si no hay datos, mostrar placeholder
                 if (!historial || historial.length === 0) {
                     console.log("No hay datos")
                     placeholder.style.display = 'block';
                     ctx.canvas.style.display = 'none';
                     
-                    // Lógica de 1 de Agosto (opcional, pero como lo pediste)
                     const hoy = new Date();
-                    if (hoy.getMonth() == 7 && hoy.getDate() < 10) { // 7 es Agosto (0-11)
+                    if (hoy.getMonth() == 7 && hoy.getDate() < 10) { 
                         placeholder.textContent = "La temporada de predicciones aún no ha comenzado.";
                     } else {
                         placeholder.textContent = "¡Empieza a predecir para ver tu historial de puntos!";
@@ -418,15 +487,14 @@
                 let cumulativeData = [];
                 let totalAcumulado = 0;
 
-                // Calcular puntos acumulados
                 historial.forEach(item => {
-                    totalAcumulado = parseInt(item.puntos_jornada, 10); // Suma los puntos de esta jornada
+                    totalAcumulado = parseInt(item.puntos_jornada, 10); 
                     labels.push(`J${item.jornada}`);
-                    cumulativeData.push(totalAcumulado); // Añade el total acumulado
+                    cumulativeData.push(totalAcumulado); 
                 });
 
                 if (pointsChartInstance) {
-                    pointsChartInstance.destroy(); // Destruir gráfico anterior si existe
+                    pointsChartInstance.destroy(); 
                 }
 
                 
@@ -485,6 +553,7 @@
                 });
             }
 
+            // RQF1
             async function cargarDatosDashboard() { 
                 try {
                     const response = await fetch('/api/fantasy-dashboard'); 
@@ -543,7 +612,7 @@
                     
                     renderPointsGraph(data.historialPredicciones);
                     
-
+                    renderPuzzle(data.puzzleData);
 
                 } catch (error) {
                     console.error("Error:", error);
@@ -613,6 +682,7 @@
                 });
             }
 
+            //RQF4
             function cargarProximosPartidos() {
                 const fixturesList = document.getElementById('fixtures-list');
     
@@ -663,6 +733,7 @@
                     });
             }
 
+            //RQF9
             function cargarMVP() {
                 const mvpList = document.getElementById('mvp-list'); 
 
@@ -712,42 +783,36 @@
             const profileBtn = document.getElementById('user-profile-btn');
             const profileDropdown = document.getElementById('profile-dropdown-menu');
 
-            // 1. Lógica para abrir/cerrar el menú
             profileBtn.addEventListener('click', (event) => {
                 console.log("Click");
-                event.stopPropagation(); // Evita que el clic se propague al 'window'
+                event.stopPropagation(); 
                 profileDropdown.classList.toggle('open');
             });
 
-            // 2. Lógica para cerrar el menú si se hace clic fuera
             window.addEventListener('click', (event) => {
                 if (profileDropdown.classList.contains('open')) {
-                    // Si el clic NO fue dentro del menú Y NO fue en el botón
                     if (!profileDropdown.contains(event.target) && event.target !== profileBtn) {
                         profileDropdown.classList.remove('open');
                     }
                 }
             });
 
-            // 3. Lógica de Cerrar Sesión
             const logoutBtn = document.getElementById('logout-btn');
             logoutBtn.addEventListener('click', async (event) => {
-                event.preventDefault(); // Prevenir que el link '#' navegue
+                event.preventDefault(); 
                 
                 try {
-                    // Llama al endpoint de logout que invalida la cookie/token
                     const response = await fetch('/api/logout', { method: 'POST' });
 
                     if (response.ok) {
                         alert("Has cerrado sesión. ¡Vuelve pronto!");
-                        window.location.href = '/login.html'; // Redirigir al login
+                        window.location.href = '/login.html';
                     } else {
                         throw new Error('No se pudo cerrar sesión.');
                     }
                 } catch (error) {
                     console.error("Error al cerrar sesión:", error);
                     alert("Sesion Cerrada");
-                    // (Igual lo redirigimos por si el token ya expiró)
                     window.location.href = '/login.html';
                 }
             });

@@ -206,46 +206,38 @@
             <header class="header">
                 
                 <h1>Ligas y Clasificaciones</h1>
-                <div style="width: 42px;"></div> <!-- Espaciador para equilibrar el header -->
+                <div style="width: 42px;"></div> 
             </header>
 
             <main class="leagues-layout">
-                <!-- COLUMNA IZQUIERDA: NAVEGACIÓN -->
                 <aside class="leagues-sidebar">
-                    <!-- RQF6: Unirse a Liga -->
                     <div class="card">
                         <h3>Unirse a Liga Privada</h3>
                         <div class="join-league-form">
                             <input type="text" id="league-code-input" placeholder="Código (8 dígitos)" maxlength="8">
                             <button class="btn-action btn-join" id="join-league-btn">Unirse</button>
                         </div>
-                        <!-- RQF3: Crear Liga (con validación de nivel) -->
                         <button class="btn-action btn-create" id="create-league-btn" disabled>
                             <ion-icon name="add-circle-outline"></ion-icon> Crear Nueva Liga
                             <span id="level-requirement-text" style="font-size: 0.8rem; opacity: 0.8;">(Req. Nivel 5)</span>
                         </button>
                     </div>
 
-                    <!-- RQF1: Ligas Públicas -->
                     <div class="card">
                         <h3>Ligas Públicas</h3>
                         <ul class="leagues-list" id="public-leagues-list">
-                            <!-- Se llena con JS -->
                             <li class="league-item">Cargando...</li>
                         </ul>
                     </div>
 
-                    <!-- RQF1: Ligas Privadas -->
                     <div class="card">
                         <h3>Mis Ligas Privadas</h3>
                         <ul class="leagues-list" id="private-leagues-list">
-                            <!-- Se llena con JS -->
                             <li style="opacity: 0.6; font-size: 0.9rem;">No te has unido a ninguna liga privada.</li>
                         </ul>
                     </div>
                 </aside>
 
-                <!-- COLUMNA DERECHA: DETALLE DE LIGA SELECCIONADA -->
                 <section class="card leagues-main">
                     <div class="active-league-header">
                         <div class="league-title-group">
@@ -255,14 +247,12 @@
                                 <span id="active-league-type">--</span>
                             </div>
                         </div>
-                        <!-- RQF5: Código de invitación (solo visible si es admin) -->
                         <div id="league-code-display" class="league-code-box" style="display: none;" title="Clic para copiar">
                             <span id="league-code-text">--------</span>
                             <ion-icon name="copy-outline"></ion-icon>
                         </div>
                     </div>
 
-                    <!-- RQF4: Tabla de Clasificación -->
                     <div class="leaderboard-container">
                         <table class="leaderboard-table">
                             <thead>
@@ -273,7 +263,6 @@
                                 </tr>
                             </thead>
                             <tbody id="leaderboard-body">
-                                <!-- Se llena con JS -->
                             </tbody>
                         </table>
                     </div>
@@ -281,7 +270,6 @@
             </main>
         </div>
 
-        <!-- Modal Crear Liga -->
         <div id="create-league-modal" class="modal">
             <div class="modal-content">
                 <h3>Crear Nueva Liga Privada</h3>
@@ -294,12 +282,9 @@
         </div>
         
         <script>
-            // --- ESTADO GLOBAL ---
-            let userLevel = 1; // Se actualizará desde el backend
-            let currentUserId = 7; // Se actualizará desde el backend (para resaltar en la tabla)
-            let allUserLeagues = []; // Guardará todas las ligas del usuario
-
-            // --- ELEMENTOS DOM ---
+            let userLevel = 1; 
+            let currentUserId = 7; 
+            let allUserLeagues = []; 
             const publicListEl = document.getElementById('public-leagues-list');
             const privateListEl = document.getElementById('private-leagues-list');
             const leagueNameEl = document.getElementById('active-league-name');
@@ -312,15 +297,12 @@
             const levelReqTextEl = document.getElementById('level-requirement-text');
             const createModal = document.getElementById('create-league-modal');
 
-            // --- INICIALIZACIÓN ---
             document.addEventListener('DOMContentLoaded', async () => {
-                await loadUserData(); // Para obtener nivel y ID
-                await loadLeagues();  // Para obtener la lista de ligas
+                await loadUserData(); 
+                await loadLeagues();  
             });
 
-            // --- 1. CARGAR DATOS DEL USUARIO (Nivel para RQF3) ---
             async function loadUserData() {
-                // Simulación de fetch al backend
                 const res = await fetch('/api/fantasy/user-info');
                 const data = await res.json();
                 userLevel = data.nivel;
@@ -328,16 +310,14 @@
                 
                 
 
-                // RQF3: Validar nivel para habilitar botón de crear
                 if (userLevel >= 5) {
                     createBtnEl.disabled = false;
                     levelReqTextEl.style.display = 'none';
                 }
             }
 
-            // --- 2. CARGAR LISTA DE LIGAS (RQF1, RQF2) ---
+            //RQF1
             async function loadLeagues() {
-                // Simulación de fetch a '/api/fantasy/mis-ligas'
                 const res = await fetch('/api/fantasy/mis-ligas');
                 allUserLeagues = await res.json();
 
@@ -345,7 +325,6 @@
 
                 renderLeaguesList();
 
-                // Cargar automáticamente la primera liga (Global)
                 if (allUserLeagues.length > 0) {
                     console.log(allUserLeagues[0].id_liga_fantasy);
                     loadLeagueDetails(allUserLeagues[0].id_liga_fantasy);
@@ -375,22 +354,17 @@
                 });
             }
 
-            // --- 3. CARGAR DETALLES Y RANKING DE UNA LIGA (RQF4, RQF5) ---
             async function loadLeagueDetails(leagueId) {
-                // 1. Actualizar UI de selección
                 document.querySelectorAll('.league-item').forEach(item => item.classList.remove('active'));
                 const activeItem = document.querySelector(`.league-item[data-id="${leagueId}"]`);
                 if (activeItem) activeItem.classList.add('active');
 
-                // 2. Encontrar datos básicos de la liga seleccionada
                 const league = allUserLeagues.find(l => l.id_liga_fantasy === leagueId);
                 if (!league) return;
 
-                // 3. Actualizar cabecera
                 leagueNameEl.textContent = league.nombre;
                 leagueTypeEl.textContent = league.tipo === 'publica' ? 'Liga Pública' : 'Liga Privada';
                 
-                // RQF5: Mostrar código si es admin de liga privada
                 if (league.tipo === 'privada' && league.es_admin) {
                     leagueCodeBoxEl.style.display = 'flex';
                     leagueCodeTextEl.textContent = league.codigo;
@@ -398,11 +372,9 @@
                     leagueCodeBoxEl.style.display = 'none';
                 }
 
-                // 4. Fetch del Leaderboard (RQF4)
                 leaderboardBodyEl.innerHTML = '<tr><td colspan="3" style="text-align:center; opacity: 0.6;">Cargando clasificación...</td></tr>';
                 
                 try {
-                    // Simulación de fetch: `/api/fantasy/liga/${leagueId}/ranking`
                     const res = await fetch(`/api/fantasy/liga/${leagueId}/ranking`);
                     const leaderboard = await res.json();
 
@@ -410,10 +382,8 @@
                         console.log("No hay miembros");
                     }
 
-                    // DATOS SIMULADOS (espera 500ms para realismo)
                     await new Promise(r => setTimeout(r, 300));
 
-                    // 5. Renderizar la tabla
                     leagueMembersEl.textContent = `${leaderboard.length} miembros`;
                     renderLeaderboard(leaderboard);
 
@@ -423,6 +393,7 @@
                 }
             }
 
+            //RQF4
             function renderLeaderboard(leaderboard) {
                 leaderboardBodyEl.innerHTML = '';
                 leaderboard.forEach((entry, index) => {
@@ -444,32 +415,41 @@
                 });
             }
 
-            // --- 4. FUNCIONALIDAD UNIRSE A LIGA (RQF6) ---
             document.getElementById('join-league-btn').addEventListener('click', async () => {
                 const codeInput = document.getElementById('league-code-input');
                 const code = codeInput.value.trim().toUpperCase();
 
-                // RQNF4 (Validación básica frontend)
                 if (code.length !== 8) {
                     alert("Código no válido. Debe tener 8 caracteres.");
                     return;
                 }
-
+                const joinButton = document.getElementById('join-league-btn');
+                joinButton.disabled = true;
+                joinButton.textContent = "Uniendo...";
                 try {
-                    // Simulación POST a /api/fantasy/unirse-liga
-                    console.log(`Uniéndose a liga con código: ${code}`);
-                    // await fetch(...)
-                    
+                    const response = await fetch('/api/fantasy/unirse-liga', {
+                        method: 'POST',
+                        headers: {
+                        'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ codigo: code }) 
+                    });
+
+                    if (!response.ok) {
+                        const errData = await response.json();
+                        // Lanza un error para ser atrapado por el 'catch'
+                        throw new Error(errData.error || 'Error desconocido del servidor');
+                    }
+                        
                     alert(`¡Te has unido correctamente a la liga!`);
                     codeInput.value = '';
-                    loadLeagues(); // Recargar la lista para mostrar la nueva liga
+                    loadLeagues();
 
                 } catch (error) {
                     alert("Error al unirse: Código no válido o ya estás en la liga.");
                 }
             });
 
-            // --- 5. FUNCIONALIDAD CREAR LIGA (RQF3, RQNF3) ---
             createBtnEl.addEventListener('click', () => createModal.style.display = 'flex');
             function closeCreateModal() { createModal.style.display = 'none'; }
 
@@ -495,14 +475,14 @@
                     alert(`¡Liga creada con éxito! Tu código es: ${result.codigo}`);
                     closeCreateModal();
                     nameInput.value = '';
-                    loadLeagues(); // Recargar para ver la nueva liga
+                    loadLeagues(); 
 
                 } catch (error) {
                     alert(`Error al crear la liga: ${error.message}`);
                 }
             });
 
-            // --- Helper: Copiar Código ---
+            //RQF6
             leagueCodeBoxEl.addEventListener('click', () => {
                 const code = leagueCodeTextEl.textContent;
                 navigator.clipboard.writeText(code).then(() => alert("Código copiado al portapapeles: " + code));

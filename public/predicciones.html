@@ -325,7 +325,6 @@
             };
             async function cargarPagina() {
                 try {
-                    // 1. Iniciar ambas peticiones en paralelo
                     const partidosPromise = fetch('/api/fantasy/partidos-prediccion').then(res => res.json());
                     const historialPromise = fetch('/api/fantasy/historial-predicciones').then(res => {
                         if (res.status === 401 || res.status === 403) {
@@ -333,26 +332,21 @@
                             window.location.href = '/login.html';
                             return Promise.reject('Sesión expirada');
                         }
-                        if (!res.ok) return []; // Si falla (ej. 404), devuelve array vacío
+                        if (!res.ok) return []; 
                         return res.json();
                     });
 
-                    // 2. Esperar a que ambas terminen
                     const [partidos, historial] = await Promise.all([partidosPromise, historialPromise]);
 
-                    // 3. Renderizar las tarjetas de predicción
                     if (partidos && partidos.length > 0) {
                         document.getElementById('jornada-numero').textContent = partidos[0].jornada;
-                        // Pasamos un array vacío por ahora para 'misPredicciones'
                         renderPredictionCards(partidos, []); 
                     } else {
                         document.getElementById('prediction-matches-container').innerHTML = "<p>No hay partidos de predicción disponibles.</p>";
                     }
                     
-                    // 4. Renderizar el gráfico de historial (RQF4)
                     renderPointsGraph(historial);
 
-                    // 5. Añadir listeners a los botones de guardar
                     addSaveButtonListeners();
 
                 } catch (error) {
@@ -363,19 +357,18 @@
                 }
             }
             
+            // RQF3 Y RQF4
             function renderPointsGraph(historial) {
                 const ctx = document.getElementById('points-graph').getContext('2d');
                 const placeholder = document.getElementById('points-graph-placeholder');
 
-                // RQF4 Condición: Si no hay datos, mostrar placeholder
                 if (!historial || historial.length === 0) {
                     console.log("No hay datos")
                     placeholder.style.display = 'block';
                     ctx.canvas.style.display = 'none';
                     
-                    // Lógica de 1 de Agosto (opcional, pero como lo pediste)
                     const hoy = new Date();
-                    if (hoy.getMonth() == 7 && hoy.getDate() < 10) { // 7 es Agosto (0-11)
+                    if (hoy.getMonth() == 7 && hoy.getDate() < 10) { 
                         placeholder.textContent = "La temporada de predicciones aún no ha comenzado.";
                     } else {
                         placeholder.textContent = "¡Empieza a predecir para ver tu historial de puntos!";
@@ -390,15 +383,14 @@
                 let cumulativeData = [];
                 let totalAcumulado = 0;
 
-                // Calcular puntos acumulados
                 historial.forEach(item => {
-                    totalAcumulado = parseInt(item.puntos_jornada, 10); // Suma los puntos de esta jornada
+                    totalAcumulado = parseInt(item.puntos_jornada, 10); 
                     labels.push(`J${item.jornada}`);
-                    cumulativeData.push(totalAcumulado); // Añade el total acumulado
+                    cumulativeData.push(totalAcumulado); 
                 });
 
                 if (pointsChartInstance) {
-                    pointsChartInstance.destroy(); // Destruir gráfico anterior si existe
+                    pointsChartInstance.destroy(); 
                 }
 
                 const currentOptions = body.classList.contains('light-mode') ? lightChartOptions : darkChartOptions;
@@ -420,21 +412,18 @@
                 });
             }
             
+            //RQF1
             function renderPredictionCards(partidos, misPredicciones) {
                 const container = document.getElementById('prediction-matches-container');
-                container.innerHTML = ''; // Limpiar los placeholders
-
+                container.innerHTML = ''; 
                 partidos.forEach((partido, index) => {
                     const card = document.createElement('div');
                     card.className = 'card prediction-card';
                     card.dataset.matchId = partido.id_partido;
                     
-                    const cardIndex = index + 1; // Para los IDs únicos (1 a 5)
-
-                    // 1. Buscar si hay una predicción guardada para ESTE partido
+                    const cardIndex = index + 1; 
                     const miPrediccion = misPredicciones.find(p => p.id_partido === partido.id_partido);
 
-                    // 2. Preparar los valores guardados (si existen)
                     const savedResult = miPrediccion?.resultado_predicho || '';
                     const savedTeam = miPrediccion?.primer_equipo_anotar_id || '';
                     const savedPlayer = miPrediccion?.primer_jugador_anotar_id || '';
@@ -490,11 +479,9 @@
                     
                     container.appendChild(card);
 
-                    // --- Cargar datos asíncronos para la tarjeta ---
                     cargarEstadoDeForma(partido.id_local, `local-form-${cardIndex}`);
                     cargarEstadoDeForma(partido.id_visitante, `visitante-form-${cardIndex}`);
                     
-                    // 5. Pasamos el ID del jugador guardado a la función que carga el select
                     cargarJugadoresParaSelect(partido.id_partido, `first-player-to-score-${cardIndex}`, savedPlayer);
                     
                     cargarPronosticosPopulares(partido.id_partido, cardIndex);
@@ -507,40 +494,36 @@
                 });
             }
             
+            //RQF2
             async function handleSavePrediction(event) {
                 const saveButton = event.target;
                 const card = saveButton.closest('.prediction-card');
                 const status = card.querySelector('.prediction-status');
 
-                // --- RQF2: Validar la fecha límite ---
                 try {
+                    //RQNF4
                     const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" }));
-                    const dayOfWeek = now.getDay(); // 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
+                    const dayOfWeek = now.getDay(); 
                     
-                    // Días en que el mercado está CERRADO
-                    const closedDays = [0, 1, 5, 6]; // Dom, Lun, Vie, Sáb
+                    const closedDays = [0, 1, 5, 6]; 
 
                     if (closedDays.includes(dayOfWeek)) {
                         alert("¡Mercado de predicciones cerrado!\n\nLas predicciones se abren de martes a jueves.");
                         return;
                     }
                     
-                    // (Tu lógica de Jueves 23:59 ya está cubierta, ya que el Viernes (5) está en closedDays)
 
                 } catch (e) {
                     console.error("Error al validar la fecha:", e);
                     alert("No se pudo verificar la fecha límite. Intenta de nuevo.");
                     return;
                 }
-                // --- Fin de Validación ---
 
-                // 1. Recolectar datos
                 const matchId = card.dataset.matchId;
                 const result = card.querySelector('.result-buttons button.selected')?.dataset.prediction || null;
                 const firstTeam = card.querySelector(`select[id^="first-to-score-"]`).value || null;
                 const firstPlayer = card.querySelector(`select[id^="first-player-to-score-"]`).value || null;
 
-                // Prevenir que se guarde si no ha seleccionado nada
                 if (result === null && firstTeam === null && firstPlayer === null) {
                     alert("Debes seleccionar al menos una predicción para guardar.");
                     return;
@@ -549,13 +532,11 @@
                 saveButton.disabled = true;
                 saveButton.textContent = "Guardando...";
 
-                // 2. Enviar datos al backend (POST a /api/fantasy/guardar-prediccion)
                 try {
                     const response = await fetch('/api/fantasy/guardar-prediccion', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
-                            // El token (cookie) se envía automáticamente
                         },
                         body: JSON.stringify({
                             id_partido: matchId,
@@ -576,7 +557,6 @@
                         throw new Error(errData.error || "No se pudo guardar la predicción.");
                     }
 
-                    // 3. Mostrar confirmación
                     status.textContent = "¡Predicción Guardada!";
                     status.style.color = "#059669";
                     status.style.display = 'block';
@@ -584,7 +564,7 @@
                 } catch (error) {
                     console.error("Error al guardar predicción:", error);
                     status.textContent = `Error: ${error.message}`;
-                    status.style.color = "#dc2626"; // Rojo
+                    status.style.color = "#dc2626"; 
                     status.style.display = 'block';
                 } finally {
                     saveButton.disabled = false;
@@ -593,24 +573,24 @@
                 }
             }
             
+            // RQF5
             async function cargarEstadoDeForma(equipoId, containerId) {
                 const container = document.getElementById(containerId);
-                container.innerHTML = ""; // Limpiar
+                container.innerHTML = ""; 
                 try {
                     const response = await fetch(`/api/estado-forma/${equipoId}`);
                     if (!response.ok) throw new Error('Error al cargar forma');
-                    const forma = await response.json(); // Espera el array [ {resultado: 'V'}, ... ]
+                    const forma = await response.json(); 
 
-                    // Tomamos solo los últimos 5
                     forma.slice(0, 5).forEach(partido => {
                         const span = document.createElement('span');
-                        span.className = `form-${partido.resultado}`; // form-V, form-E, o form-L
+                        span.className = `form-${partido.resultado}`; 
                         span.textContent = partido.resultado;
                         container.appendChild(span);
                     });
                 } catch (error) {
                     console.error(`Error cargando forma para ${containerId}:`, error);
-                    container.innerHTML = "<span>?</span>".repeat(5); // Poner '?' si falla
+                    container.innerHTML = "<span>?</span>".repeat(5); 
                 }
             }
 
@@ -626,7 +606,6 @@
                         option.value = jugador.id_jugador;
                         option.textContent = `(${jugador.posicion}) ${jugador.nombre_jugador} (${jugador.nombre_equipo})`;
                         
-                        // 6. Si este es el jugador que el usuario ya había guardado, lo seleccionamos
                         
                         
                         select.appendChild(option);
@@ -636,34 +615,29 @@
                 }
             }
 
+            //RQF6
             async function cargarPronosticosPopulares(partidoId, cardIndex) {
                 try {
-                    // 1. Hacemos el fetch
                     const response = await fetch(`/api/fantasy/predicciones-populares/${partidoId}`);
                     if (!response.ok) throw new Error('Error al cargar populares');
                     
-                    const data = await response.json(); // { resultado: [...], primerEquipo: [...], ... }
+                    const data = await response.json(); 
 
-                    // --- Parte A: Llenar la barra de Resultado Final ---
 
-                    // 2. Objeto para guardar los votos
                     const votos = {
                         L: 0,
                         E: 0,
                         V: 0
                     };
 
-                    // 3. Llenamos el objeto 'votos' desde el array 'data.resultado'
                     if (data.resultado) {
                         data.resultado.forEach(item => {
-                            // item es { "resultado_predicho": "V", "total_votos": 2 }
                             if (votos.hasOwnProperty(item.resultado_predicho)) {
                                 votos[item.resultado_predicho] = item.total_votos;
                             }
                         });
                     }
 
-                    // 4. Calcular el total y los porcentajes
                     const totalVotos = votos.L + votos.E + votos.V;
 
                     let porcLocal = 0;
@@ -676,7 +650,6 @@
                         porcVisitante = (votos.V / totalVotos) * 100;
                     }
 
-                    // 5. Aplicar al DOM (las barras de progreso)
                     const localBar = document.getElementById(`pop-local-${cardIndex}`);
                     const empateBar = document.getElementById(`pop-empate-${cardIndex}`);
                     const visitanteBar = document.getElementById(`pop-visitante-${cardIndex}`);
@@ -694,34 +667,26 @@
                         visitanteBar.title = `Visitante: ${votos.V} votos (${porcVisitante.toFixed(0)}%)`;
                     }
 
-                    // --- Parte B: (Opcional) Mostrar el jugador/equipo más popular ---
-                    // (Tu HTML no tiene dónde poner esto, pero así es como lo harías)
 
                     if (data.primerEquipo && data.primerEquipo.length > 0) {
                         const equipoPopular = data.primerEquipo[0];
                         console.log(`Popular (Equipo): ${equipoPopular.nombre_equipo} con ${equipoPopular.total_votos} votos`);
-                        // Aquí podrías añadir un texto pequeño:
-                        // const labelEquipo = document.querySelector(`label[for="first-to-score-${cardIndex}"]`);
-                        // labelEquipo.innerHTML += ` <span style="font-size: 0.8rem; color: #a0a0c0;">(Pop: ${equipoPopular.nombre_equipo})</span>`;
+                        
                     }
 
                     if (data.primerJugador && data.primerJugador.length > 0) {
                         const jugadorPopular = data.primerJugador[0];
                         console.log(`Popular (Jugador): ${jugadorPopular.nombre_jugador} con ${jugadorPopular.total_votos} votos`);
-                        // Y aquí también:
-                        // const labelJugador = document.querySelector(`label[for="first-player-to-score-${cardIndex}"]`);
-                        // labelJugador.innerHTML += ` <span style="font-size: 0.8rem; color: #a0a0c0;">(Pop: ${jugadorPopular.nombre_jugador})</span>`;
+                        
                     }
 
                 } catch (error) {
                     console.error(`Error cargando populares para partido ${partidoId}:`, error);
-                    // Ocultamos la barra si falla la carga
                     const popBar = document.getElementById(`pop-local-${cardIndex}`)?.closest('.popular-picks');
                     if (popBar) popBar.style.display = 'none';
                 }
             }
 
-            // Lógica para botones de resultado (L/E/V)
             document.getElementById('prediction-matches-container').addEventListener('click', e => {
                 if (e.target.tagName === 'BUTTON' && e.target.closest('.result-buttons')) {
                     const buttons = e.target.closest('.result-buttons').querySelectorAll('button');
@@ -730,7 +695,6 @@
                 }
             });
 
-            // Carga inicial (descomentar cuando tengas los endpoints)
             cargarPagina();
         </script>
 

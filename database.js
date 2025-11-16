@@ -9,24 +9,22 @@ const dbConfig = {
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME, // <--- El nombre correcto
+  database: process.env.DB_NAME, 
   port: process.env.DB_PORT,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
 };
 
-// Si la variable de entorno del certificado SSL existe (en Vercel),
-// añadimos la configuración SSL al objeto.
+
 if (process.env.DB_SSL_CA) {
   dbConfig.ssl = {
     ca: process.env.DB_SSL_CA,
-    rejectUnauthorized: false // <-- AÑADE ESTA LÍNEA
+    rejectUnauthorized: false 
   };
 }
 
-// Creamos el pool de conexiones con la configuración final
-const pool = mysql.createPool(dbConfig);
+export const pool = mysql.createPool(dbConfig);
 
 
 
@@ -463,96 +461,73 @@ export async function getPosiblesAlineaciones(partido) {
             al.formacion_local, 
             al.formacion_visitante,
             
-            -- Jugador 1
             j1.id_jugador as id1, j1.nombre as nombre1, j1.dorsal as dorsal1, j1.url_imagen as img1,
-            ejp1.rating as rating1, -- <-- AÑADIDO
+            ejp1.rating as rating1, 
             
-            -- Jugador 2
             j2.id_jugador as id2, j2.nombre as nombre2, j2.dorsal as dorsal2 , j2.url_imagen as img2,
-            ejp2.rating as rating2, -- <-- AÑADIDO
+            ejp2.rating as rating2, 
             
-            -- Jugador 3
             j3.id_jugador as id3, j3.nombre as nombre3, j3.dorsal as dorsal3, j3.url_imagen as img3,
-            ejp3.rating as rating3, -- <-- AÑADIDO
+            ejp3.rating as rating3, 
             
-            -- Jugador 4
             j4.id_jugador as id4, j4.nombre as nombre4, j4.dorsal as dorsal4, j4.url_imagen as img4,
-            ejp4.rating as rating4, -- <-- AÑADIDO
+            ejp4.rating as rating4,
             
-            -- Jugador 5
             j5.id_jugador as id5, j5.nombre as nombre5, j5.dorsal as dorsal5, j5.url_imagen as img5,
-            ejp5.rating as rating5, -- <-- AÑADIDO
+            ejp5.rating as rating5, 
             
-            -- Jugador 6
             j6.id_jugador as id6, j6.nombre as nombre6, j6.dorsal as dorsal6, j6.url_imagen as img6,
-            ejp6.rating as rating6, -- <-- AÑADIDO
+            ejp6.rating as rating6, 
             
-            -- Jugador 7
             j7.id_jugador as id7, j7.nombre as nombre7, j7.dorsal as dorsal7, j7.url_imagen as img7,
-            ejp7.rating as rating7, -- <-- AÑADIDO
+            ejp7.rating as rating7, 
             
-            -- Jugador 8
             j8.id_jugador as id8, j8.nombre as nombre8, j8.dorsal as dorsal8, j8.url_imagen as img8,
-            ejp8.rating as rating8, -- <-- AÑADIDO
+            ejp8.rating as rating8, 
             
-            -- Jugador 9
             j9.id_jugador as id9, j9.nombre as nombre9, j9.dorsal as drosal9, j9.url_imagen as img9,
-            ejp9.rating as rating9, -- <-- AÑADIDO
+            ejp9.rating as rating9, 
             
-            -- Jugador 10
             j10.id_jugador as id10, j10.nombre as nombre10, j10.dorsal as dorsal10, j10.url_imagen as img10,
-            ejp10.rating as rating10, -- <-- AÑADIDO
+            ejp10.rating as rating10, 
             
-            -- Jugador 11
             j11.id_jugador as id11, j11.nombre as nombre11, j11.dorsal as dorsal11, j11.url_imagen as img11,
-            ejp11.rating as rating11, -- <-- AÑADIDO
+            ejp11.rating as rating11, 
             
-            -- Jugador 12
             j12.id_jugador as id12, j12.nombre as nombre12, j12.dorsal as dorsal12, j12.url_imagen as img12,
-            ejp12.rating as rating12, -- <-- AÑADIDO
+            ejp12.rating as rating12, 
             
-            -- Jugador 13
             j13.id_jugador as id13, j13.nombre as nombre13, j13.dorsal as dorsal13, j13.url_imagen as img13,
-            ejp13.rating as rating13, -- <-- AÑADIDO
+            ejp13.rating as rating13, 
             
-            -- Jugador 14
             j14.id_jugador as id14, j14.nombre as nombre14, j14.dorsal as dorsal14, j14.url_imagen as img14,
-            ejp14.rating as rating14, -- <-- AÑADIDO
+            ejp14.rating as rating14, 
             
-            -- Jugador 15
             j15.id_jugador as id15, j15.nombre as nombre15, j15.dorsal as dorsal15, j15.url_imagen as img15,
-            ejp15.rating as rating15, -- <-- AÑADIDO
+            ejp15.rating as rating15, 
             
-            -- Jugador 16
             j16.id_jugador as id16, j16.nombre as nombre16, j16.dorsal as dorsal16, j16.url_imagen as img16,
-            ejp16.rating as rating16, -- <-- AÑADIDO
+            ejp16.rating as rating16, 
             
-            -- Jugador 17
             j17.id_jugador as id17, j17.nombre as nombre17, j17.dorsal as dorsal17, j17.url_imagen as img17,
-            ejp17.rating as rating17, -- <-- AÑADIDO
+            ejp17.rating as rating17, 
             
-            -- Jugador 18
             j18.id_jugador as id18, j18.nombre as nombre18, j18.dorsal as dorsal18, j18.url_imagen as img18,
-            ejp18.rating as rating18, -- <-- AÑADIDO
+            ejp18.rating as rating18, 
             
-            -- Jugador 19
             j19.id_jugador as id19, j19.nombre as nombre19, j19.dorsal as dorsal19, j19.url_imagen as img19,
-            ejp19.rating as rating19, -- <-- AÑADIDO
+            ejp19.rating as rating19, 
             
-            -- Jugador 20
             j20.id_jugador as id20, j20.nombre as nombre20, j20.dorsal as dorsal20, j20.url_imagen as img20,
-            ejp20.rating as rating20, -- <-- AÑADIDO
+            ejp20.rating as rating20,
             
-            -- Jugador 21
             j21.id_jugador as id21, j21.nombre as nombre21, j21.dorsal as dorsal21, j21.url_imagen as img21,
-            ejp21.rating as rating21, -- <-- AÑADIDO
+            ejp21.rating as rating21, 
             
-            -- Jugador 22
             j22.id_jugador as id22, j22.nombre as nombre22, j22.dorsal as dorsal22, j22.url_imagen as img22,
-            ejp22.rating as rating22 -- <-- AÑADIDO
+            ejp22.rating as rating22 
                 
         FROM alineaciones al
-        -- Joins de Jugador (como los tenías)
         JOIN jugador j1 on al.jugador1 = j1.id_jugador
         JOIN jugador j2 on al.jugador2 = j2.id_jugador
         JOIN jugador j3 on al.jugador3 = j3.id_jugador
@@ -576,7 +551,6 @@ export async function getPosiblesAlineaciones(partido) {
         JOIN jugador j21 on al.jugador21 = j21.id_jugador
         JOIN jugador j22 on al.jugador22 = j22.id_jugador
 
-        -- Joins de Estadísticas (NUEVOS)
         LEFT JOIN estadistica_jugador_partido ejp1 ON al.partido = ejp1.partido AND al.jugador1 = ejp1.jugador
         LEFT JOIN estadistica_jugador_partido ejp2 ON al.partido = ejp2.partido AND al.jugador2 = ejp2.jugador
         LEFT JOIN estadistica_jugador_partido ejp3 ON al.partido = ejp3.partido AND al.jugador3 = ejp3.jugador
@@ -802,7 +776,6 @@ export async function getMapaDeDisparosJugador(jugador) {
 export async function getPercentilesJugador(jugador) {
     const [rows] = await pool.query(`
         WITH EstadisticasPorJugador AS (
-            -- Paso 1: Esto no cambia. Sigue siendo la parte pesada de agregación.
             SELECT
                 j.id_jugador,
                 j.url_imagen AS imagen_jugador,
@@ -839,8 +812,6 @@ export async function getPercentilesJugador(jugador) {
                 sj.entradas, sj.intercepciones, sj.bloqueos, sj.despejes, sj.duelos_aereos_ganados
         ),
         MaximosGlobales AS (
-            -- Paso 2: NUEVO. Calculamos TODOS los máximos en una sola pasada.
-            -- Esto nos dará una única fila con todos los valores máximos.
             SELECT
                 MAX(total_goles) AS max_goles,
                 MAX(disparos) AS max_disparos,
@@ -858,8 +829,6 @@ export async function getPercentilesJugador(jugador) {
             FROM
                 EstadisticasPorJugador
         )
-        -- Paso 3: Unimos las estadísticas de TODOS los jugadores con la fila de MÁXIMOS
-        -- y luego filtramos por el jugador que queremos.
         SELECT
             epj.id_jugador,
             epj.imagen_jugador,
@@ -867,7 +836,6 @@ export async function getPercentilesJugador(jugador) {
             epj.nombre_equipo,
             epj.imagen_equipo,
             
-            -- Los cálculos ahora son una simple división contra la tabla de máximos
             (CAST(epj.total_goles AS DECIMAL) * 100.0 / NULLIF(mg.max_goles, 0)) AS percentil_goles,
             (CAST(epj.disparos AS DECIMAL) * 100.0 / NULLIF(mg.max_disparos, 0)) AS percentil_disparos,
             (CAST(epj.asistencias AS DECIMAL) * 100.0 / NULLIF(mg.max_asistencias, 0)) AS percentil_asistencias,
@@ -883,10 +851,10 @@ export async function getPercentilesJugador(jugador) {
             (CAST(epj.duelos_aereos_ganados AS DECIMAL) * 100.0 / NULLIF(mg.max_duelos_aereos, 0)) AS percentil_duelos_aereos
         FROM
             EstadisticasPorJugador AS epj
-        CROSS JOIN -- Unimos cada jugador con la única fila de máximos
+        CROSS JOIN 
             MaximosGlobales AS mg
         WHERE
-            epj.id_jugador = ?; -- Filtramos al final
+            epj.id_jugador = ?; 
         `, [jugador])
     return rows; 
     
@@ -895,7 +863,6 @@ export async function getPercentilesJugador(jugador) {
 export async function getPercentilesPortero(jugador) {
     const [rows] = await pool.query(`
         WITH EstadisticasPorJugador AS (
-            -- Paso 1: Esto no cambia. Sigue siendo la parte pesada de agregación.
             SELECT
                 j.id_jugador,
                 j.url_imagen AS imagen_jugador,
@@ -925,8 +892,6 @@ export async function getPercentilesPortero(jugador) {
      			sj.centros_interceptados
         ),
         MaximosGlobales AS (
-            -- Paso 2: NUEVO. Calculamos TODOS los máximos en una sola pasada.
-            -- Esto nos dará una única fila con todos los valores máximos.
             SELECT
                 MAX(atajadas) AS max_atajadas,
                 MAX(porterias_imbatidas) AS max_porterias_imbatidas,
@@ -937,8 +902,6 @@ export async function getPercentilesPortero(jugador) {
             FROM
                 EstadisticasPorJugador
         )
-        -- Paso 3: Unimos las estadísticas de TODOS los jugadores con la fila de MÁXIMOS
-        -- y luego filtramos por el jugador que queremos.
         SELECT
             epj.id_jugador,
             epj.imagen_jugador,
@@ -946,7 +909,6 @@ export async function getPercentilesPortero(jugador) {
             epj.nombre_equipo,
             epj.imagen_equipo,
             
-            -- Los cálculos ahora son una simple división contra la tabla de máximos
             (CAST(epj.atajadas AS DECIMAL) * 100.0 / NULLIF(mg.max_atajadas, 0)) AS percentil_atajadas,
             (CAST(epj.porterias_imbatidas AS DECIMAL) * 100.0 / NULLIF(mg.max_porterias_imbatidas, 0)) AS percentil_porterias_imbatidas,
             (CAST(epj.penales_atajados AS DECIMAL) * 100.0 / NULLIF(mg.max_penales_atajados, 0)) AS percentil_penales_atajados,
@@ -955,7 +917,7 @@ export async function getPercentilesPortero(jugador) {
             (CAST(epj.centros_interceptados AS DECIMAL) * 100.0 / NULLIF(mg.max_centros_interceptados, 0)) AS percentil_centros_interceptados
         FROM
             EstadisticasPorJugador AS epj
-        CROSS JOIN -- Unimos cada jugador con la única fila de máximos
+        CROSS JOIN 
             MaximosGlobales AS mg
         WHERE
             epj.id_jugador = ?;
@@ -977,7 +939,6 @@ export async function getUltimosPartidosJugador(jugador) {
             mi_equipo.url_imagen as imagen_equipo,
             p.id_partido,
 
-            -- Información del RIVAL
             rival.nombre AS nombre_rival,
             rival.url_imagen AS imagen_rival,
             rival.id_equipo as id_rival
@@ -989,20 +950,15 @@ export async function getUltimosPartidosJugador(jugador) {
         JOIN 
             partido p ON ejp.partido = p.id_partido
 
-        -- === EL CAMBIO CLAVE ESTÁ AQUÍ ===
-        -- Unimos con plantilla_equipos para descubrir para cuál de los dos equipos
-        -- (local o visitante) jugó nuestro jugador.
         JOIN 
             plantilla_equipos pe ON pe.jugador = j.id_jugador 
             AND (pe.equipo = p.equipo_local OR pe.equipo = p.equipo_visitante)
 
         
             
-        -- Unimos la tabla equipo para obtener el nombre del equipo del jugador.
         JOIN 
             equipo mi_equipo ON pe.equipo = mi_equipo.id_equipo
 
-        -- Unimos la tabla equipo OTRA VEZ, pero para el RIVAL, usando el CASE.
         JOIN 
             equipo rival ON rival.id_equipo = (
                 CASE 
@@ -1014,7 +970,6 @@ export async function getUltimosPartidosJugador(jugador) {
         WHERE 
             j.id_jugador = ?
 
-        -- No olvides ordenar para obtener los "últimos" partidos
         ORDER BY 
             p.fecha DESC 
             
@@ -1052,7 +1007,6 @@ export async function getUltimosPartidosPortero(jugador) {
             mi_equipo.url_imagen as imagen_equipo,
             p.id_partido,
 
-            -- Información del RIVAL
             rival.nombre AS nombre_rival,
             rival.url_imagen AS imagen_rival,
             rival.id_equipo as id_rival
@@ -1064,20 +1018,15 @@ export async function getUltimosPartidosPortero(jugador) {
         JOIN 
             partido p ON ejp.partido = p.id_partido
 
-        -- === EL CAMBIO CLAVE ESTÁ AQUÍ ===
-        -- Unimos con plantilla_equipos para descubrir para cuál de los dos equipos
-        -- (local o visitante) jugó nuestro jugador.
         JOIN 
             plantilla_equipos pe ON pe.jugador = j.id_jugador 
             AND (pe.equipo = p.equipo_local OR pe.equipo = p.equipo_visitante)
 
         
             
-        -- Unimos la tabla equipo para obtener el nombre del equipo del jugador.
         JOIN 
             equipo mi_equipo ON pe.equipo = mi_equipo.id_equipo
 
-        -- Unimos la tabla equipo OTRA VEZ, pero para el RIVAL, usando el CASE.
         JOIN 
             equipo rival ON rival.id_equipo = (
                 CASE 
@@ -1089,7 +1038,6 @@ export async function getUltimosPartidosPortero(jugador) {
         WHERE 
             j.id_jugador = ?
 
-        -- No olvides ordenar para obtener los "últimos" partidos
         ORDER BY 
             p.fecha DESC 
             
@@ -1235,11 +1183,9 @@ export async function getPlantillaClub(club) {
             SELECT
                 pe.jugador,
                 pe.equipo,
-                -- Calculamos el registro más reciente para CADA jugador en TODA la tabla
                 ROW_NUMBER() OVER(PARTITION BY pe.jugador ORDER BY pe.id_plantilla DESC) AS rn
             FROM
                 plantilla_equipos pe
-            -- IMPORTANTE: Quitamos el "WHERE pe.equipo = 15" de aquí
             )
             SELECT
             j.id_jugador,
@@ -1254,10 +1200,7 @@ export async function getPlantillaClub(club) {
             JOIN
             UltimoEquipoPorJugador uepj ON j.id_jugador = uepj.jugador
             WHERE
-            -- Aplicamos los dos filtros AL FINAL:
-            -- 1. Queremos solo el registro más reciente de cada jugador (el que tiene el número 1)
             uepj.rn = 1
-            -- 2. Y de esos, solo nos interesan los que actualmente pertenecen al equipo 15
             AND uepj.equipo = ?;
 
 
@@ -1295,13 +1238,11 @@ export async function crearUsuario(datos) {
   return { id: result.insertId };
 }
 
-// ✅ Función para las validaciones (SELECT)
 export async function buscarUsuarioPorUsername(username) {
   const [rows] = await pool.query('SELECT id_usuario FROM usuario WHERE username = ?', [username]);
   return rows[0];
 }
 
-// ✅ También necesitarás una para el correo, etc.
 export async function buscarUsuarioPorEmail(email) {
     const [rows] = await pool.query('SELECT id_usuario FROM usuario WHERE email = ?', [email]);
     return rows[0];
@@ -1309,12 +1250,11 @@ export async function buscarUsuarioPorEmail(email) {
 
 
 export async function findUserByEmail(email) {
-  // Seleccionamos el id y la contraseña hasheada
   const [rows] = await pool.query(
     'SELECT id_usuario, hashed_password FROM usuario WHERE email = ?',
     [email]
   );
-  return rows[0]; // Devuelve el usuario si existe, o undefined si no
+  return rows[0]; 
 }
 
 
@@ -1340,18 +1280,14 @@ export async function getEquipoFantasyUsuario(id_usuario){
 
 export async function getJugadoresFantasy(){
     const [rows] = await pool.query(`
-        -- Usamos una CTE (Common Table Expression) para encontrar la última asignación de equipo
         WITH LatestTeamAssignment AS (
             SELECT
                 pe.jugador,
                 pe.equipo,
                 pe.temporada,
-                -- Asignamos un número de fila a cada registro de equipo para un jugador/temporada,
-                -- ordenando por id_plantilla DESC (el más alto obtiene el #1)
                 ROW_NUMBER() OVER(PARTITION BY pe.jugador, pe.temporada ORDER BY pe.id_plantilla DESC) as rn
             FROM
                 plantilla_equipos pe
-            -- No necesitamos filtrar por temporada aquí todavía
         )
         SELECT
             vj.id_jugador,
@@ -1361,32 +1297,25 @@ export async function getJugadoresFantasy(){
             vj.popularidad,
             vj.valor_actual,
             COALESCE(SUM(pjj.puntos_fantasy), 0) AS total_puntos_fantasy,
-            -- Columnas del equipo (ahora del equipo más reciente)
             e.id_equipo,
             e.nombre AS nombre_equipo,
-            e.url_imagen AS img_equipo -- Añadí la URL de la imagen del equipo también
+            e.url_imagen AS img_equipo 
         FROM
             valor_jugador_fantasy vj
         JOIN
             jugador j ON vj.id_jugador = j.id_jugador
-        -- 👇 Unimos con nuestra CTE para obtener SOLO la última asignación de equipo 👇
         JOIN
             LatestTeamAssignment lta ON j.id_jugador = lta.jugador 
-        -- 👇 Unimos con la tabla equipo usando el ID de la CTE 👇
         JOIN
             equipo e ON lta.equipo = e.id_equipo
-        -- 👇 Mantenemos los LEFT JOINs para los puntos 👇
         LEFT JOIN
             puntos_jugador_jornada pjj ON vj.id_jugador = pjj.id_jugador
         LEFT JOIN
-            partido p ON pjj.id_partido = p.id_partido -- Aseguramos que los puntos sean de la misma temporada
+            partido p ON pjj.id_partido = p.id_partido 
         WHERE
             vj.valor_actual > 0
-            -- 👇 Filtramos por la temporada activa del fantasy 👇
-            -- 👇 ¡LA MAGIA! Solo seleccionamos el registro de equipo más reciente (rn=1) 👇
             AND lta.rn = 1
         GROUP BY
-            -- Agrupamos por todas las columnas no agregadas
             vj.id_jugador,
             j.nombre,
             j.posicion,
@@ -1395,7 +1324,7 @@ export async function getJugadoresFantasy(){
             vj.valor_actual,
             e.id_equipo,
             e.nombre,
-            e.url_imagen -- Añadimos la URL del equipo al GROUP BY
+            e.url_imagen 
         ORDER BY
             total_puntos_fantasy DESC;`
   );
@@ -1405,12 +1334,10 @@ export async function getJugadoresFantasy(){
 
 
 export async function crearEquipoFantasyCompleto(id_usuario, nombreEquipo, presupuestoRestante, plantillaJugadores, paisId) {
-    const conn = await pool.getConnection(); // Obtenemos una conexión del pool
-    await conn.beginTransaction(); // Iniciamos la transacción
+    const conn = await pool.getConnection(); 
+    await conn.beginTransaction(); 
 
     try {
-        // 1. Insertar el equipo principal en 'equipo_fantasy'
-        // (Asumimos que id_temporada = 1, cámbialo si es necesario)
         
         const [equipoResult] = await conn.query(
             `INSERT INTO equipo_fantasy (id_usuario, nombre_equipo, presupuesto_restante)
@@ -1418,11 +1345,10 @@ export async function crearEquipoFantasyCompleto(id_usuario, nombreEquipo, presu
             [id_usuario,  nombreEquipo, presupuestoRestante]
         );
 
-        const newTeamId = equipoResult.insertId; // Obtenemos el ID del equipo que acabamos de crear
+        const newTeamId = equipoResult.insertId; 
 
-        // 2. Obtener los precios de los jugadores (¡seguridad!)
-        // No confiamos en el precio del cliente, lo buscamos en la BD
-        const placeholders = plantillaJugadores.map(() => '?').join(','); // Crea "(?,?,?,...)"
+
+        const placeholders = plantillaJugadores.map(() => '?').join(','); 
         const [jugadoresConPrecio] = await conn.query(
             `SELECT id_jugador, valor_actual FROM valor_jugador_fantasy 
              WHERE id_jugador IN (${placeholders})`,
@@ -1435,30 +1361,22 @@ export async function crearEquipoFantasyCompleto(id_usuario, nombreEquipo, presu
             throw new Error("No se encontraron los datos de precio para todos los jugadores.");
         }
 
-        // 3. Preparar el INSERT masivo para 'plantilla_fantasy'
         const plantillaValues = jugadoresConPrecio.map((jugador, index) => {
             const id_jugador = jugador.id_jugador;
             const precio_compra = jugador.valor_actual;
             
-            // Lógica para titulares y capitán:
-            
-            // ✅ Asigna 1 (titular) a los primeros 11 jugadores (índice 0 al 10)
-            //    y 0 (suplente) a los últimos 4 (índice 11 al 14).
+
             const es_titular = (index < 11) ? 1 : 0; 
-            
-            // ✅ Asigna 1 (capitán) SOLO al primer jugador (índice 0)
-            //    y 0 (no capitán) a todos los demás.
+
             const es_capitan = (index === 0) ? 1 : 0; 
 
-            // El array que se insertará para este jugador
             return [newTeamId, id_jugador, precio_compra, es_titular, es_capitan];
         });
 
-        // 4. Insertar los 15 jugadores en la plantilla
         await conn.query(
             `INSERT INTO plantilla_fantasy (id_equipo_fantasy, id_jugador, precio_compra, es_titular, es_capitan)
              VALUES ?`,
-            [plantillaValues] // [ [1, 101, 8.5, 1], [1, 102, 5.5, 1], ... ]
+            [plantillaValues] 
         );
 
         const [ligaGlobal] = await conn.query(
@@ -1473,7 +1391,6 @@ export async function crearEquipoFantasyCompleto(id_usuario, nombreEquipo, presu
             console.warn("ADVERTENCIA: No se encontró una Liga Global pública.");
         }
 
-        // 5.2. Buscar o Crear la Liga Local
         let idLigaLocal;
         const [ligaLocalExistente] = await conn.query(
             `SELECT id_liga_fantasy FROM liga_fantasy WHERE es_publica = 1 AND pais = ? LIMIT 1`,
@@ -1481,24 +1398,20 @@ export async function crearEquipoFantasyCompleto(id_usuario, nombreEquipo, presu
         );
 
         if (ligaLocalExistente.length > 0) {
-            // La liga ya existe, solo obtenemos su ID
             idLigaLocal = ligaLocalExistente[0].id_liga_fantasy;
         } else {
-            // ¡La liga no existe! La creamos.
             console.log(`No se encontró liga para el país ${paisId}. Creando una nueva...`);
             
-            // (Asumo que tienes una tabla 'pais' con 'id_pais' y 'nombre')
             const nombrePais = await getNombrePais(conn, paisId);
-            const nombreNuevaLiga = `Liga ${nombrePais}`; // Ej: "Liga México"
+            const nombreNuevaLiga = `Liga ${nombrePais}`; 
 
             const [nuevaLigaResult] = await conn.query(
                 `INSERT INTO liga_fantasy (nombre, es_publica, pais) VALUES (?, 1, ?)`,
                 [nombreNuevaLiga, paisId]
             );
-            idLigaLocal = nuevaLigaResult.insertId; // Usamos el ID de la liga que acabamos de crear
+            idLigaLocal = nuevaLigaResult.insertId; 
         }
 
-        // 5.3. Unir al usuario a la Liga Local (ya sea la existente o la nueva)
         if (idLigaLocal) {
             await conn.query(
                 `INSERT INTO liga_fantasy_miembros (id_liga_fantasy, id_equipo_fantasy) VALUES (?, ?)`,
@@ -1507,24 +1420,20 @@ export async function crearEquipoFantasyCompleto(id_usuario, nombreEquipo, presu
         }
 
 
-        // 5. ¡Éxito! Confirmamos todos los cambios
         await conn.commit();
-        conn.release(); // Devolvemos la conexión al pool
+        conn.release(); 
         
         return { id_equipo_fantasy: newTeamId };
 
     } catch (error) {
-        // 6. ¡Error! Deshacemos todos los cambios
         await conn.rollback();
-        conn.release(); // Devolvemos la conexión al pool
+        conn.release(); 
         console.error("Error en la transacción de crear equipo:", error);
-        throw error; // Lanzamos el error para que app.js lo atrape
+        throw error; 
     }
 }
 
 async function getNombrePais(conn, paisId) {
-    // Necesitamos el nombre del país para crear la "Liga [País]"
-    // Asumo que tu tabla 'pais' tiene columnas 'id_pais' y 'nombre'
     const [paisData] = await conn.query(
         `SELECT nombre FROM pais WHERE id_pais = ?`,
         [paisId]
@@ -1535,38 +1444,31 @@ async function getNombrePais(conn, paisId) {
 
 export async function getPlantillaFantasy(id_usuario){
     const [rows] = await pool.query(`
-        -- CTE 1: Encuentra la asignación de equipo y temporada MÁS RECIENTE de cada jugador
         WITH LatestPlayerTeam AS (
             SELECT
                 pe.jugador,
                 pe.equipo,
                 pe.temporada,
-                -- Asigna el ranking #1 al registro de plantilla más reciente
                 ROW_NUMBER() OVER(PARTITION BY pe.jugador ORDER BY pe.id_plantilla DESC) as rn
             FROM
                 plantilla_equipos pe
         ),
-        -- CTE 2: Encuentra el ID del último partido completado (hasta hoy) para CADA combo de equipo/temporada
         LatestTeamMatch AS (
             SELECT
                 team_id,
                 temporada_id,
                 match_id,
-                -- Asigna el ranking #1 al partido más reciente de cada equipo EN ESA TEMPORADA
                 ROW_NUMBER() OVER(PARTITION BY team_id, temporada_id ORDER BY match_fecha DESC, match_id DESC) as rn
             FROM (
-                -- Partidos como local
                 SELECT p.equipo_local as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha
                 FROM partido p
-                WHERE p.fecha <= CURDATE() + 4 -- Solo partidos completados
+                WHERE p.fecha <= CURDATE() + 4 
                 UNION ALL
-                -- Partidos como visitante
                 SELECT p.equipo_visitante as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha
                 FROM partido p
                 WHERE p.fecha <= CURDATE() + 4
             ) AS all_team_matches
         )
-        -- Consulta Principal
         SELECT
             pf.id_jugador,
             pf.precio_compra,
@@ -1578,38 +1480,29 @@ export async function getPlantillaFantasy(id_usuario){
             e.id_equipo,
             e.nombre AS nombre_equipo,
             e.url_imagen AS img_equipo,
-            -- Volvemos a usar COALESCE. Si sale 0, es porque el LEFT JOIN no encontró puntos
-            -- para ESE PARTIDO en específico (porque el jugador no jugó)
             COALESCE(pjj.puntos_fantasy, 0) AS puntos_ultima_jornada_equipo,
             ltm.match_id
         FROM
             plantilla_fantasy pf
-        -- Uniones básicas para obtener el equipo fantasy del usuario
         JOIN
             equipo_fantasy ef ON pf.id_equipo_fantasy = ef.id_equipo_fantasy
         JOIN
             usuario us ON ef.id_usuario = us.id_usuario
-        -- Uniones para obtener los datos del jugador
         JOIN
             jugador j ON pf.id_jugador = j.id_jugador
-        -- 1. Unimos con la CTE 1 para encontrar el equipo y temporada MÁS RECIENTE del jugador
         LEFT JOIN
             LatestPlayerTeam lpt ON j.id_jugador = lpt.jugador AND lpt.rn = 1
-        -- 2. Unimos para obtener los detalles de ese equipo
         LEFT JOIN
             equipo e ON lpt.equipo = e.id_equipo
-        -- 3. Unimos con la CTE 2 para encontrar el ÚLTIMO PARTIDO de ese equipo EN ESA temporada
         LEFT JOIN
             LatestTeamMatch ltm ON lpt.equipo = ltm.team_id AND lpt.temporada = ltm.temporada_id AND ltm.rn = 1
-        -- 4. Finalmente, unimos con la tabla de puntos, buscando la coincidencia EXACTA
-        --    del jugador Y el ID del último partido del equipo en la temporada correcta
         LEFT JOIN
             puntos_jugador_jornada pjj ON pf.id_jugador = pjj.id_jugador AND ltm.match_id = pjj.id_partido
         WHERE
-            us.id_usuario = ?  -- Filtramos por el usuario
+            us.id_usuario = ?  
         ORDER BY
-            FIELD(j.posicion, 'G', 'D', 'M', 'F'), -- Orden G->D->M->F
-            pf.es_titular DESC,                   -- Titulares primero
+            FIELD(j.posicion, 'G', 'D', 'M', 'F'), 
+            pf.es_titular DESC,                   
             j.nombre;`,
         [id_usuario]
   );
@@ -1620,8 +1513,6 @@ export async function getPlantillaFantasy(id_usuario){
 
 export async function getDesglosePuntosFantasyJugador(id_jugador){
     const [rows] = await pool.query(`
-        -- CTE 1: Encuentra el EQUIPO ACTUAL del jugador (el más reciente)
-        -- Esto lo usaremos para saber quién es el "rival" en cada partido
         WITH CurrentTeam AS (
             SELECT
                 pe.jugador,
@@ -1638,48 +1529,38 @@ export async function getDesglosePuntosFantasyJugador(id_jugador){
                 pe.jugador = ? 
         )
 
-        -- Consulta Principal: Obtiene todos los partidos jugados y los datos del rival
         SELECT
             j.id_jugador,
             j.nombre AS nombre_jugador,
             j.posicion,
             j.url_imagen AS url_imagen_jugador,
             
-            -- Info estática (se repetirá en cada fila)
             ct.id_equipo_actual,
             ct.nombre_equipo_actual,
             ct.img_equipo_actual,
             vjf.valor_actual,
             vjf.popularidad,
             
-            -- Info del partido (cambiará en cada fila)
             p.fecha,
             pjj.jornada,
             pjj.puntos_fantasy,
             
-            -- Info del Rival (calculada con el CASE)
             e_rival.id_equipo AS id_rival,
             e_rival.nombre AS nombre_rival,
             e_rival.url_imagen AS img_rival
             
         FROM
             puntos_jugador_jornada pjj
-        -- Unimos con partido para obtener la fecha, jornada y los IDs de los equipos
         JOIN
             partido p ON pjj.id_partido = p.id_partido
-        -- Unimos con jugador para obtener sus datos
         JOIN
             jugador j ON pjj.id_jugador = j.id_jugador
-        -- Unimos con la CTE para saber cuál es el equipo "actual" del jugador
         LEFT JOIN
             CurrentTeam ct ON pjj.id_jugador = ct.jugador AND ct.rn = 1
-        -- Unimos con valor_fantasy (usando la temporada del partido)
         LEFT JOIN
             valor_jugador_fantasy vjf ON pjj.id_jugador = vjf.id_jugador 
-        -- Unimos la tabla equipo OTRA VEZ para obtener los datos del RIVAL
         LEFT JOIN
             equipo e_rival ON e_rival.id_equipo = (
-                -- Este CASE identifica al rival basándose en el equipo actual del jugador
                 CASE
                     WHEN p.equipo_local = ct.id_equipo_actual THEN p.equipo_visitante
                     ELSE p.equipo_local
@@ -1703,35 +1584,27 @@ export async function getProximoPartido(id_equipo){
         p.jornada,
         p.fecha,
         
-        -- Traemos los datos del equipo local
         e_local.id_equipo AS id_local,
         e_local.nombre AS nombre_local,
         e_local.url_imagen AS img_local,
         
-        -- Traemos los datos del equipo visitante
         e_visitante.id_equipo AS id_visitante,
         e_visitante.nombre AS nombre_visitante,
         e_visitante.url_imagen AS img_visitante
     FROM
         partido p
-    -- Unimos la tabla equipo para el equipo local
     JOIN
         equipo e_local ON p.equipo_local = e_local.id_equipo
-    -- Unimos la tabla equipo OTRA VEZ (con un alias) para el visitante
     JOIN
         equipo e_visitante ON p.equipo_visitante = e_visitante.id_equipo
     WHERE
-        -- 1. Buscamos el ID de tu equipo tanto en la columna local COMO en la visitante
         (p.equipo_local = ? OR p.equipo_visitante = ?)
         
-        -- 2. Filtramos para que solo muestre partidos de hoy en adelante
         AND p.fecha >= CURDATE()
         
-    -- 3. Ordenamos por fecha para que el más cercano aparezca primero
     ORDER BY
         p.fecha ASC
         
-    -- 4. Tomamos solo el primer resultado
     LIMIT 1;`,
     [id_equipo, id_equipo]
   );
@@ -1746,7 +1619,6 @@ export async function realizarFichaje(id_equipo_fantasy, jugadorSaleId, jugadorE
 
     try {
         console.log(jugadorEntraId)
-        // 1. Obtener precio y equipo del jugador que ENTRA
         const [jugadorEntraData] = await conn.query(
             `SELECT vj.valor_actual, lta.equipo AS id_equipo
              FROM valor_jugador_fantasy vj
@@ -1761,7 +1633,6 @@ export async function realizarFichaje(id_equipo_fantasy, jugadorSaleId, jugadorE
         if (!jugadorEntraData.length) throw new Error("No se encontró el jugador a comprar.");
         const jugadorEntra = jugadorEntraData[0];
 
-        // 2. Obtener precio del jugador que SALE
         const [jugadorSaleData] = await conn.query(
             `SELECT precio_compra, es_capitan FROM plantilla_fantasy 
              WHERE id_equipo_fantasy = ? AND id_jugador = ?`,
@@ -1770,20 +1641,17 @@ export async function realizarFichaje(id_equipo_fantasy, jugadorSaleId, jugadorE
         if (!jugadorSaleData.length) throw new Error("No se encontró al jugador a vender en tu plantilla.");
         const jugadorSale = jugadorSaleData[0];
 
-        // 3. Obtener presupuesto actual
         const [equipoData] = await conn.query(
-            `SELECT presupuesto_restante FROM equipo_fantasy WHERE id_equipo_fantasy = ? FOR UPDATE`, // Bloquea la fila
+            `SELECT presupuesto_restante FROM equipo_fantasy WHERE id_equipo_fantasy = ? FOR UPDATE`, 
             [id_equipo_fantasy]
         );
         let presupuesto = parseFloat(equipoData[0].presupuesto_restante);
         
-        // 4. Validar presupuesto
         const nuevoPresupuesto = presupuesto + parseFloat(jugadorSale.precio_compra) - parseFloat(jugadorEntra.valor_actual);
         if (nuevoPresupuesto < 0) {
             throw new Error(`Presupuesto insuficiente. Necesitas ${nuevoPresupuesto * -1}M más.`);
         }
 
-        // 5. Validar límite de equipo (2 jugadores)
         const [conteoEquipo] = await conn.query(
             `SELECT COUNT(pf.id_jugador) AS count
              FROM plantilla_fantasy pf
@@ -1793,7 +1661,7 @@ export async function realizarFichaje(id_equipo_fantasy, jugadorSaleId, jugadorE
              ) lta ON pf.id_jugador = lta.jugador AND lta.rn = 1
              WHERE pf.id_equipo_fantasy = ? 
                AND lta.equipo = ?
-               AND pf.id_jugador != ?`, // No contar al jugador que sale
+               AND pf.id_jugador != ?`, 
             [id_temporada, id_equipo_fantasy, jugadorEntra.id_equipo, jugadorSaleId]
         );
         
@@ -1801,17 +1669,14 @@ export async function realizarFichaje(id_equipo_fantasy, jugadorSaleId, jugadorE
             throw new Error("Límite de 2 jugadores por equipo alcanzado.");
         }
 
-        // 6. Calcular costo de puntos
         let costoPuntos = 0;
         let fichajesNuevos = fichajesRestantes;
         if (fichajesRestantes > 0) {
             fichajesNuevos -= 1;
         } else {
-            costoPuntos = 5; // Penalización de 5 puntos
-            // (Aquí también restarías 5 puntos al 'puntos_totales' del equipo)
+            costoPuntos = 5; 
         }
 
-        // 7. Ejecutar el UPDATE en la plantilla
         await conn.query(
             `UPDATE plantilla_fantasy 
              SET id_jugador = ?, precio_compra = ?, es_capitan = 0
@@ -1819,7 +1684,6 @@ export async function realizarFichaje(id_equipo_fantasy, jugadorSaleId, jugadorE
             [jugadorEntraId, jugadorEntra.valor_actual, id_equipo_fantasy, jugadorSaleId]
         );
 
-        // 8. Actualizar el presupuesto del equipo y fichajes restantes
         await conn.query(
             `UPDATE equipo_fantasy 
              SET presupuesto_restante = ?, fichajes_jornada_restantes = ?
@@ -1827,7 +1691,6 @@ export async function realizarFichaje(id_equipo_fantasy, jugadorSaleId, jugadorE
             [nuevoPresupuesto, fichajesNuevos, id_equipo_fantasy]
         );
         
-        // 9. (Opcional pero recomendado) Guardar en tabla 'transferencia_fantasy'
         const [jornadaActual] = await conn.query("SELECT MAX(jornada) FROM partido WHERE fecha <= CURDATE()");
         await conn.query(
              `INSERT INTO transferencia_fantasy (id_equipo_fantasy, jornada, jugador_sale_id, jugador_entra_id, costo_puntos)
@@ -1835,13 +1698,12 @@ export async function realizarFichaje(id_equipo_fantasy, jugadorSaleId, jugadorE
              [id_equipo_fantasy, jornadaActual[0]['MAX(jornada)'], jugadorSaleId, jugadorEntraId, costoPuntos]
          );
 
-        // 10. Confirmar transacción
         await conn.commit();
 
     } catch (error) {
         await conn.rollback();
         console.error("Error en transacción de fichaje:", error);
-        throw error; // Lanza el error para que app.js lo atrape
+        throw error; 
     } finally {
         conn.release();
     }
@@ -1849,12 +1711,10 @@ export async function realizarFichaje(id_equipo_fantasy, jugadorSaleId, jugadorE
 
 
 export async function actualizarPlantilla(id_equipo_fantasy, plantilla) {
-    const conn = await pool.getConnection(); // Obtén una conexión del pool
-    await conn.beginTransaction(); // Inicia la transacción
+    const conn = await pool.getConnection(); 
+    await conn.beginTransaction(); 
 
     try {
-        // Preparamos todas las promesas de actualización
-        // (Promise.all ejecuta todas las consultas en paralelo, es más rápido)
         const updatePromises = plantilla.map(player => {
             return conn.query(
                 `UPDATE plantilla_fantasy 
@@ -1863,21 +1723,17 @@ export async function actualizarPlantilla(id_equipo_fantasy, plantilla) {
                 [player.es_titular, player.es_capitan, id_equipo_fantasy, player.id_jugador]
             );
         });
-
-        // Ejecutamos todas las promesas de actualización
         await Promise.all(updatePromises);
         
-        // Si todas tuvieron éxito, guardamos los cambios
         await conn.commit();
         console.log(`Plantilla ${id_equipo_fantasy} actualizada con éxito.`);
 
     } catch (error) {
-        // Si una sola falla, deshacemos todo
         await conn.rollback();
         console.error("Error en la transacción de actualizar plantilla:", error);
-        throw error; // Lanza el error para que app.js lo atrape
+        throw error; 
     } finally {
-        conn.release(); // Siempre libera la conexión de vuelta al pool
+        conn.release(); 
     }
 }
 
@@ -1897,16 +1753,15 @@ export async function getProximosPartidosDeEquipos(){
 
 export async function getMVPdeLaSemana(){
     const [rows] = await pool.query(
-    `-- CTE 1: Encuentra la última jornada completada (que ya pasó) para la temporada_id dada
+    `
     WITH LatestCompletedGameweek AS (
         SELECT 
             MAX(p.jornada) AS max_jornada
         FROM 
             partido p
         WHERE 
-            p.fecha <= CURDATE() -- CURDATE() obtiene la fecha de hoy
+            p.fecha <= CURDATE() 
     ),
-    -- CTE 2: Encuentra el equipo más reciente para cada jugador en esa temporada
     LatestPlayerTeam AS (
         SELECT
             pe.jugador,
@@ -1919,7 +1774,6 @@ export async function getMVPdeLaSemana(){
             plantilla_equipos pe
 
     )
-    -- Consulta Principal: Obtiene los 5 mejores jugadores de esa jornada
     SELECT
         j.id_jugador,
         j.nombre AS nombre_jugador,
@@ -1929,19 +1783,14 @@ export async function getMVPdeLaSemana(){
         pjj.puntos_fantasy
     FROM
         puntos_jugador_jornada pjj
-    -- Unir con partido para filtrar por jornada y temporada
     JOIN
         partido p ON pjj.id_partido = p.id_partido
-    -- Unir con la CTE 1 para asegurarse de que es la última jornada
     JOIN
         LatestCompletedGameweek lcg ON p.jornada = lcg.max_jornada
-    -- Unir con jugador para obtener sus detalles
     JOIN
         jugador j ON pjj.id_jugador = j.id_jugador
-    -- Unir con la CTE 2 para obtener el equipo más reciente del jugador
     LEFT JOIN
         LatestPlayerTeam lpt ON j.id_jugador = lpt.jugador AND lpt.rn = 1
-    -- Unir con equipo para obtener los detalles del equipo
     LEFT JOIN
         equipo e ON lpt.equipo = e.id_equipo
 
@@ -1962,15 +1811,12 @@ export async function getPartidosRandom(){
     FROM 
         partido p
     WHERE 
-        -- Asume que tus 5 ligas principales tienen id_temporada del 1 al 5
-        -- ¡AJUSTA ESTO a los IDs de temporada correctos!
         p.temporada IN (1, 2, 3, 4, 5) 
-        AND p.fecha >= CURDATE() -- Solo partidos de hoy en adelante
+        AND p.fecha >= CURDATE() 
     GROUP BY 
         p.temporada
 ),
 
--- CTE 2: Obtiene todos los partidos de esas jornadas y los "baraja" de forma predecible
 RankedMatches AS (
     SELECT
         p.id_partido,
@@ -1980,11 +1826,7 @@ RankedMatches AS (
         p.equipo_local,
         p.equipo_visitante,
         
-        -- Aquí está la magia:
-        -- 1. Particionamos por liga (temporada)
-        -- 2. Ordenamos usando RAND() con una semilla (seed)
-        -- 3. La semilla es el día del año + la jornada. Esto es "aleatorio",
-        --    pero será IDÉNTICO para todos los usuarios el mismo día.
+
         ROW_NUMBER() OVER (
             PARTITION BY p.temporada 
             ORDER BY RAND(DAYOFYEAR(CURDATE()) + p.jornada)
@@ -1995,7 +1837,6 @@ RankedMatches AS (
         NextJornadas nj ON p.temporada = nj.temporada AND p.jornada = nj.jornada
 )
 
--- Consulta Final: Selecciona solo el partido clasificado como #1 de cada liga
 SELECT
     rm.id_partido,
     rm.jornada,
@@ -2009,7 +1850,6 @@ SELECT
     ev.url_imagen AS escudo_visitante
 FROM 
     RankedMatches rm
--- Unimos con la tabla 'equipo' DOS VECES para obtener los nombres/escudos
 JOIN 
     equipo el ON rm.equipo_local = el.id_equipo
 JOIN 
@@ -2033,29 +1873,22 @@ export async function getPlantillasDePredicciones(idPartido){
     e.nombre AS nombre_equipo,
     e.url_imagen AS img_equipo,
     
-    -- Columna extra para saber si el jugador es local o visitante
     CASE 
         WHEN pe.equipo = p.equipo_local THEN 'local'
         ELSE 'visitante'
     END AS tipo_equipo 
 FROM
     partido p
--- 1. Unimos con plantilla_equipos usando la TEMPORADA del partido
 JOIN
     plantilla_equipos pe ON p.temporada = pe.temporada 
-    -- 2. Y nos aseguramos de que el equipo del jugador sea el LOCAL O el VISITANTE
     AND (pe.equipo = p.equipo_local OR pe.equipo = p.equipo_visitante)
--- 3. Unimos con jugador para obtener los datos del jugador
 JOIN
     jugador j ON pe.jugador = j.id_jugador
--- 4. Unimos con equipo para obtener los datos del equipo
 JOIN
     equipo e ON pe.equipo = e.id_equipo
 WHERE
-    -- 5. Filtramos por el ID del partido que te interesa
-    p.id_partido = ? -- Reemplaza ? con el ID de tu partido
+    p.id_partido = ? 
 ORDER BY
-    -- Opcional: agrupa a los locales primero, luego por posición
     tipo_equipo,
     FIELD(j.posicion, 'G', 'D', 'M', 'F');`,[idPartido]
     );
@@ -2066,19 +1899,16 @@ ORDER BY
 export async function getEstadoDeForma(idEquipo){
     const [rows] = await pool.query(
         `(
-        -- Parte 1: Partidos jugados como LOCAL
         SELECT
             p.fecha,
-            -- Compara los goles para determinar el resultado
             (CASE
-                WHEN ep.goles_local > ep.goles_visitante THEN 'V' -- Victoria
-                WHEN ep.goles_local = ep.goles_visitante THEN 'E' -- Empate
-                ELSE 'D' -- Derrota
+                WHEN ep.goles_local > ep.goles_visitante THEN 'V' 
+                WHEN ep.goles_local = ep.goles_visitante THEN 'E' 
+                ELSE 'D' 
             END) AS resultado
         FROM
             partido p
         JOIN
-            -- Unimos con las estadísticas para saber el marcador
             estadisticas_partido ep ON p.id_partido = ep.partido
         WHERE
             p.equipo_local = ? 
@@ -2143,7 +1973,7 @@ export async function getPronosticoPrimerEquipoEnAnotar(idPartido){
             e.id_equipo, e.nombre, e.url_imagen
         ORDER BY
             total_votos DESC
-        LIMIT 1; -- Tomamos solo el más popular`,[idPartido]
+        LIMIT 1; `,[idPartido]
     );
   return rows;
 
@@ -2165,7 +1995,7 @@ export async function getPronosticoPrimerJugadorEnAnotar(idPartido){
             j.id_jugador, j.nombre, j.url_imagen
         ORDER BY
             total_votos DESC
-        LIMIT 1; -- Tomamos solo el más popular`,[idPartido]
+        LIMIT 1; `,[idPartido]
     );
   return rows;
 
@@ -2223,7 +2053,7 @@ export async function getMisPredicciones(id_usuario, jornada) {
             id_usuario = ? AND jornada = ?`,
         [id_usuario, jornada]
     );
-    return rows; // Devuelve un array de predicciones
+    return rows; 
 }
 
 export async function getHistorialPredicciones(id_usuario) {
@@ -2238,18 +2068,15 @@ export async function getHistorialPredicciones(id_usuario) {
          GROUP BY 
             jornada
          ORDER BY 
-            jornada ASC`, // Ordenar por jornada es crucial
+            jornada ASC`, 
         [id_usuario]
     );
-    // Devuelve ej: [{jornada: 1, puntos: 10}, {jornada: 2, puntos: 25}, ...]
     return rows;
 }
 
 
 export async function getMisLigas(id_usuario, pais_id, id_equipo_fantasy) {
-    // Esta consulta combina 3 búsquedas en 1
     const sql = `
-        -- 1. Liga Global (pública, sin país)
         (SELECT 
             lf.id_liga_fantasy, lf.nombre, 'publica' as tipo, 
             (lf.id_creador = ?) AS es_admin, lf.codigo_invitacion
@@ -2258,7 +2085,6 @@ export async function getMisLigas(id_usuario, pais_id, id_equipo_fantasy) {
         
         UNION
         
-        -- 2. Liga Local/País (pública, con país)
         (SELECT 
             lf.id_liga_fantasy, lf.nombre, 'publica' as tipo, 
             (lf.id_creador = ?) AS es_admin, lf.codigo_invitacion
@@ -2267,7 +2093,6 @@ export async function getMisLigas(id_usuario, pais_id, id_equipo_fantasy) {
         
         UNION
         
-        -- 3. Ligas Privadas donde el usuario es miembro
         (SELECT 
             lf.id_liga_fantasy, lf.nombre, 'privada' as tipo, 
             (lf.id_creador = ?) AS es_admin, lf.codigo_invitacion
@@ -2276,7 +2101,6 @@ export async function getMisLigas(id_usuario, pais_id, id_equipo_fantasy) {
          WHERE lfm.id_equipo_fantasy = ? AND lf.es_publica = 0)
     `;
     
-    // Los parámetros deben coincidir con los 5 '?' en orden
     const [rows] = await pool.query(sql, [id_usuario, id_usuario, pais_id, id_usuario, id_equipo_fantasy]);
     return rows;
 }
@@ -2309,7 +2133,6 @@ export async function crearLiga(nombre, id_creador, codigo_invitacion, id_equipo
     await conn.beginTransaction();
     
     try {
-        // Paso 1: Crear la liga
         const [resultLiga] = await conn.query(
             `INSERT INTO liga_fantasy (nombre, id_creador, es_publica, codigo_invitacion) 
              VALUES (?, ?, 0, ?)`,
@@ -2318,7 +2141,6 @@ export async function crearLiga(nombre, id_creador, codigo_invitacion, id_equipo
         
         const newLeagueId = resultLiga.insertId;
 
-        // Paso 2: Unir al creador a su propia liga
         await conn.query(
             `INSERT INTO liga_fantasy_miembros (id_liga_fantasy, id_equipo_fantasy) 
              VALUES (?, ?)`,
@@ -2326,12 +2148,12 @@ export async function crearLiga(nombre, id_creador, codigo_invitacion, id_equipo
         );
         
         await conn.commit();
-        return resultLiga; // Devuelve el resultado del primer INSERT
+        return resultLiga; 
 
     } catch (error) {
         await conn.rollback();
         console.error("Error en la transacción de crearLiga:", error);
-        throw error; // Lanza el error para que app.js lo atrape
+        throw error; 
     } finally {
         conn.release();
     }
@@ -2342,34 +2164,28 @@ export async function unirseLigaPorCodigo(codigo, id_equipo_fantasy) {
     await conn.beginTransaction();
 
     try {
-        // Paso 1: Encontrar la liga y bloquearla para la transacción
         const [ligas] = await conn.query(
             `SELECT id_liga_fantasy FROM liga_fantasy 
              WHERE codigo_invitacion = ? AND es_publica = 0 FOR UPDATE`,
             [codigo]
         );
 
-        // Validación RQF4: Código no válido
         if (ligas.length === 0) {
             throw new Error("Código no válido");
         }
         const idLiga = ligas[0].id_liga_fantasy;
 
-        // Paso 2: Contar los miembros actuales de esa liga
         const [conteo] = await conn.query(
             `SELECT COUNT(*) as memberCount FROM liga_fantasy_miembros 
              WHERE id_liga_fantasy = ? FOR UPDATE`,
             [idLiga]
         );
 
-        // Validación RQNF2: Límite de 100 usuarios
         if (conteo[0].memberCount >= 100) {
             throw new Error("La liga está llena. No se pueden unir más miembros.");
         }
 
-        // Paso 3: Insertar al nuevo miembro
-        // La BD fallará automáticamente si ya existe (PK duplicada),
-        // lo cual será atrapado por el catch.
+
         await conn.query(
             `INSERT INTO liga_fantasy_miembros (id_liga_fantasy, id_equipo_fantasy) 
              VALUES (?, ?)`,
@@ -2381,7 +2197,7 @@ export async function unirseLigaPorCodigo(codigo, id_equipo_fantasy) {
     } catch (error) {
         await conn.rollback();
         console.error("Error en la transacción de unirseLigaPorCodigo:", error);
-        throw error; // Lanza el error para que app.js lo atrape
+        throw error; 
     } finally {
         conn.release();
     }
@@ -2396,18 +2212,18 @@ export async function getPublicLeagueIDs(paisId) {
     );
     
     const globalLeague = leagues.find(l => l.pais === null);
-    const localLeague = leagues.find(l => l.pais == paisId); // Usar '==' para comparar null/undefined
+    const localLeague = leagues.find(l => l.pais == paisId); 
     
     return {
         globalLeagueId: globalLeague?.id_liga_fantasy,
         localLeagueId: localLeague?.id_liga_fantasy,
-        localLeagueName: localLeague?.nombre || 'Liga Local' // Nombre de fallback
+        localLeagueName: localLeague?.nombre || 'Liga Local' 
     };
 }
 
 export async function getLeagueRankingTop10(id_liga_fantasy) {
     if (!id_liga_fantasy) {
-        return []; // Si no hay liga (ej. no hay liga local), devuelve array vacío
+        return []; 
     }
     
     const [rows] = await pool.query(
@@ -2426,7 +2242,7 @@ export async function getLeagueRankingTop10(id_liga_fantasy) {
             lfm.id_liga_fantasy = ?
          ORDER BY
             ef.puntos_totales DESC, ef.nombre_equipo ASC
-         LIMIT 5`, // <-- Solo traemos los primeros 10
+         LIMIT 5`, 
         [id_liga_fantasy]
     );
     return rows;
@@ -2439,7 +2255,7 @@ export async function getEventoActivo() {
          WHERE CURDATE() BETWEEN DATE(fecha_inicio) AND DATE(fecha_fin)
          LIMIT 1`
     );
-    return rows[0]; // Devuelve el evento o undefined
+    return rows[0]; 
 }
 
 export async function getEventoRanking(id_evento) {
@@ -2452,7 +2268,7 @@ export async function getEventoRanking(id_evento) {
          JOIN usuario u ON ee.id_usuario = u.id_usuario
          WHERE ee.id_evento = ?
          ORDER BY ee.puntos_totales DESC
-         LIMIT 10`, // Devuelve solo el Top 10
+         LIMIT 10`, 
         [id_evento]
     );
     return rows;
@@ -2468,37 +2284,26 @@ export async function getEquipoEventoUsuario(id_usuario, id_evento) {
 }
 
 export async function getAvailableEventPlayers(regla) {
-    let whereClause = ''; // Aquí se inyectará la regla
+    let whereClause = ''; 
 
-    // (Asumo que la temporada del evento es la 1. Si no, tendrás que pasarla como parámetro)
     const id_temporada = 1; 
 
-    // RQF1 / RQNF1: Filtramos la lista de jugadores
     switch (regla) {
         case 'U23':
-            // Jugadores de 23 años o menos (nacidos después de HOY - 24 años)
             whereClause = ' j.fec_nac >= DATE_SUB(CURDATE(), INTERVAL 23 YEAR)';
             break;
         case 'GIGANTES':
-            whereClause = ' j.altura >= 190'; // Asume 190cm
+            whereClause = ' j.altura >= 190'; 
             break;
         case 'SOLO_POR':
             whereClause = ' j.posicion = "G"';
             break;
-        // --- TÚ AÑADES EL RESTO DE REGLAS AQUÍ ---
-        // case 'CERO_GOLES':
-        //     whereClause = 'AND (sjf.total_goles IS NULL OR sjf.total_goles = 0)';
-        //     break;
-        // case 'SIN_ESTRELLAS':
-        //     whereClause = 'AND vjf.popularidad < 10';
-        //     break;
+       
         default:
-            // Si la regla no se reconoce, no devuelve jugadores.
             console.error(`Regla de evento no reconocida: ${regla}`);
             throw new Error(`Regla de evento no reconocida: ${regla}`);
     }
 
-    // Esta es tu consulta base de 'available-players', pero con el WHERE dinámico
     const sql = `
         SELECT 
             j.id_jugador, j.nombre AS nombre_jugador, j.posicion, j.url_imagen AS url_imagen_jugador,
@@ -2508,13 +2313,11 @@ export async function getAvailableEventPlayers(regla) {
         FROM jugador j
         JOIN valor_jugador_fantasy vjf ON j.id_jugador = vjf.id_jugador
         LEFT JOIN (
-            -- Subconsulta para el equipo más reciente
             SELECT pe.jugador, pe.equipo, ROW_NUMBER() OVER(PARTITION BY pe.jugador ORDER BY pe.id_plantilla DESC) as rn
             FROM plantilla_equipos pe 
         ) lta ON j.id_jugador = lta.jugador AND lta.rn = 1
         LEFT JOIN equipo e ON lta.equipo = e.id_equipo
         LEFT JOIN (
-            -- Subconsulta para los puntos totales de la temporada
             SELECT pjj.id_jugador, SUM(pjj.puntos_fantasy) as total_puntos_fantasy
             FROM puntos_jugador_jornada pjj
             JOIN partido p ON pjj.id_partido = p.id_partido
@@ -2523,7 +2326,7 @@ export async function getAvailableEventPlayers(regla) {
         ) sjf ON j.id_jugador = sjf.id_jugador
         WHERE 
             
-            ${whereClause} -- <-- ¡LA MAGIA!
+            ${whereClause} 
     `;
     
     const [rows] = await pool.query(sql);
@@ -2536,8 +2339,6 @@ export async function crearEquipoEventoCompleto(id_usuario, id_evento, nombreEqu
     await conn.beginTransaction();
 
     try {
-        // --- PASO 1: Validación de Backend (RQNF1) ---
-        // Volvemos a validar que los 11 IDs SÍ cumplen la regla.
         let validationWhere = '';
         switch (reglaClave) {
             case 'U23':
@@ -2549,7 +2350,6 @@ export async function crearEquipoEventoCompleto(id_usuario, id_evento, nombreEqu
             case 'SOLO_POR':
                 validationWhere = 'AND j.posicion = "G"';
                 break;
-            // ... (Añadir el resto de tus 10 reglas aquí) ...
             default:
                 throw new Error("Regla de evento no reconocida.");
         }
@@ -2565,21 +2365,18 @@ export async function crearEquipoEventoCompleto(id_usuario, id_evento, nombreEqu
             throw new Error(`La plantilla no cumple con la regla del evento "${reglaClave}". (${validationRows[0].validCount}/11 válidos)`);
         }
 
-        // --- PASO 2: Crear el equipo_evento ---
         const [equipoResult] = await conn.query(
             `INSERT INTO equipo_evento (id_usuario, id_evento, nombre_equipo) VALUES (?, ?, ?)`,
             [id_usuario, id_evento, nombreEquipo]
         );
         const newEventTeamId = equipoResult.insertId;
 
-        // --- PASO 3: Crear la plantilla_evento (Bulk Insert) ---
         const plantillaValues = plantillaIds.map(id_jugador => [newEventTeamId, id_jugador]);
         await conn.query(
             `INSERT INTO plantilla_evento (id_equipo_evento, id_jugador) VALUES ?`,
             [plantillaValues]
         );
 
-        // --- PASO 4: Commit ---
         await conn.commit();
         conn.release();
         return { id_equipo_evento: newEventTeamId };
@@ -2588,7 +2385,7 @@ export async function crearEquipoEventoCompleto(id_usuario, id_evento, nombreEqu
         await conn.rollback();
         conn.release();
         console.error("Error en transacción crearEquipoEvento:", error);
-        throw error; // Re-lanzar para que app.js lo atrape
+        throw error; 
     }
 }
 
@@ -2598,11 +2395,10 @@ export async function getEquipoEventoUsuarioID(id_usuario, id_evento) {
          WHERE id_usuario = ? AND id_evento = ?`,
         [id_usuario, id_evento]
     );
-    return rows[0]; // Devuelve { id_equipo_evento: 123 } o undefined
+    return rows[0]; 
 }
 
 export async function getPlantillaEvento(id_equipo_evento) {
-    // Asumimos temporada 1 (ajusta si es dinámico)
     const id_temporada = 1; 
     
     const [rows] = await pool.query(
@@ -2612,12 +2408,11 @@ export async function getPlantillaEvento(id_equipo_evento) {
             j.posicion, 
             j.url_imagen AS url_imagen_jugador,
             e.nombre AS nombre_equipo,
-            1 AS es_titular, -- Asumimos que los 11 son titulares
-            0 AS es_capitan -- Asumimos que no hay capitán
+            1 AS es_titular,
+            0 AS es_capitan 
          FROM plantilla_evento pe
          JOIN jugador j ON pe.id_jugador = j.id_jugador
          LEFT JOIN (
-             -- Subconsulta para el equipo más reciente del jugador
              SELECT pe_sub.jugador, pe_sub.equipo, 
                     ROW_NUMBER() OVER(PARTITION BY pe_sub.jugador ORDER BY pe_sub.id_plantilla DESC) as rn
              FROM plantilla_equipos pe_sub WHERE pe_sub.temporada = ?
@@ -2627,13 +2422,12 @@ export async function getPlantillaEvento(id_equipo_evento) {
          ORDER BY  FIELD(j.posicion, 'G', 'D', 'M', 'F')`,
          [id_temporada, id_equipo_evento]
     );
-    return rows; // Devuelve el array de 11 jugadores
+    return rows; 
 }
 
 export async function getLogrosBase(id_usuario) {
-    // Primero, contamos el total de usuarios con equipo para el cálculo de rareza
     const [totalUsersRows] = await pool.query('SELECT COUNT(id_usuario) AS total FROM equipo_fantasy');
-    const totalUsers = totalUsersRows[0].total > 0 ? totalUsersRows[0].total : 1; // Evita división por cero
+    const totalUsers = totalUsersRows[0].total > 0 ? totalUsersRows[0].total : 1;
 
     const sql = `
         SELECT
@@ -2641,19 +2435,15 @@ export async function getLogrosBase(id_usuario) {
             l.nombre,
             l.descripcion,
             
-            -- RQF1/RQNF1: Revisa si ESTE usuario tiene el logro
             (CASE WHEN lu_user.id_usuario IS NOT NULL THEN 1 ELSE 0 END) AS unlocked,
             
-            -- RQF4: Calcula la rareza (qué % de usuarios totales lo tiene)
             (SELECT COUNT(id_usuario) FROM logro_usuario lu_all WHERE lu_all.id_logro = l.id_logro) * 100 / 24 AS rarity
 
-            -- RQF5 (Icono): Hardcodeado porque no está en la BD
             
             
         FROM 
             logro l
         LEFT JOIN 
-            -- Join para el estado 'unlocked' DE ESTE USUARIO
             logro_usuario lu_user ON l.id_logro = lu_user.id_logro AND lu_user.id_usuario = ?
         ORDER BY
             unlocked DESC, rarity ASC;
@@ -2666,8 +2456,6 @@ export async function getLogrosBase(id_usuario) {
 
 export async function otorgarLogro(id_usuario, id_logro) {
     try {
-        // 'INSERT IGNORE' es la clave:
-        // Intenta insertar. Si la fila ya existe (duplicado), no hace nada y no da error.
         const [result] = await pool.query(
             'INSERT IGNORE INTO logro_usuario (id_logro, id_usuario, fecha_desbloqueo) VALUES (?, ?, NOW())',
             [id_logro, id_usuario]
@@ -2675,12 +2463,147 @@ export async function otorgarLogro(id_usuario, id_logro) {
         
         if (result.affectedRows > 0) {
             console.log(`¡LOGRO DESBLOQUEADO! Usuario ${id_usuario} obtuvo el logro ${id_logro}`);
-            // (Aquí podrías también añadir una llamada para el logro "GOAT")
-            // await checkLogroGOAT(id_usuario); 
         }
-        return result.affectedRows > 0; // Devuelve true si el logro era nuevo
+        return result.affectedRows > 0; 
         
     } catch (error) {
         console.error("Error al otorgar logro:", error);
     }
+}
+
+export async function getStatsParaPoisson(id_partido) {
+    const [partidoRows] = await pool.query(
+        `SELECT equipo_local, equipo_visitante 
+         FROM partido 
+         WHERE id_partido = ?`,
+        [id_partido]
+    );
+    if (!partidoRows.length) {
+        throw new Error('Partido no encontrado');
+    }
+    const { equipo_local, equipo_visitante } = partidoRows[0];
+
+    const sql = `
+    WITH
+    StatsEquipos AS (
+        SELECT
+            p.equipo_local AS id_equipo,
+            SUM(ep.goles_local) AS goles_anotados_casa,
+            SUM(ep.goles_visitante) AS goles_recibidos_casa,
+            COUNT(p.id_partido) AS partidos_casa,
+            0 AS goles_anotados_visita,
+            0 AS goles_recibidos_visita,
+            0 AS partidos_visita
+        FROM partido p
+        JOIN estadisticas_partido ep ON p.id_partido = ep.partido
+        WHERE  p.fecha < CURDATE()
+        GROUP BY p.equipo_local
+
+        UNION ALL
+
+        SELECT
+            p.equipo_visitante AS id_equipo,
+            0 AS goles_anotados_casa,
+            0 AS goles_recibidos_casa,
+            0 AS partidos_casa,
+            SUM(ep.goles_visitante) AS goles_anotados_visita,
+            SUM(ep.goles_local) AS goles_recibidos_visita,
+            COUNT(p.id_partido) AS partidos_visita
+        FROM partido p
+        JOIN estadisticas_partido ep ON p.id_partido = ep.partido
+        WHERE p.fecha < CURDATE()
+        GROUP BY p.equipo_visitante
+    ),
+    StatsAgregadas AS (
+        SELECT
+            id_equipo,
+            SUM(goles_anotados_casa) AS total_goles_casa,
+            SUM(goles_recibidos_casa) AS total_recibidos_casa,
+            SUM(partidos_casa) AS total_partidos_casa,
+            SUM(goles_anotados_visita) AS total_goles_visita,
+            SUM(goles_recibidos_visita) AS total_recibidos_visita,
+            SUM(partidos_visita) AS total_partidos_visita
+        FROM StatsEquipos
+        GROUP BY id_equipo
+    ),
+    PromediosLiga AS (
+        SELECT
+            AVG(ep.goles_local) AS avg_goles_casa,
+            AVG(ep.goles_visitante) AS avg_goles_visita
+        FROM estadisticas_partido ep
+        JOIN partido p ON ep.partido = p.id_partido
+        WHERE p.fecha < CURDATE()
+    )
+    SELECT
+        (SELECT total_goles_casa / total_partidos_casa FROM StatsAgregadas WHERE id_equipo = ?) AS poder_ataque_local,
+        (SELECT total_recibidos_casa / total_partidos_casa FROM StatsAgregadas WHERE id_equipo = ?) AS poder_defensa_local,
+        
+        (SELECT total_goles_visita / total_partidos_visita FROM StatsAgregadas WHERE id_equipo = ?) AS poder_ataque_visitante,
+        (SELECT total_recibidos_visita / total_partidos_visita FROM StatsAgregadas WHERE id_equipo = ?) AS poder_defensa_visitante,
+        
+        pl.avg_goles_casa AS avg_liga_casa,
+        pl.avg_goles_visita AS avg_liga_visita
+    FROM
+        PromediosLiga pl;
+    `;
+
+    const [rows] = await pool.query(sql, [
+        equipo_local,  
+        equipo_local,  
+        equipo_visitante,
+        equipo_visitante  
+    ]);
+    return rows[0];
+}
+
+
+export async function getPuzzleDelUsuario(id_usuario) {
+    const [userData] = await pool.query(
+        `SELECT es.id_estadio, es.url_imagen AS estadio_url_completa
+         FROM usuario u
+         JOIN equipo e ON u.equipo_favorito_id = e.id_equipo
+         JOIN estadio es on e.estadio = es.id_estadio
+         WHERE u.id_usuario = ?`,
+        [id_usuario]
+    );
+
+    if (!userData.length || !userData[0].id_estadio) {
+        return { piezas: [], estadio_url_completa: null };
+    }
+    
+    const { id_estadio, estadio_url_completa } = userData[0];
+
+    const [piezas] = await pool.query(
+            `SELECT
+                pz.id_pieza,
+                pz.nombre,
+                pz.url_imagen,
+                (CASE WHEN pzu.id_usuario IS NOT NULL THEN 1 ELSE 0 END) AS desbloqueado
+            FROM 
+                pieza_rompecabezas pz
+            LEFT JOIN 
+                pieza_rompecabezas_usuario pzu ON pz.id_pieza = pzu.id_pieza AND pzu.id_usuario = ?
+            WHERE 
+                pz.id_estadio = ?
+            ORDER BY 
+                pz.nombre ASC 
+        `,
+        [id_usuario, id_estadio]
+    );
+
+    return {
+        piezas: piezas, 
+        estadio_url_completa: estadio_url_completa 
+    };
+}
+
+
+export async function getUltimaJornadaCompletada(temporada_id) {
+    const [rows] = await pool.query(
+        `SELECT MAX(jornada) as ultima_jornada
+         FROM partido
+         WHERE fecha < CURDATE() AND temporada = ?`,
+        [temporada_id]
+    );
+    return rows[0]?.ultima_jornada || 1; 
 }

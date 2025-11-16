@@ -245,25 +245,18 @@
             </main>
         </div>
         <script>
-            // --- ESTADO GLOBAL ---
             const MAX_PLAYERS = 11;
-            const MAX_PER_TEAM = 11; // Sin límite de equipo por defecto
+            const MAX_PER_TEAM = 11; 
             
-            let allPlayers = []; // Lista completa de la API (pre-filtrada por regla)
-            let filteredPlayers = []; // Lista mostrada en la tabla
-            let selectedPlayers = []; // Los 11 jugadores del usuario
-
-            // Datos del evento (de la URL)
+            let allPlayers = []; 
+            let filteredPlayers = []; 
+            let selectedPlayers = []; 
             const urlParams = new URLSearchParams(window.location.search);
             const eventoId = urlParams.get('evento');
-            const reglaClave = urlParams.get('regla'); // ej. "U23"
-
-            // Límites de posición (RQNF1)
-            let positionLimits = { G: 1, D: 4, M: 4, F: 2 }; // Por defecto
+            const reglaClave = urlParams.get('regla'); 
+            let positionLimits = { G: 1, D: 4, M: 4, F: 2 }; 
             if (reglaClave === 'SOLO_POR') positionLimits = { G: 11, D: 0, M: 0, F: 0 };
-            // ... (añadir 'SOLO_DEF', 'UNA_POSICION' etc.) ...
 
-            // --- ELEMENTOS DOM ---
             const tbodyListaJugs = document.getElementById('player-list-body');
             const teamDisplayContainer = document.getElementById('team-display-visual');
             const teamCountEl = document.getElementById('team-count');
@@ -273,7 +266,6 @@
             const searchInput = document.getElementById('search-player');
 
             
-            // --- INICIALIZACIÓN ---
             document.addEventListener('DOMContentLoaded', () => {
                 if (!eventoId || !reglaClave) {
                     alert("Error: Faltan parámetros del evento. Volviendo a la página de eventos.");
@@ -284,23 +276,18 @@
                 document.getElementById('event-name-title').textContent = `Evento ${reglaClave}`;
                 
                 cargarJugadoresDisponibles();
-                updateTeamGrid(); // Dibuja el campo vacío
-                
-                // Listeners de filtros
+                updateTeamGrid(); 
                 positionFilter.addEventListener('change', applyFilters);
                 teamFilter.addEventListener('change', applyFilters);
                 searchInput.addEventListener('input', applyFilters);
                 
-                // Listener del botón final
                 submitBtn.addEventListener('click', handleSubmitTeam);
             });
 
-            // --- 1. LÓGICA DE CARGA DE DATOS ---
             
             async function cargarJugadoresDisponibles() {
                 tbodyListaJugs.innerHTML = `<tr><td colspan="4" style="text-align: center;">Cargando jugadores...</td></tr>`;
                 try {
-                    // RQNF1: El endpoint filtra por la regla
                     const response = await fetch(`/api/fantasy/available-event-players?regla=${reglaClave}`); 
                     if (!response.ok) {
                         if (response.status === 401) { window.location.href = '/login.html'; return; }
@@ -309,16 +296,15 @@
                     
                     allPlayers = await response.json(); 
                     
-                    // Ordenar por puntos (y desempate por precio, como en la otra página)
                     allPlayers.sort((a, b) => {
                         const puntosDiff = b.total_puntos_fantasy - a.total_puntos_fantasy;
                         if (puntosDiff !== 0) return puntosDiff;
                         return parseFloat(a.valor_actual) - parseFloat(b.valor_actual);
                     });
                     
-                    populateTeamFilter(); // Llena el filtro de equipos
+                    populateTeamFilter(); 
                     filteredPlayers = [...allPlayers];
-                    displayPage(1); // Muestra la primera página
+                    displayPage(1); 
 
                 } catch (error) {
                     console.error("Error al cargar jugadores:", error);
@@ -330,11 +316,8 @@
                 const teams = new Map();
                 allPlayers.forEach(p => teams.set(p.id_equipo, p.nombre_equipo));
                 const sortedTeams = Array.from(teams.entries()).sort((a, b) => {
-                    // Si 'a' no tiene nombre, ponlo al final.
                     if (!a[1]) return 1;
-                    // Si 'b' no tiene nombre, ponlo al final.
                     if (!b[1]) return -1;
-                    // Si ambos tienen nombre, compáralos.
                     return a[1].localeCompare(b[1]);
                 });
                 
@@ -343,7 +326,6 @@
                 });
             }
 
-            // --- 2. LÓGICA DE FILTRADO Y PAGINACIÓN ---
 
             function applyFilters() {
                 const pos = positionFilter.value;
@@ -356,10 +338,10 @@
                         (p.nombre_jugador.toLowerCase().includes(search));
                 });
                 
-                displayPage(1); // Resetear a página 1
+                displayPage(1); 
             }
             
-            function displayPage(page) { // (Paginación no implementada, muestra todo)
+            function displayPage(page) { 
                 tbodyListaJugs.innerHTML = "";
                 
                 if (filteredPlayers.length === 0) {
@@ -390,7 +372,6 @@
                         </td>
                     `;
                     
-                    // Añadir el listener al botón
                     tr.querySelector('.add-player-btn').addEventListener('click', (e) => {
                         handleAddPlayer(e.currentTarget.dataset.playerId);
                     });
@@ -399,31 +380,25 @@
                 });
             }
 
-            // --- 3. LÓGICA DE MANEJO DE EQUIPO ---
 
             function handleAddPlayer(playerId) {
                 const player = allPlayers.find(p => p.id_jugador == playerId);
                 if (!player) return;
 
-                // RQF1: Validar 11 jugadores
                 if (selectedPlayers.length >= MAX_PLAYERS) {
                     alert(`Límite alcanzado. Solo puedes seleccionar ${MAX_PLAYERS} jugadores.`);
                     return;
                 }
 
-                // RQNF1: Validar límites de posición (basado en la regla)
                 const posCount = selectedPlayers.filter(p => p.posicion === player.posicion).length;
                 if (posCount >= positionLimits[player.posicion]) {
                     alert(`Límite alcanzado para la posición ${player.posicion} (Máx: ${positionLimits[player.posicion]}).`);
                     return;
                 }
 
-                // (Lógica de presupuesto y límite de equipo eliminada)
 
-                // Añadir jugador
                 selectedPlayers.push(player);
                 
-                // Actualizar UI
                 updateTeamGrid();
                 updatePlayerListButtons();
                 updateSubmitButton();
@@ -432,7 +407,6 @@
             function handleRemovePlayer(playerId) {
                 selectedPlayers = selectedPlayers.filter(p => p.id_jugador != playerId);
                 
-                // Actualizar UI
                 updateTeamGrid();
                 updatePlayerListButtons();
                 updateSubmitButton();
@@ -442,7 +416,7 @@
                 document.querySelectorAll('.add-player-btn').forEach(btn => {
                     const id = btn.dataset.playerId;
                     const isSelected = selectedPlayers.find(p => p.id_jugador == id);
-                    btn.disabled = !!isSelected; // Deshabilitar si está seleccionado
+                    btn.disabled = !!isSelected; 
                 });
             }
 
@@ -456,11 +430,9 @@
             }
             
             function updateTeamGrid() {
-                teamDisplayContainer.innerHTML = ''; // Limpiar campo
+                teamDisplayContainer.innerHTML = ''; 
 
-                const titulares = selectedPlayers; // Aquí, los 11 son "titulares"
-                
-                // Crear las 4 filas
+                const titulares = selectedPlayers; 
                 const rowG = document.createElement('div'); rowG.className = 'pitch-row';
                 const rowD = document.createElement('div'); rowD.className = 'pitch-row';
                 const rowM = document.createElement('div'); rowM.className = 'pitch-row';
@@ -471,7 +443,6 @@
                 teamDisplayContainer.appendChild(rowD);
                 teamDisplayContainer.appendChild(rowG);
                 
-                // Llenar las filas con jugadores
                 const counts = { G: 0, D: 0, M: 0, F: 0 };
                 titulares.forEach(player => {
                     let targetRow;
@@ -497,7 +468,6 @@
                     targetRow.appendChild(playerDiv);
                 });
                 
-                // Llenar slots vacíos
                 for(let i = counts.G; i < positionLimits.G; i++) rowG.innerHTML += createEmptySlot('G');
                 for(let i = counts.D; i < positionLimits.D; i++) rowD.innerHTML += createEmptySlot('D');
                 for(let i = counts.M; i < positionLimits.M; i++) rowM.innerHTML += createEmptySlot('M');
@@ -511,7 +481,6 @@
                         </div>`;
             }
 
-            // --- 4. LÓGICA DE GUARDAR EQUIPO ---
 
             async function handleSubmitTeam() {
                 if (selectedPlayers.length !== MAX_PLAYERS) {
@@ -522,7 +491,6 @@
                 submitBtn.disabled = true;
                 submitBtn.textContent = "Guardando...";
                 
-                // Crear el array de IDs
                 const playerIds = selectedPlayers.map(p => p.id_jugador);
                 const teamName = prompt("¡Equipo completo! Dale un nombre a tu equipo de evento:", "Equipo de Evento");
 
@@ -541,7 +509,7 @@
                             eventoId: eventoId,
                             nombreEquipo: teamName,
                             plantilla: playerIds,
-                            reglaClave: reglaClave // Array de 11 IDs
+                            reglaClave: reglaClave 
                         })
                     });
 
@@ -551,7 +519,7 @@
                     }
 
                     alert("¡Equipo de evento creado con éxito!");
-                    window.location.href = 'eventos.html'; // Redirigir de vuelta
+                    window.location.href = 'eventos.html'; 
 
                 } catch (error) {
                     alert(`Error al guardar: ${error.message}`);

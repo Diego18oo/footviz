@@ -147,11 +147,9 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', async () => {
-                // --- ESTADO ---
                 let userLevel = 1;
-                let currentEvent = null; // { id_evento, nombre, regla_clave, descripcion, ... }
+                let currentEvent = null; 
                 let clickablePlayers = [];
-                // --- ELEMENTOS ---
                 const activeEventEl = document.getElementById('active-event-details');
                 const noEventEl = document.getElementById('no-event-details');
                 const createBtn = document.getElementById('create-event-team-btn');
@@ -161,13 +159,12 @@
                 const eventRuleEl = document.getElementById('event-rule');
                 const myTeamTitle = document.getElementById('my-event-team-title');
                 const myTeamVisual = document.getElementById('event-team-visual');
-                const myTeamCanvas = document.createElement('canvas'); // Creamos el canvas dinámicamente
+                const myTeamCanvas = document.createElement('canvas'); 
                 myTeamCanvas.width = 500;
                 myTeamCanvas.height = 700;
                 myTeamCanvas.style.width = "100%";
                 myTeamCanvas.style.height = "100%";
                 myTeamVisual.appendChild(myTeamCanvas);
-                // --- 1. Cargar Datos del Usuario (Nivel) ---
                 async function loadUserData() {
                     try {
                         const res = await fetch('/api/fantasy/user-info');
@@ -183,7 +180,6 @@
                     }
                 }
 
-                // --- 2. Cargar Evento Actual (RQF3) ---
                 async function loadActiveEvent() {
                     try {
                         const res = await fetch('/api/fantasy/evento-actual');
@@ -199,7 +195,7 @@
                     }
                 }
 
-                // --- 3. Cargar Ranking del Evento (RQF2) ---
+                //RQF2
                 async function loadEventRanking(eventId) {
                     leaderboardBodyEl.innerHTML = '<tr><td colspan="3" style="text-align:center; opacity: 0.6;">Cargando...</td></tr>';
                     try {
@@ -302,62 +298,52 @@
 
                
 
-                // --- INICIALIZACIÓN ---
                 await loadUserData();
                 await loadActiveEvent();
 
+                //RQF3
                 if (currentEvent) {
-                    // Evento ACTIVO
                     noEventEl.style.display = 'none';
                     activeEventEl.style.display = 'block';
 
                     eventNameEl.textContent = currentEvent.nombre;
                     eventDescEl.textContent = currentEvent.descripcion;
                     eventRuleEl.textContent = `${currentEvent.regla_clave}`;
-
-                    // RQNF2: Validar Nivel 5
+                    //RQNF2
                     if (userLevel < 5) {
                         createBtn.disabled = true;
                         createBtn.textContent = `Desbloqueado a Nivel 5 (Eres Nivel ${userLevel})`;
                     } else if (currentEvent.usuario_inscrito) {
-                        // --- 👇 MODIFICACIÓN: Mostrar equipo si está inscrito 👇 ---
-                        createBtn.style.display = 'none'; // Ocultar el botón de crear
+                        createBtn.style.display = 'none'; 
                         
                         if (currentEvent.plantilla && currentEvent.plantilla.length > 0) {
-                            // Si la API devolvió la plantilla, la mostramos
                             myTeamTitle.style.display = 'block';
                             myTeamVisual.style.display = 'block';
                             
-                            // Usamos una formación por defecto (4-4-2) para mostrar.
-                            // (La regla real de formación solo importa al *crear* el equipo)
+                            
                             const formacion = FORMACIONES["1-4-4-2_fake"] || FORMACIONES["4-4-2"]; 
                             
-                            // Ajustamos el tamaño del canvas dinámicamente al contenedor
                             const ctx = myTeamCanvas.getContext('2d');
                             myTeamCanvas.width = myTeamVisual.clientWidth;
-                            myTeamCanvas.height = (myTeamVisual.clientWidth / 500) * 700; // Mantenemos aspect ratio
+                            myTeamCanvas.height = (myTeamVisual.clientWidth / 500) * 700; 
                             
                             precargarImagenesYDibujar(ctx, currentEvent.plantilla, formacion, clickablePlayers);
                         } else {
-                            // Inscrito pero sin plantilla (error raro)
                             myTeamTitle.style.display = 'block';
                             myTeamTitle.textContent = "Error al cargar tu equipo";
                         }
-                        // --- 👆 FIN DE LA MODIFICACIÓN 👆 ---
                     } else {
-                        // El usuario tiene nivel y no está inscrito
                         createBtn.disabled = false;
                         createBtn.textContent = "¡Crear Equipo de Evento!";
+                        //RQF1
                         createBtn.onclick = () => {
                             window.location.href = `crear-equipo-evento.html?evento=${currentEvent.id_evento}&regla=${currentEvent.regla_clave}`;
                         };
                     }
 
-                    // Cargar el ranking del evento
                     loadEventRanking(currentEvent.id_evento);
                     
                 } else {
-                // Evento INACTIVO
                     noEventEl.style.display = 'block';
                     activeEventEl.style.display = 'none';
                     leaderboardBodyEl.innerHTML = 

@@ -54,13 +54,15 @@ ids_para_scrapear_temporada = df_partidos_ayer['temporada'].unique()
         #prematch_odds(engine, df_partidos_futuros.iloc[i])
         #insert_predicted_lineups(engine, df_partidos_futuros.iloc[i])
 
-ejecutar_procesos_fin_de_jornada(engine, 11)
+#ejecutar_procesos_fin_de_jornada(engine, 11)
 
 #actualizar_porcentaje_popularidad(engine)
 #actualizar_valor_mercado_fantasy(engine)
 
 
-
+df_estadios = pd.read_sql("SELECT id_estadio, nombre, url_imagen FROM estadio WHERE url_imagen IS NOT NULL", engine)
+arreglo_urls_nuevas = extract_img_url(engine, df_estadios, driver)
+transfer_to_database(engine, arreglo_urls_nuevas, df_estadios)
 
 #verifica que si haya partidos el dia de ayer
 if len(df_partidos_ayer) == 0:
