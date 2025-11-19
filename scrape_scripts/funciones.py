@@ -1130,99 +1130,120 @@ def buscar_jugador(nombre_fbref, lista_jugadores, mapa_jugadores, mapa_alias, df
     return None
 
 def insert_estadistica_jugador(engine,  ids_para_scrapear_temp, db_url):
+
     engine = create_engine(db_url)
+    
     df_jugadores = pd.read_sql('SELECT id_jugador, nombre FROM jugador', engine)
     mapa_jugadores = dict(zip(df_jugadores['nombre'], df_jugadores['id_jugador'])) 
     df_alias = pd.read_sql('SELECT jugador, alias FROM alias_jugador', engine)
     mapa_alias = dict(zip(df_alias['alias'], df_alias['jugador']))
     lista_alias = df_alias['alias'].tolist()
     lista_nombres = df_jugadores['nombre'].tolist()
-  
+ 
     meta = MetaData()
     meta.reflect(bind=engine)
-    ligas = [
-        'Premier League', 
-        'La Liga', 
-        'Serie A',
-        'Bundesliga',
-        'Ligue 1'
-    ]
+    
     tabla_estadistica_jugador = meta.tables['estadistica_jugador']
     tabla_estadistica_portero = meta.tables['estadistica_portero']
+
+    def add_missing_cols(df, required_cols):
+        """
+        Revisa si un DataFrame tiene las columnas necesarias.
+        Si falta alguna, la añade y la rellena con 0.
+        """
+        for col in required_cols:
+            if col not in df.columns:
+                print(f"ADVERTENCIA: Columna '{col}' no encontrada. Se rellenará con 0.")
+                df[col] = 0
+        return df
+
     with engine.begin() as conn:
         for i in range(len(ids_para_scrapear_temp)):
             
             iteracion = ids_para_scrapear_temp[i]
             print(f"Scrapeando temporada {iteracion-1}")
+            
             df_all_players_stats = get_all_players_stats_fbref(id_liga_fbref=iteracion-1)      
             df_pochoclo = df_all_players_stats[0]
             df_porteros = df_all_players_stats[1]
-            df_pochoclo.columns.values[17] = "shooting_FK"
-            df_pochoclo.columns.values[34] = "pases_cmp"
-            df_pochoclo.columns.values[35] = "pases_intentados"
-            df_pochoclo.columns.values[36] = "pases_porcentaje_efectividad"
-            df_pochoclo.columns.values[39] = "pases_cortos_cmp"
-            df_pochoclo.columns.values[40] = "pases_cortos_intentados"
-            df_pochoclo.columns.values[41] = "pases_cortos_porcentaje_efectividad"
-            df_pochoclo.columns.values[42] = "pases_medios_cmp"
-            df_pochoclo.columns.values[43] = "pases_medios_intentados"
-            df_pochoclo.columns.values[44] = "pases_medios_porcentaje_efectividad"
-            df_pochoclo.columns.values[45] = "pases_largos_cmp"
-            df_pochoclo.columns.values[46] = "pases_largos_intentados"
-            df_pochoclo.columns.values[47] = "pases_largos_porcentaje_efectividad"
-            df_pochoclo.columns.values[66] = "pases_intentados"
-            df_pochoclo.columns.values[69] = "passing_FK"
-            df_pochoclo.columns.values[115] = "entradas"
-            df_pochoclo.columns.values[120] = "entradas_regates"
-            df_pochoclo = df_pochoclo.loc[:,~df_pochoclo.columns.duplicated()].copy()
-            df_porteros_chulo = df_porteros[['Player', 'MP', 'Min', 'GA', 'GA90', 'SoTA', 'Saves', 'Save%', 'CS', 'PKatt', 'PKsv', 'Att (GK)', 'Opp', 'Stp', '#OPA']]
-            df_jugadores_no_porteros = df_pochoclo[df_pochoclo['Pos'] != 'GK']
-            df_jugadores_no_porteros['passing_FK'] = pd.to_numeric(df_jugadores_no_porteros['passing_FK'], errors='coerce')
-            df_jugadores_no_porteros['shooting_FK'] = pd.to_numeric(df_jugadores_no_porteros['shooting_FK'], errors='coerce')
-            df_jugadores_no_porteros['FK'] = df_jugadores_no_porteros['passing_FK'] + df_jugadores_no_porteros['shooting_FK']
-            df_chulo = df_jugadores_no_porteros[['Player', 'passing_FK','shooting_FK','pases_cmp','entradas','pases_porcentaje_efectividad','Gls', 'CrdY', 'CrdR', '2CrdY',
-                                      'MP', 'Ast', 'Min', 'Sh', 
-                                      'SoT', 'Sh/90', 'G/Sh', 'Dist', 
-                                      'PK', 'GCA','PrgP', 'PrgC', 
-                                      'Succ', 'Touches', 'Int', 
-                                      'Blocks', 'Clr', 'Won', 'npxG']]
+
+            cols_portero_req = [
+                'Player', 'MP', 'Min', 'GA', 'GA90', 'SoTA', 'Saves', 'Save%', 
+                'CS', 'PKatt', 'PKsv', 'Att (GK)', 'Opp', 'Stp', '#OPA'
+            ]
+            cols_chulo_req = [
+                'Player', 'Pos', 'passing_FK','shooting_FK','pases_cmp','entradas',
+                'pases_porcentaje_efectividad','Gls', 'CrdY', 'CrdR', '2CrdY',
+                'MP', 'Ast', 'Min', 'Sh', 'SoT', 'Sh/90', 'G/Sh', 'Dist', 
+                'PK', 'GCA','PrgP', 'PrgC', 'Succ', 'Touches', 'Int', 
+                'Blocks', 'Clr', 'Won', 'npxG'
+            ]
+
+            
+            if df_porteros.empty:
+                print("ADVERTENCIA: No se obtuvieron datos de porteros. Saltando.")
+                df_porteros_chulo = pd.DataFrame(columns=cols_portero_req) # Vacío
+            else:
+                df_porteros = add_missing_cols(df_porteros, cols_portero_req)
+                df_porteros_chulo = df_porteros[cols_portero_req].copy()
+
+            if df_pochoclo.empty:
+                print("ADVERTENCIA: No se obtuvieron datos de jugadores. Saltando.")
+                df_chulo = pd.DataFrame(columns=cols_chulo_req) # Vacío
+            else:
+                if 'Pos' not in df_pochoclo.columns:
+                     df_pochoclo['Pos'] = 'N/A'
+                
+                df_jugadores_no_porteros = df_pochoclo[df_pochoclo['Pos'] != 'GK'].copy()
+                df_jugadores_no_porteros = add_missing_cols(df_jugadores_no_porteros, cols_chulo_req)
+
+                df_jugadores_no_porteros['passing_FK'] = pd.to_numeric(df_jugadores_no_porteros['passing_FK'], errors='coerce').fillna(0)
+                df_jugadores_no_porteros['shooting_FK'] = pd.to_numeric(df_jugadores_no_porteros['shooting_FK'], errors='coerce').fillna(0)
+                
+                df_jugadores_no_porteros['FK'] = df_jugadores_no_porteros['passing_FK'] + df_jugadores_no_porteros['shooting_FK']
+
+                df_chulo = df_jugadores_no_porteros[cols_chulo_req + ['FK']].copy() 
+
             df_chulo.fillna(0, inplace=True)
             df_porteros_chulo.fillna(0, inplace=True)
 
-            for i in range(len(df_chulo)):
-                nombre_fbref = df_chulo['Player'].iloc[i]
+
+            for j in range(len(df_chulo)): 
+                nombre_fbref = df_chulo['Player'].iloc[j]
                 nombre_match = buscar_jugador(nombre_fbref, lista_nombres, mapa_jugadores, mapa_alias, df_jugadores)
-                fk = df_chulo['passing_FK'].iloc[i] + df_chulo['shooting_FK'].iloc[i]
+                
+                fk = df_chulo['FK'].iloc[j] 
+                
                 if nombre_match:
                     jugador_id = mapa_jugadores[nombre_match]
                     insert_estadistica_jugador_stmt = insert(tabla_estadistica_jugador).values(
-                        npxg = df_chulo['npxG'].iloc[i],
-                        goles = df_chulo['Gls'].iloc[i],
-                        tarjetas_amarillas = df_chulo['CrdY'].iloc[i],
-                        tarjetas_rojas = df_chulo['CrdR'].iloc[i],
-                        tarjetas_amarilla_roja = df_chulo['2CrdY'].iloc[i],
-                        partidos_jugados = df_chulo['MP'].iloc[i],
-                        asistencias = df_chulo['Ast'].iloc[i],
-                        pases = df_chulo['pases_cmp'].iloc[i],
-                        minutos_jugados = df_chulo['Min'].iloc[i],
-                        disparos = df_chulo['Sh'].iloc[i],
-                        disparos_a_puerta = df_chulo['SoT'].iloc[i],
-                        disparos_por_90 = df_chulo['Sh/90'].iloc[i],
-                        goles_por_disparo = df_chulo['G/Sh'].iloc[i],
-                        distancia_promedio_de_disparos = df_chulo['Dist'].iloc[i],
+                        npxg = df_chulo['npxG'].iloc[j],
+                        goles = df_chulo['Gls'].iloc[j],
+                        tarjetas_amarillas = df_chulo['CrdY'].iloc[j],
+                        tarjetas_rojas = df_chulo['CrdR'].iloc[j],
+                        tarjetas_amarilla_roja = df_chulo['2CrdY'].iloc[j],
+                        partidos_jugados = df_chulo['MP'].iloc[j],
+                        asistencias = df_chulo['Ast'].iloc[j],
+                        pases = df_chulo['pases_cmp'].iloc[j],
+                        minutos_jugados = df_chulo['Min'].iloc[j],
+                        disparos = df_chulo['Sh'].iloc[j],
+                        disparos_a_puerta = df_chulo['SoT'].iloc[j],
+                        disparos_por_90 = df_chulo['Sh/90'].iloc[j],
+                        goles_por_disparo = df_chulo['G/Sh'].iloc[j],
+                        distancia_promedio_de_disparos = df_chulo['Dist'].iloc[j],
                         tiros_libres = fk,
-                        penales = df_chulo['PK'].iloc[i],
-                        acciones_creadas = df_chulo['GCA'].iloc[i],
-                        porcentaje_de_efectividad_de_pases = df_chulo['pases_porcentaje_efectividad'].iloc[i],
-                        pases_progresivos = df_chulo['PrgP'].iloc[i],
-                        acarreos_progresivos = df_chulo['PrgC'].iloc[i],
-                        regates_efectivos = df_chulo['Succ'].iloc[i],
-                        toques_de_balon = df_chulo['Touches'].iloc[i],
-                        entradas = df_chulo['entradas'].iloc[i],
-                        intercepciones = df_chulo['Int'].iloc[i],
-                        bloqueos = df_chulo['Blocks'].iloc[i],
-                        despejes = df_chulo['Clr'].iloc[i],
-                        duelos_aereos_ganados = df_chulo['Won'].iloc[i],
+                        penales = df_chulo['PK'].iloc[j],
+                        acciones_creadas = df_chulo['GCA'].iloc[j],
+                        porcentaje_de_efectividad_de_pases = df_chulo['pases_porcentaje_efectividad'].iloc[j],
+                        pases_progresivos = df_chulo['PrgP'].iloc[j],
+                        acarreos_progresivos = df_chulo['PrgC'].iloc[j],
+                        regates_efectivos = df_chulo['Succ'].iloc[j],
+                        toques_de_balon = df_chulo['Touches'].iloc[j],
+                        entradas = df_chulo['entradas'].iloc[j],
+                        intercepciones = df_chulo['Int'].iloc[j],
+                        bloqueos = df_chulo['Blocks'].iloc[j],
+                        despejes = df_chulo['Clr'].iloc[j],
+                        duelos_aereos_ganados = df_chulo['Won'].iloc[j],
                         jugador = jugador_id,
                         temporada = iteracion
                     )
@@ -1248,45 +1269,45 @@ def insert_estadistica_jugador(engine,  ids_para_scrapear_temp, db_url):
                         porcentaje_de_efectividad_de_pases = insert_estadistica_jugador_stmt.inserted.porcentaje_de_efectividad_de_pases, 
                         pases_progresivos = insert_estadistica_jugador_stmt.inserted.pases_progresivos, 
                         acarreos_progresivos = insert_estadistica_jugador_stmt.inserted.acarreos_progresivos, 
-                        regates_efectivos = insert_estadistica_jugador_stmt.inserted.regates_efectivos,   
-                        toques_de_balon = insert_estadistica_jugador_stmt.inserted.toques_de_balon,   
-                        entradas = insert_estadistica_jugador_stmt.inserted.entradas,   
-                        intercepciones = insert_estadistica_jugador_stmt.inserted.intercepciones,   
-                        bloqueos = insert_estadistica_jugador_stmt.inserted.bloqueos,     
-                        despejes = insert_estadistica_jugador_stmt.inserted.despejes,   
-                        duelos_aereos_ganados = insert_estadistica_jugador_stmt.inserted.duelos_aereos_ganados,   
-                        jugador = insert_estadistica_jugador_stmt.inserted.jugador,   
+                        regates_efectivos = insert_estadistica_jugador_stmt.inserted.regates_efectivos,  
+                        toques_de_balon = insert_estadistica_jugador_stmt.inserted.toques_de_balon,  
+                        entradas = insert_estadistica_jugador_stmt.inserted.entradas,  
+                        intercepciones = insert_estadistica_jugador_stmt.inserted.intercepciones,  
+                        bloqueos = insert_estadistica_jugador_stmt.inserted.bloqueos,   
+                        despejes = insert_estadistica_jugador_stmt.inserted.despejes,  
+                        duelos_aereos_ganados = insert_estadistica_jugador_stmt.inserted.duelos_aereos_ganados,  
+                        jugador = insert_estadistica_jugador_stmt.inserted.jugador,  
                         temporada = insert_estadistica_jugador_stmt.inserted.temporada
                     )
-                    print(f"Jugador {df_chulo['Player'].iloc[i]} insertado correctamente como {nombre_match}")
+                    print(f"Jugador {df_chulo['Player'].iloc[j]} insertado correctamente como {nombre_match}")
                     conn.execute(update_estadistica_jugador_stmt)
-       
+           
                 else:
                     jugador_id = None
                     print(f"No se pudo agregar el nombre de {nombre_fbref}")
                     
-                
-            for i in range(len(df_porteros_chulo)):
-                nombre_fbref = df_porteros_chulo['Player'].iloc[i]
+            
+            for j in range(len(df_porteros_chulo)): 
+                nombre_fbref = df_porteros_chulo['Player'].iloc[j]
                 nombre_match = buscar_jugador(nombre_fbref, lista_nombres, mapa_jugadores, mapa_alias, df_jugadores)
                 
                 if nombre_match:
                     jugador_id = mapa_jugadores[nombre_match]
                     insert_estadistica_portero_stmt = insert(tabla_estadistica_portero).values(
-                        partidos_jugados = df_porteros_chulo['MP'].iloc[i],
-                        minutos = df_porteros_chulo['Min'].iloc[i],
-                        goles_recibidos = df_porteros_chulo['GA'].iloc[i],
-                        goles_recibidos_por_90 = df_porteros_chulo['GA90'].iloc[i],
-                        tiros_a_puerta_recibidos = df_porteros_chulo['SoTA'].iloc[i],
-                        atajadas = df_porteros_chulo['Saves'].iloc[i],
-                        porcentaje_de_atajadas = df_porteros_chulo['Save%'].iloc[i],
-                        porterias_imbatidas = df_porteros_chulo['CS'].iloc[i],
-                        penales_en_contra = df_porteros_chulo['PKatt'].iloc[i],
-                        penales_atajados = df_porteros_chulo['PKsv'].iloc[i],
-                        pases = df_porteros_chulo['Att (GK)'].iloc[i],
-                        centros_recibidos = df_porteros_chulo['Opp'].iloc[i],
-                        centros_interceptados = df_porteros_chulo['Stp'].iloc[i],
-                        acciones_fuera_del_area = df_porteros_chulo['#OPA'].iloc[i],
+                        partidos_jugados = df_porteros_chulo['MP'].iloc[j],
+                        minutos = df_porteros_chulo['Min'].iloc[j],
+                        goles_recibidos = df_porteros_chulo['GA'].iloc[j],
+                        goles_recibidos_por_90 = df_porteros_chulo['GA90'].iloc[j],
+                        tiros_a_puerta_recibidos = df_porteros_chulo['SoTA'].iloc[j],
+                        atajadas = df_porteros_chulo['Saves'].iloc[j],
+                        porcentaje_de_atajadas = df_porteros_chulo['Save%'].iloc[j],
+                        porterias_imbatidas = df_porteros_chulo['CS'].iloc[j],
+                        penales_en_contra = df_porteros_chulo['PKatt'].iloc[j],
+                        penales_atajados = df_porteros_chulo['PKsv'].iloc[j],
+                        pases = df_porteros_chulo['Att (GK)'].iloc[j],
+                        centros_recibidos = df_porteros_chulo['Opp'].iloc[j],
+                        centros_interceptados = df_porteros_chulo['Stp'].iloc[j],
+                        acciones_fuera_del_area = df_porteros_chulo['#OPA'].iloc[j],
                         jugador = jugador_id,
                         temporada = iteracion
                     )
@@ -1310,15 +1331,15 @@ def insert_estadistica_jugador(engine,  ids_para_scrapear_temp, db_url):
                         temporada = insert_estadistica_portero_stmt.inserted.temporada,
                     )
 
-                    print(f"Jugador {df_porteros_chulo['Player'].iloc[i]} insertado como {nombre_match}")
+                    print(f"Jugador {df_porteros_chulo['Player'].iloc[j]} insertado como {nombre_match}")
                     conn.execute(update_estadistica_portero_stmt)
                 else:
                     jugador_id = None
                     print(f"No se pudo agregar correctamente a {nombre_fbref}")
-                
+            
+            print(f"Liga insertada correctamente")
+    return
 
-        print(f"Liga insertada correctamente")
-    return 
 
 def update_standings_evolution_graph(liga_a_scrapear, engine,  temporada):
     df_equipo = pd.read_sql('SELECT id_equipo, nombre FROM equipo', engine)

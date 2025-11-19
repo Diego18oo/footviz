@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup, Comment
 from selenium import webdriver
 import random
-
+from functools import reduce
 from selenium.webdriver.chrome.options import Options
 import cloudscraper
 import json
@@ -38,94 +38,124 @@ def get_sofascore_api_data(driver, path: str) -> dict:
 
 def get_all_players_stats_fbref(id_liga_fbref):
     stats_list = [
-    'keepers',
-    'keepersadv',
-    'shooting',
-    'passing',
-    'passing_types',
-    'gca',
-    'defense',
-    'possession',
-    'playingtime',
-    'misc'
+        'keepers', 'keepersadv', 'shooting', 'passing', 'passing_types',
+        'gca', 'defense', 'possession', 'playingtime', 'misc'
     ]
     liga_fbref = [
-    '9/Premier-League',
-    '12/La-Liga',
-    '11/Serie-A',
-    '20/Bundesliga',
-    '13/Ligue-1'
+        '9/Premier-League', '12/La-Liga', '11/Serie-A',
+        '20/Bundesliga', '13/Ligue-1'
     ]
 
     base_url = "https://fbref.com/en/comps/"
     id_parts = liga_fbref[id_liga_fbref].split('/')
 
-    data = pd.DataFrame()
-    gk_data = pd.DataFrame()
-
+    list_of_data_dfs = []
+    list_of_gk_data_dfs = []
     scraper = cloudscraper.create_scraper()
+
+    # --- Diccionario de Renombre para columnas duplicadas ---
+    # Mapea (stat, col_original) -> col_nueva
+    # Añade más si encuentras otros duplicados
+    rename_map = {
+        ('shooting', 'FK'): 'shooting_FK',
+        ('passing', 'FK'): 'passing_FK',
+        ('passing', 'Att'): 'pases_intentados',
+        ('passing', 'Cmp'): 'pases_cmp',
+        ('passing', 'Cmp%'): 'pases_porcentaje_efectividad',
+        ('passing_types', 'Att'): 'passing_types_Att', # Evitar colisión
+        ('defense', 'Tkl'): 'entradas',
+        ('defense', 'Tkl%'): 'entradas_regates_pct', # Ojo: Tkl% es % de regates parados
+        ('defense', 'Lost'): 'entradas_regates', # Retado en regate
+    }
 
     for stat in stats_list:
         full_url = f"{base_url}{id_parts[0]}/{stat}/{id_parts[1]}-Stats"
         print(f"Scraping: {full_url}")
-
+        # ... (código de request, sleep, status, etc. ... igual) ...
         response = scraper.get(full_url)
-        time.sleep(5)
+        time.sleep(5) 
+        if response.status_code != 200:
+            print(f"¡FALLO DE CONEXIÓN para {stat}! ...")
+            continue
         soup = BeautifulSoup(response.text, "lxml")
-
+        
+        # --- Búsqueda de Tabla (tu código de v3, está perfecto) ---
+        all_tables = soup.find_all("table", {"id": lambda x: x and x.startswith("stats_")})
         comments = soup.find_all(string=lambda text: isinstance(text, Comment))
-        player_tables = []
         for comment in comments:
             if "table" in comment:
                 comment_soup = BeautifulSoup(comment, "lxml")
-                player_table = comment_soup.find("table", {"id": lambda x: x and x.startswith("stats_")})
-                if player_table:
-                    player_tables.append(player_table)
+                all_tables.extend(comment_soup.find_all("table", {"id": lambda x: x and x.startswith("stats_")}))
+        player_table = None
+        for tbl in all_tables:
+            tbl_id = tbl.get('id', '')
+            if "squads" not in tbl_id:
+                player_table = tbl
+                break 
+        if not player_table:
+            print(f"No se pudo encontrar la tabla de JUGADORES para {stat}")
+            continue
+        
+        placeholder = pd.read_html(str(player_table))[0]
 
-        if not player_tables:
-            print(f"No se encontró la tabla de jugadores para {stat}")
+        if isinstance(placeholder.columns, pd.MultiIndex):
+            placeholder.columns = placeholder.columns.droplevel(0)
+
+        # --- !! INICIO DE CORRECCIÓN: RENOMBRAR INTELIGENTE !! ---
+        
+        # Renombrar columnas basado en nuestro mapa
+        cols_a_renombrar = {}
+        for col in placeholder.columns:
+            if (stat, col) in rename_map:
+                cols_a_renombrar[col] = rename_map[(stat, col)]
+        
+        if cols_a_renombrar:
+            placeholder = placeholder.rename(columns=cols_a_renombrar)
+            
+        # --- !! FIN DE CORRECCIÓN !! ---
+
+        # Limpieza de filas (quitar cabeceras repetidas)
+        if 'Player' not in placeholder.columns:
+            print(f"ADVERTENCIA: 'Player' no se encontró en {stat}, saltando.")
+            continue
+             
+        player_col = placeholder['Player']
+        mask = player_col.notna() & (player_col.astype(str).str.strip() != '') & (player_col != 'Player')
+        placeholder = placeholder[mask].copy()
+        placeholder.reset_index(drop=True, inplace=True)
+        
+        if placeholder.empty:
             continue
 
-        placeholder = pd.concat([pd.read_html(str(tbl))[0] for tbl in player_tables], axis=0, ignore_index=True)
-
         if stat in ['keepers', 'keepersadv']:
-            gk_data = pd.concat([gk_data, placeholder], axis=1) if not gk_data.empty else placeholder
+            list_of_gk_data_dfs.append(placeholder)
         else:
-            data = pd.concat([data, placeholder], axis=1) if not data.empty else placeholder
+            list_of_data_dfs.append(placeholder)
 
-    print("Scraping finalizado")
-    data.columns = data.columns.droplevel(0)
-    gk_data.columns = gk_data.columns.droplevel(0)
-    player_col = data.loc[:, 'Player']
-    if isinstance(player_col, pd.DataFrame):
-        player_col = player_col.iloc[:, 0]
+    print("Scraping finalizado. Fusionando tablas...")
 
-    mask = player_col.notna() & (player_col.astype(str).str.strip() != '') & (player_col != 'Player')
-    data = data[mask].copy()
-    data['Player'] = player_col[mask].values
+    # --- Lógica de Fusión (sin cambios, la v3 'robust_merge' está bien) ---
+    data = pd.DataFrame()
+    gk_data = pd.DataFrame()
 
-    data.reset_index(drop=True, inplace=True)
+    def robust_merge(df_left, df_right):
+        cols_to_drop = [col for col in df_right.columns if col in df_left.columns and col != 'Player']
+        df_right_cleaned = df_right.drop(columns=cols_to_drop, errors='ignore')
+        return pd.merge(df_left, df_right_cleaned, on='Player', how='outer')
 
-    player_col = gk_data.loc[:, 'Player']
-    if isinstance(player_col, pd.DataFrame):
-        player_col = player_col.iloc[:, 0]
-    mask = player_col.notna() & (player_col.astype(str).str.strip() != '') & (player_col != 'Player')
-    gk_data = gk_data[mask].copy()
+    if not list_of_data_dfs:
+        print("ADVERTENCIA: No se scrapearondatos de jugadores de campo.")
+    else:
+        data = reduce(robust_merge, list_of_data_dfs)
+        data = data.loc[:, ~data.columns.duplicated(keep='first')]
 
-    gk_data['Player'] = player_col[mask].values
-
-    gk_data = gk_data.loc[:, ~gk_data.columns.duplicated(keep='first')]
-
-    gk_data.reset_index(drop=True, inplace=True)
+    if not list_of_gk_data_dfs:
+        print("ADVERTENCIA: No se scrapearondatos de porteros.")
+    else:
+        gk_data = reduce(robust_merge, list_of_gk_data_dfs)
+        gk_data = gk_data.loc[:, ~gk_data.columns.duplicated(keep='first')]
 
     return data, gk_data
-
-
-
-
-
-
-
 
 def get_all_teams_stats_fbref(id_liga_fbref):
     base_url = "https://fbref.com/en/comps/"

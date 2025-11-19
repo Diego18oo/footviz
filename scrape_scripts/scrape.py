@@ -17,7 +17,7 @@ db_name = os.getenv('DB_NAME')
 
 db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
 today = datetime.now()
-yesterday = today - timedelta(days=1)
+yesterday = today - timedelta(days=9)
 yesterday = yesterday.strftime('%Y-%m-%d')
 engine = create_engine(db_url)
 
@@ -41,7 +41,7 @@ liga_fbref = [
 ]
 
 ids_para_scrapear_temporada = df_partidos_ayer['temporada'].unique() 
-#insert_estadistica_jugador(engine,  ids_para_scrapear_temporada, db_url)
+insert_estadistica_jugador(engine,  ids_para_scrapear_temporada, db_url)
 #insert_update_plantilla_equipos(engine, driver, ligas_ids, temporadas_ids, db_url)
 #print("Todo las plantillas estan actualizadas")
 
@@ -60,9 +60,9 @@ ids_para_scrapear_temporada = df_partidos_ayer['temporada'].unique()
 #actualizar_valor_mercado_fantasy(engine)
 
 
-df_estadios = pd.read_sql("SELECT id_estadio, nombre, url_imagen FROM estadio WHERE url_imagen IS NOT NULL", engine)
-arreglo_urls_nuevas = extract_img_url(engine, df_estadios, driver)
-transfer_to_database(engine, arreglo_urls_nuevas, df_estadios)
+#df_estadios = pd.read_sql("SELECT id_estadio, nombre, url_imagen FROM estadio WHERE url_imagen IS NOT NULL", engine)
+#arreglo_urls_nuevas = extract_img_url(engine, df_estadios, driver)
+#transfer_to_database(engine, arreglo_urls_nuevas, df_estadios)
 
 #verifica que si haya partidos el dia de ayer
 if len(df_partidos_ayer) == 0:

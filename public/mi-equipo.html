@@ -209,12 +209,13 @@
                             Guardar Cambios
                         </button>
                     </div>
+                    <!--
                     <div class="card chips-section">
                         <h3>Fichas Disponibles</h3> <div id="chips-list">
                             <button id="chip-triple-captain" disabled>Triple Capitán</button>
                             <button id="chip-bench-boost" disabled>Banca Potenciada</button>
                             </div>
-                    </div>
+                    </div>-->
                     
                 </div>
             </main>
@@ -694,6 +695,9 @@
                     [player1.es_titular, player2.es_titular] = [player2.es_titular, player1.es_titular];
                     console.log(diaHoy);
                     if (diasNoPermitidos.includes(diaHoy)){
+                        alert("Solo se pueden hacer cambios los dias martes, miercoles y jueves.")
+                        
+                    } else{
                         if(player1.puntos_ultima_jornada_equipo > 0 || player2.puntos_ultima_jornada_equipo > 0 ){
                             alert("Cambio invalido, solo pueden entrar jugadores que no han jugado");
                             return;
