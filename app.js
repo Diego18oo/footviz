@@ -5,7 +5,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import cookieParser from 'cookie-parser';
-import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail, getUsuarioData, getEquipoFantasyUsuario, getJugadoresFantasy, crearEquipoFantasyCompleto, getPlantillaFantasy, getDesglosePuntosFantasyJugador, getProximoPartido, realizarFichaje, actualizarPlantilla, getProximosPartidosDeEquipos, getMVPdeLaSemana, getPartidosRandom, getPlantillasDePredicciones, getEstadoDeForma, getPronosticoResultado, getPronosticoPrimerEquipoEnAnotar, getPronosticoPrimerJugadorEnAnotar, guardarPrediccionUsuario, getJornadaFromPartido, getMisPredicciones, getHistorialPredicciones, unirseLigaPorCodigo, crearLiga, getLeagueRanking, getMisLigas, getPublicLeagueIDs, getLeagueRankingTop10, getEquipoEventoUsuario, getEventoRanking, getEventoActivo, crearEquipoEventoCompleto, getAvailableEventPlayers, getEquipoEventoUsuarioID, getPlantillaEvento, getLogrosBase, otorgarLogro, getStatsParaPoisson, getPuzzleDelUsuario, getUltimaJornadaCompletada} from './database.js'
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail, getUsuarioData, getEquipoFantasyUsuario, getJugadoresFantasy, crearEquipoFantasyCompleto, getPlantillaFantasy, getDesglosePuntosFantasyJugador, getProximoPartido, realizarFichaje, actualizarPlantilla, getProximosPartidosDeEquipos, getMVPdeLaSemana, getPartidosRandom, getPlantillasDePredicciones, getEstadoDeForma, getPronosticoResultado, getPronosticoPrimerEquipoEnAnotar, getPronosticoPrimerJugadorEnAnotar, guardarPrediccionUsuario, getJornadaFromPartido, getMisPredicciones, getHistorialPredicciones, unirseLigaPorCodigo, crearLiga, getLeagueRanking, getMisLigas, getPublicLeagueIDs, getLeagueRankingTop10, getEquipoEventoUsuario, getEventoRanking, getEventoActivo, crearEquipoEventoCompleto, getAvailableEventPlayers, getEquipoEventoUsuarioID, getPlantillaEvento, getLogrosBase, otorgarLogro, getStatsParaPoisson, getPuzzleDelUsuario, getUltimaJornadaCompletada, getFichasEquipo, registrarUsoFicha} from './database.js'
  
 
 const app = express()  
@@ -487,7 +487,7 @@ app.get("/api/fantasy/proximos-partidos",  async (req, res) => {
 app.post("/api/fantasy/actualizar-plantilla", authenticateToken, async (req, res) => {
     try {
         const userId = req.userId; 
-        const { plantilla } = req.body; 
+        const { plantilla, id_ficha_activa } = req.body; 
 
         if (!plantilla || plantilla.length !== 15) {
             return res.status(400).json({ error: "Datos de plantilla inválidos." });
@@ -500,7 +500,17 @@ app.post("/api/fantasy/actualizar-plantilla", authenticateToken, async (req, res
         }
         
         await actualizarPlantilla(equipo.id_equipo_fantasy, plantilla);
+        if (id_ficha_activa) {
+            
+            const fichas = await getFichasEquipo(equipo.id_equipo_fantasy);
+            const fichaDeseada = fichas.find(f => f.id_ficha == id_ficha_activa);
 
+            if (fichaDeseada && !fichaDeseada.usada) {
+                await registrarUsoFicha(equipo.id_equipo_fantasy, id_ficha_activa);
+            } else {
+                console.warn("Intento de usar una ficha ya gastada o inexistente.");
+            }
+        }
         res.status(200).json({ message: "¡Plantilla actualizada con éxito!" });
 
     } catch (error) {
@@ -514,26 +524,19 @@ app.post("/api/fantasy/hacer-fichaje", authenticateToken, async (req, res) => {
     try {
         const userId = req.userId;
         const { jugadorSaleId, jugadorEntraId } = req.body;
-
-        const equipo = await getEquipoFantasyUsuario(userId);
-        if (!equipo) {
-            return res.status(404).json({ error: "No se encontró el equipo fantasy." });
+        const resultado = await  realizarFichaje(userId, jugadorSaleId, jugadorEntraId);
+        let mensaje = "¡Fichaje realizado con éxito!";
+        if (resultado.penalizacion_aplicada) {
+            mensaje += ` Se han descontado ${resultado.puntos_restados} puntos por fichaje extra.`;
         }
-        
-        await realizarFichaje(
-            equipo.id_equipo_fantasy, 
-            jugadorSaleId, 
-            jugadorEntraId,
-            equipo.fichajes_jornada_restantes,
-            equipo.id_temporada 
-        );
 
-        res.status(200).json({ message: "Fichaje realizado con éxito." });
+        res.status(200).json({ message: mensaje });        
+
 
     } catch (error) {
         console.error("Error al hacer fichaje:", error);
-        if (error.message.includes("Presupuesto") || error.message.includes("Límite")) {
-             return res.status(400).json({ error: error.message });
+        if (error.message.includes("Presupuesto insuficiente")) {
+            return res.status(400).json({ error: error.message });
         }
         res.status(500).json({ error: "Error interno del servidor." });
     }
@@ -578,9 +581,9 @@ app.get("/api/fantasy/mi-equipo", authenticateToken, async (req, res) => {
         const userInfo = await getUsuarioData(userId);
         const equipoInfo = await getEquipoFantasyUsuario(userId);
         const plantillaConDetalles = await getPlantillaFantasy(userId);
-        
+        const fichas = await getFichasEquipo(equipoInfo.id_equipo_fantasy);
 
-        res.status(200).json({userInfo, equipoInfo, plantillaConDetalles});
+        res.status(200).json({userInfo, equipoInfo, plantillaConDetalles, fichas});
     } catch (error) {
         console.error(`Error al obtener dashboard para usuario ${userId}:`, error);
         res.status(500).json({ error: "Error interno al obtener datos del dashboard" });

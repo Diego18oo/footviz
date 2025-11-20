@@ -209,13 +209,13 @@
                             Guardar Cambios
                         </button>
                     </div>
-                    <!--
+                    
                     <div class="card chips-section">
                         <h3>Fichas Disponibles</h3> <div id="chips-list">
                             <button id="chip-triple-captain" disabled>Triple Capitán</button>
                             <button id="chip-bench-boost" disabled>Banca Potenciada</button>
                             </div>
-                    </div>-->
+                    </div>
                     
                 </div>
             </main>
@@ -287,6 +287,12 @@
         </div>
 
         <script>
+            let fichajesBase = 0; 
+            let fichajesRealizadosEnSesion = 0;
+            let fichajesExtra = 0
+            let activeChipId = null; 
+            let extraTransferActive = false; 
+            let doubleCaptainActive = false;
             let miPlantilla = []; 
             let allAvailablePlayers = []; 
             let transferFilteredPlayers = []; 
@@ -295,7 +301,6 @@
             let playerToSell = null;
             let transferCurrentPage = 1;
             const transferPlayersPerPage = 10;
-
             const saveChangesButton = document.getElementById('save-team-changes-btn');
             const playerModal = document.getElementById('player-info-modal');
             const transferModal = document.getElementById('transfer-modal');
@@ -329,8 +334,10 @@
 
                     document.getElementById('budget-remaining').textContent = `${data.equipoInfo.presupuesto_restante} M`;
                     document.getElementById('transfers-remaining').textContent = data.equipoInfo.fichajes_jornada_restantes;
-
+                    fichajesBase = parseInt(data.equipoInfo.fichajes_jornada_restantes);
+                    actualizarContadorFichajes();
                     renderPitchAndBench(miPlantilla);
+                    renderChips(data.fichas);
 
 
                 } catch (error) {
@@ -445,6 +452,13 @@
                     alert(`No puedes fichar a ${playerToBuy.nombre_jugador}, ya tienes 2 jugadores de ${playerToBuy.nombre_equipo}.`);
                     return;
                 }
+                const fichajesRestantes = parseInt(document.getElementById('transfers-remaining').textContent);
+                
+                if (fichajesRestantes <= 0) {
+                     if (!confirm(`Ya no te quedan fichajes. ¿Deseas hacer este fichaje con un costo de -5 puntos?`)) {
+                        return;
+                    }
+                }
                 if (!confirm(`¿Confirmar fichaje?\n\nVENDER: ${playerToSell.nombre_jugador}\nCOMPRAR: ${playerToBuy.nombre_jugador}`)) {
                     return;
                 }
@@ -461,8 +475,10 @@
                         const result = await response.json();
                         throw new Error(result.error || 'Error en el servidor');
                     }
-                    alert("¡Fichaje realizado con éxito!");
-                    window.location.reload(); 
+                    const result = await response.json();
+                    alert(result.message);
+                    fichajesRealizadosEnSesion++; 
+                    actualizarContadorFichajes();
                 } catch (error) {
                     alert("Error al realizar el fichaje: " + error.message);
                 }
@@ -526,7 +542,7 @@
                     button.id = `chip-${ficha.id_ficha}`; 
                     button.textContent = ficha.nombre; 
                     button.disabled = ficha.jornada_uso !== null; 
-                    button.onclick = () => activateChip(ficha.id_ficha);
+                    button.onclick = () => toggleChip(ficha.id_ficha, button);
                     chipsList.appendChild(button);
                 });
             }
@@ -774,17 +790,7 @@
             function handleMakeCaptain() {
                 const lastCaptainChange = localStorage.getItem('lastCaptainChange');
                 const now = new Date().getTime(); 
-                if (lastCaptainChange) {
-                    const lastChangeTime = parseInt(lastCaptainChange);
-                    const hoursPassed = (now - lastChangeTime) / (1000 * 60 * 60); 
-
-                    //RQF6
-                    if (hoursPassed < 24) {
-                        alert(`Puedes cambiar de capitán solo una vez cada 24 horas. Faltan ${ (24 - hoursPassed).toFixed(1) } horas.`);
-                        closePlayerModal();
-                        return;
-                    }
-                }
+                
 
                 const newCaptainId = currentPlayerIdInModal;
                 const newCaptain = miPlantilla.find(p => p.id_jugador === newCaptainId);
@@ -794,14 +800,33 @@
                     closePlayerModal();
                     return;
                 }
+                const currentCaptains = miPlantilla.filter(p => p.es_capitan === 1);
+                if (doubleCaptainActive) {
+                    if (currentCaptains.length < 2) {
+                        newCaptain.es_capitan = 1; 
+                    } else {
+                        
+                        alert("Ya tienes 2 capitanes. Quita uno primero."); 
+                        return; 
+                    }
+                } else {
+                    if (currentCaptains.length > 0) {
+                        currentCaptains[0].es_capitan = 0; 
+                    }
+                    newCaptain.es_capitan = 1;
 
-
-                const oldCaptain = miPlantilla.find(p => p.es_capitan === 1);
-                if (oldCaptain) {
-                    oldCaptain.es_capitan = 0;
+                    const lastCaptainChange = localStorage.getItem('lastCaptainChange');
+                    if (lastCaptainChange) {
+                         const lastChangeTime = parseInt(lastCaptainChange);
+                        const hoursPassed = (now - lastChangeTime) / (1000 * 60 * 60); 
+                         if (hoursPassed < 24) {
+                             alert("Ya tienes un capitan activo"); 
+                             return;
+                         }
+                    }
                 }
+                
 
-                newCaptain.es_capitan = 1;
 
                 console.log(`Nuevo capitán: ${newCaptain.nombre_jugador}`);
 
@@ -878,8 +903,65 @@
             transferTeamFilter.addEventListener('change', applyTransferFilters);
             transferSearchInput.addEventListener('input', applyTransferFilters);
 
-            
+            function activarFichajeExtra() {
+                extraTransferActive = true;
+                fichajesExtra = 1; 
+                actualizarContadorFichajes();
+                alert("¡Fichaje Extra activado! Ahora tienes un traspaso adicional gratis.");
+            }
 
+            function desactivarFichajeExtra() {
+                extraTransferActive = false;
+                fichajesExtra = 0; 
+                actualizarContadorFichajes(); 
+            }
+
+            function actualizarContadorFichajes() {
+                
+                const total = fichajesBase + fichajesExtra - fichajesRealizadosEnSesion; 
+                document.getElementById('transfers-remaining').textContent = total;
+            }
+
+            function activarDobleCapitan() {
+                doubleCaptainActive = true;
+                alert("¡Doble Capitán activado! Ahora puedes seleccionar un segundo capitán.");
+            }
+
+            function desactivarDobleCapitan() {
+                doubleCaptainActive = false;
+                const capitanes = miPlantilla.filter(p => p.es_capitan);
+                if (capitanes.length > 1) {
+                    
+                    capitanes[1].es_capitan = 0; 
+                    renderPitchAndBench(miPlantilla); 
+                    alert("Se ha desactivado el segundo capitán.");
+                }
+            }
+            function toggleChip(id, btn) {
+                if (activeChipId === id) {
+                    activeChipId = null;
+                    btn.style.backgroundColor = "#4f46e5";
+                    btn.textContent = btn.textContent.replace(" (Activa)", "");
+                    
+                    if (id === 1) desactivarFichajeExtra(); 
+                    if (id === 2) desactivarDobleCapitan(); 
+                    
+                } else {
+                    if (activeChipId !== null) {
+                        const prevBtn = document.querySelector(`#chips-list button[data-id="${activeChipId}"]`);
+                        if(prevBtn) toggleChip(activeChipId, prevBtn); 
+                    }
+
+                    activeChipId = id;
+                    btn.style.backgroundColor = "#059669"; 
+                    btn.textContent += " (Activa)";
+
+                    if (id === 1) activarFichajeExtra();
+                    if (id === 2) activarDobleCapitan();
+                }
+                
+                showSaveChangesButton();
+            }
             async function saveChangesToBackend() {
                 console.log("Guardando cambios en el servidor...");
                 const plantillaActualizada = miPlantilla.map(p => ({
@@ -891,11 +973,15 @@
                     const response = await fetch('/api/fantasy/actualizar-plantilla', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ plantilla: plantillaActualizada })
+                        body: JSON.stringify({ 
+                            plantilla: plantillaActualizada,
+                            id_ficha_activa: activeChipId 
+                        })
                     });
                     if (!response.ok) throw new Error('Respuesta del servidor no fue OK');
                     const result = await response.json();
                     alert('¡Cambios guardados con éxito!');
+                    activeChipId = null;
                     saveChangesButton.style.display = 'none';
                 } catch (error) {
                     console.error("Error al guardar cambios:", error);

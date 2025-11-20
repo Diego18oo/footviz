@@ -1613,97 +1613,76 @@ export async function getProximoPartido(id_equipo){
 }
 
 
-export async function realizarFichaje(id_equipo_fantasy, jugadorSaleId, jugadorEntraId, fichajesRestantes, id_temporada) {
+export async function realizarFichaje( id_usuario, jugadorSaleId, jugadorEntraId) {
     const conn = await pool.getConnection();
     await conn.beginTransaction();
 
     try {
-        console.log(jugadorEntraId)
-        const [jugadorEntraData] = await conn.query(
-            `SELECT vj.valor_actual, lta.equipo AS id_equipo
-             FROM valor_jugador_fantasy vj
-             JOIN (
-                 SELECT pe.jugador, pe.equipo, ROW_NUMBER() OVER(PARTITION BY pe.jugador ORDER BY pe.id_plantilla DESC) as rn
-                 FROM plantilla_equipos pe WHERE pe.jugador = ?
-             ) lta ON vj.id_jugador = lta.jugador AND lta.rn = 1
-             WHERE vj.id_jugador = ? `,
-            [jugadorEntraId, jugadorEntraId]
+        const [equipos] = await conn.query(
+            `SELECT id_equipo_fantasy, presupuesto_restante, fichajes_jornada_restantes, puntos_totales 
+             FROM equipo_fantasy WHERE id_usuario = ? FOR UPDATE`,
+            [id_usuario]
+        );
+
+        if (!equipos.length) throw new Error("Equipo no encontrado");
+        const equipo = equipos[0];
+
+        const [jugadores] = await conn.query(
+            `SELECT id_jugador, valor_actual FROM valor_jugador_fantasy 
+             WHERE id_jugador IN (?, ?)`,
+            [jugadorSaleId, jugadorEntraId]
         );
         
-        if (!jugadorEntraData.length) throw new Error("No se encontró el jugador a comprar.");
-        const jugadorEntra = jugadorEntraData[0];
+        const sale = jugadores.find(j => j.id_jugador === jugadorSaleId);
+        const entra = jugadores.find(j => j.id_jugador === jugadorEntraId);
 
-        const [jugadorSaleData] = await conn.query(
-            `SELECT precio_compra, es_capitan FROM plantilla_fantasy 
-             WHERE id_equipo_fantasy = ? AND id_jugador = ?`,
-            [id_equipo_fantasy, jugadorSaleId]
-        );
-        if (!jugadorSaleData.length) throw new Error("No se encontró al jugador a vender en tu plantilla.");
-        const jugadorSale = jugadorSaleData[0];
+        if (!sale || !entra) throw new Error("Jugadores no encontrados");
 
-        const [equipoData] = await conn.query(
-            `SELECT presupuesto_restante FROM equipo_fantasy WHERE id_equipo_fantasy = ? FOR UPDATE`, 
-            [id_equipo_fantasy]
-        );
-        let presupuesto = parseFloat(equipoData[0].presupuesto_restante);
         
-        const nuevoPresupuesto = presupuesto + parseFloat(jugadorSale.precio_compra) - parseFloat(jugadorEntra.valor_actual);
+        const nuevoPresupuesto = parseFloat(equipo.presupuesto_restante) + parseFloat(sale.valor_actual) - parseFloat(entra.valor_actual);
+
         if (nuevoPresupuesto < 0) {
-            throw new Error(`Presupuesto insuficiente. Necesitas ${nuevoPresupuesto * -1}M más.`);
-        }
-
-        const [conteoEquipo] = await conn.query(
-            `SELECT COUNT(pf.id_jugador) AS count
-             FROM plantilla_fantasy pf
-             JOIN (
-                 SELECT pe.jugador, pe.equipo, ROW_NUMBER() OVER(PARTITION BY pe.jugador, pe.temporada ORDER BY pe.id_plantilla DESC) as rn
-                 FROM plantilla_equipos pe WHERE pe.temporada = ?
-             ) lta ON pf.id_jugador = lta.jugador AND lta.rn = 1
-             WHERE pf.id_equipo_fantasy = ? 
-               AND lta.equipo = ?
-               AND pf.id_jugador != ?`, 
-            [id_temporada, id_equipo_fantasy, jugadorEntra.id_equipo, jugadorSaleId]
-        );
-        
-        if (conteoEquipo[0].count >= 2) {
-            throw new Error("Límite de 2 jugadores por equipo alcanzado.");
+            throw new Error("Presupuesto insuficiente para realizar el fichaje.");
         }
 
         let costoPuntos = 0;
-        let fichajesNuevos = fichajesRestantes;
-        if (fichajesRestantes > 0) {
-            fichajesNuevos -= 1;
-        } else {
+        let nuevosFichajesRestantes = equipo.fichajes_jornada_restantes - 1;
+
+        if (equipo.fichajes_jornada_restantes <= 0) {
             costoPuntos = 5; 
+            
         }
+        
+        const nuevosPuntosTotales = equipo.puntos_totales - costoPuntos;
 
         await conn.query(
             `UPDATE plantilla_fantasy 
-             SET id_jugador = ?, precio_compra = ?, es_capitan = 0
+             SET id_jugador = ?, precio_compra = ? 
              WHERE id_equipo_fantasy = ? AND id_jugador = ?`,
-            [jugadorEntraId, jugadorEntra.valor_actual, id_equipo_fantasy, jugadorSaleId]
+            [jugadorEntraId, entra.valor_actual, equipo.id_equipo_fantasy, jugadorSaleId]
         );
 
         await conn.query(
             `UPDATE equipo_fantasy 
-             SET presupuesto_restante = ?, fichajes_jornada_restantes = ?
+             SET presupuesto_restante = ?, 
+                 fichajes_jornada_restantes = ?, 
+                 puntos_totales = ?
              WHERE id_equipo_fantasy = ?`,
-            [nuevoPresupuesto, fichajesNuevos, id_equipo_fantasy]
+            [nuevoPresupuesto, nuevosFichajesRestantes, nuevosPuntosTotales, equipo.id_equipo_fantasy]
         );
-        
-        const [jornadaActual] = await conn.query("SELECT MAX(jornada) FROM partido WHERE fecha <= CURDATE()");
-        await conn.query(
-             `INSERT INTO transferencia_fantasy (id_equipo_fantasy, jornada, jugador_sale_id, jugador_entra_id, costo_puntos)
-              VALUES (?, ?, ?, ?, ?)`,
-             [id_equipo_fantasy, jornadaActual[0]['MAX(jornada)'], jugadorSaleId, jugadorEntraId, costoPuntos]
-         );
 
         await conn.commit();
+        
+        return { 
+            penalizacion_aplicada: costoPuntos > 0,
+            puntos_restados: costoPuntos,
+            nuevo_presupuesto: nuevoPresupuesto
+        };
 
     } catch (error) {
         await conn.rollback();
-        console.error("Error en transacción de fichaje:", error);
-        throw error; 
+        console.error("Error en transacción hacerFichaje:", error);
+        throw error;
     } finally {
         conn.release();
     }
@@ -1715,18 +1694,15 @@ export async function actualizarPlantilla(id_equipo_fantasy, plantilla) {
     await conn.beginTransaction(); 
 
     try {
-        const updatePromises = plantilla.map(player => {
-            return conn.query(
+        for (const p of plantilla) {
+            await conn.query(
                 `UPDATE plantilla_fantasy 
-                 SET es_titular = ?, es_capitan = ?
+                 SET es_titular = ?, es_capitan = ? 
                  WHERE id_equipo_fantasy = ? AND id_jugador = ?`,
-                [player.es_titular, player.es_capitan, id_equipo_fantasy, player.id_jugador]
+                [p.es_titular, p.es_capitan, id_equipo_fantasy, p.id_jugador] 
             );
-        });
-        await Promise.all(updatePromises);
-        
+        }
         await conn.commit();
-        console.log(`Plantilla ${id_equipo_fantasy} actualizada con éxito.`);
 
     } catch (error) {
         await conn.rollback();
@@ -2606,4 +2582,40 @@ export async function getUltimaJornadaCompletada(temporada_id) {
         [temporada_id]
     );
     return rows[0]?.ultima_jornada || 1; 
+}
+
+
+export async function getFichasEquipo(id_equipo_fantasy) {
+    const [rows] = await pool.query(`
+        SELECT 
+            f.id_ficha, 
+            f.nombre, 
+            f.descripcion,
+            -- Si 'jornada_uso' no es nulo, significa que ya se usó
+            fu.jornada_uso 
+        FROM 
+            ficha f
+        LEFT JOIN 
+            ficha_usuario fu ON f.id_ficha = fu.id_ficha AND fu.id_equipo_fantasy = ?
+        ORDER BY 
+            f.id_ficha ASC
+    `, [id_equipo_fantasy]);
+
+    return rows.map(ficha => ({
+        ...ficha,
+        usada: ficha.jornada_uso !== null 
+    }));
+}
+
+export async function registrarUsoFicha(id_equipo_fantasy, id_ficha) {
+    
+    const [jornadaRows] = await pool.query(
+        `SELECT MIN(jornada) as proxima_jornada FROM partido WHERE fecha > NOW()`
+    );
+    const jornadaActual = jornadaRows[0].proxima_jornada || 1; 
+
+    await pool.query(`
+        INSERT INTO ficha_usuario (id_equipo_fantasy, id_ficha, jornada_uso)
+        VALUES (?, ?, ?)
+    `, [id_equipo_fantasy, id_ficha, jornadaActual]);
 }
