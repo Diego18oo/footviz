@@ -523,19 +523,26 @@ app.post("/api/fantasy/actualizar-plantilla", authenticateToken, async (req, res
 app.post("/api/fantasy/hacer-fichaje", authenticateToken, async (req, res) => {
     try {
         const userId = req.userId;
-        const { jugadorSaleId, jugadorEntraId } = req.body;
-        const resultado = await  realizarFichaje(userId, jugadorSaleId, jugadorEntraId);
+        // 👇 IMPORTANTE: Recibir id_ficha_activa
+        const { jugadorSaleId, jugadorEntraId, id_ficha_activa } = req.body; 
+
+        if (!jugadorSaleId || !jugadorEntraId) {
+            return res.status(400).json({ error: "Faltan datos de jugadores." });
+        }
+
+        // 👇 Pasamos el ID de la ficha a la función
+        const resultado = await realizarFichaje(userId, jugadorSaleId, jugadorEntraId, id_ficha_activa);
+
         let mensaje = "¡Fichaje realizado con éxito!";
         if (resultado.penalizacion_aplicada) {
             mensaje += ` Se han descontado ${resultado.puntos_restados} puntos por fichaje extra.`;
         }
 
-        res.status(200).json({ message: mensaje });        
-
+        res.status(200).json({ message: mensaje });
 
     } catch (error) {
         console.error("Error al hacer fichaje:", error);
-        if (error.message.includes("Presupuesto insuficiente")) {
+        if (error.message.includes("Presupuesto insuficiente") || error.message.includes("Ya utilizaste")) {
             return res.status(400).json({ error: error.message });
         }
         res.status(500).json({ error: "Error interno del servidor." });

@@ -1613,11 +1613,12 @@ export async function getProximoPartido(id_equipo){
 }
 
 
-export async function realizarFichaje( id_usuario, jugadorSaleId, jugadorEntraId) {
+export async function realizarFichaje( id_usuario, jugadorSaleId, jugadorEntraId, idFichaActiva) {
     const conn = await pool.getConnection();
     await conn.beginTransaction();
 
     try {
+        // 1. Obtener datos del equipo
         const [equipos] = await conn.query(
             `SELECT id_equipo_fantasy, presupuesto_restante, fichajes_jornada_restantes, puntos_totales 
              FROM equipo_fantasy WHERE id_usuario = ? FOR UPDATE`,
@@ -1627,6 +1628,7 @@ export async function realizarFichaje( id_usuario, jugadorSaleId, jugadorEntraId
         if (!equipos.length) throw new Error("Equipo no encontrado");
         const equipo = equipos[0];
 
+        // 2. Obtener precios
         const [jugadores] = await conn.query(
             `SELECT id_jugador, valor_actual FROM valor_jugador_fantasy 
              WHERE id_jugador IN (?, ?)`,
@@ -1635,38 +1637,81 @@ export async function realizarFichaje( id_usuario, jugadorSaleId, jugadorEntraId
         
         const sale = jugadores.find(j => j.id_jugador === jugadorSaleId);
         const entra = jugadores.find(j => j.id_jugador === jugadorEntraId);
-
         if (!sale || !entra) throw new Error("Jugadores no encontrados");
 
-        
+        // 3. Validar Presupuesto (ID 7 = Sin Límites ignora esto)
         const nuevoPresupuesto = parseFloat(equipo.presupuesto_restante) + parseFloat(sale.valor_actual) - parseFloat(entra.valor_actual);
-
-        if (nuevoPresupuesto < 0) {
-            throw new Error("Presupuesto insuficiente para realizar el fichaje.");
+        if (nuevoPresupuesto < 0 && idFichaActiva != 7) {
+            throw new Error("Presupuesto insuficiente.");
         }
 
+        // --- 👇 LÓGICA DE FICHAS Y PENALIZACIÓN 👇 ---
+        let nuevosFichajesRestantes = equipo.fichajes_jornada_restantes - 1; // Por defecto resta 1
         let costoPuntos = 0;
-        let nuevosFichajesRestantes = equipo.fichajes_jornada_restantes - 1;
+        let registrarFicha = false;
 
-        if (equipo.fichajes_jornada_restantes <= 0) {
-            costoPuntos = 5; 
+        // CASO: FICHAJE EXTRA (ID 1)
+        if (idFichaActiva == 1) {
+            // Verificar si ya se usó
+            const [check] = await conn.query(
+                `SELECT id_ficha_usuario FROM ficha_usuario WHERE id_equipo_fantasy = ? AND id_ficha = 1`,
+                [equipo.id_equipo_fantasy]
+            );
+            if (check.length > 0) throw new Error("Ya utilizaste tu Fichaje Extra esta temporada.");
+
+            // EFECTO: No restamos fichajes (se mantiene igual que antes)
+            nuevosFichajesRestantes = equipo.fichajes_jornada_restantes; 
+            costoPuntos = 0; // Sin penalización
+            registrarFicha = true; // Hay que marcarla como usada
+        }
+
+        // CASO: COMODÍN (ID 6) o SIN LÍMITES (ID 7)
+        else if (idFichaActiva == 6 || idFichaActiva == 7) {
+            // Verificar si ya se usó (opcional, o confiar en el frontend/app.js)
+             const [check] = await conn.query(
+                `SELECT id_ficha_usuario FROM ficha_usuario WHERE id_equipo_fantasy = ? AND id_ficha = ?`,
+                [equipo.id_equipo_fantasy, idFichaActiva]
+            );
+            const yaEstabaActiva = check.length > 0;
             
+            nuevosFichajesRestantes = equipo.fichajes_jornada_restantes; 
+            costoPuntos = 0;
+            
+            // 3. Solo registramos la ficha si es la PRIMERA vez que la activa
+            registrarFicha = !yaEstabaActiva;
         }
         
+        // CASO NORMAL (Sin ficha de transferencia activa)
+        else {
+            // Si nos quedamos en negativos, cobramos penalización
+            if (nuevosFichajesRestantes < 0) {
+                costoPuntos = 5;
+            }
+        }
+
         const nuevosPuntosTotales = equipo.puntos_totales - costoPuntos;
 
+        // --- 4. REGISTRAR USO DE FICHA (Si aplica) ---
+        if (registrarFicha) {
+            // Obtenemos la jornada actual para el registro
+            const [jornadaRows] = await conn.query(`SELECT MIN(jornada) as proxima FROM partido WHERE fecha > NOW()`);
+            const jornadaActual = jornadaRows[0].proxima || 1;
+
+            await conn.query(
+                `INSERT INTO ficha_usuario (id_equipo_fantasy, id_ficha, jornada_uso) VALUES (?, ?, ?)`,
+                [equipo.id_equipo_fantasy, idFichaActiva, jornadaActual]
+            );
+        }
+
+        // --- 5. EJECUTAR CAMBIOS (PLANTILLA Y EQUIPO) ---
         await conn.query(
-            `UPDATE plantilla_fantasy 
-             SET id_jugador = ?, precio_compra = ? 
+            `UPDATE plantilla_fantasy SET id_jugador = ?, precio_compra = ? 
              WHERE id_equipo_fantasy = ? AND id_jugador = ?`,
             [jugadorEntraId, entra.valor_actual, equipo.id_equipo_fantasy, jugadorSaleId]
         );
 
         await conn.query(
-            `UPDATE equipo_fantasy 
-             SET presupuesto_restante = ?, 
-                 fichajes_jornada_restantes = ?, 
-                 puntos_totales = ?
+            `UPDATE equipo_fantasy SET presupuesto_restante = ?, fichajes_jornada_restantes = ?, puntos_totales = ?
              WHERE id_equipo_fantasy = ?`,
             [nuevoPresupuesto, nuevosFichajesRestantes, nuevosPuntosTotales, equipo.id_equipo_fantasy]
         );
@@ -1736,7 +1781,7 @@ export async function getMVPdeLaSemana(){
         FROM 
             partido p
         WHERE 
-            p.fecha <= CURDATE() 
+            p.fecha <= CURDATE() - 1
     ),
     LatestPlayerTeam AS (
         SELECT

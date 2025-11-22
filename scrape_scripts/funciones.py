@@ -2340,12 +2340,19 @@ def update_fantasy_team_points(engine):
     FantasyPlayerPoints AS (
         SELECT
             pf.id_equipo_fantasy,
-            -- Lógica de puntos: 
-            -- 1. Solo cuentan si 'es_titular' = 1
-            -- 2. Si 'es_capitan' = 1, los puntos se multiplican x2 (1 + 1)
-            -- 3. Si no es capitán ('es_capitan' = 0), se multiplican x1 (1 + 0)
+            
             CASE
-                WHEN pf.es_titular = 1 THEN COALESCE(pjj.puntos_fantasy, 0) * (1 + pf.es_capitan)
+                WHEN pf.es_titular = 1 THEN 
+                    COALESCE(pjj.puntos_fantasy, 0) * (
+                        CASE 
+                            -- Si NO es capitán, multiplicador base es 1
+                            WHEN pf.es_capitan = 0 THEN 1
+                            -- Si ES capitán Y usó la ficha 'Capitán x3' (ID 4), multiplica por 3
+                            WHEN pf.es_capitan = 1 AND fu.id_ficha IS NOT NULL THEN 3
+                            -- Si ES capitán Y NO usó la ficha, multiplica por 2 (normal)
+                            ELSE 2
+                        END
+                    )
                 ELSE 0
             END AS calculated_points
         FROM
@@ -2353,6 +2360,10 @@ def update_fantasy_team_points(engine):
         JOIN
             jugador j ON pf.id_jugador = j.id_jugador
         -- Encontrar el equipo/temporada real más reciente del jugador
+        LEFT JOIN
+            ficha_usuario fu ON pf.id_equipo_fantasy = fu.id_equipo_fantasy 
+            AND fu.id_ficha = 4 
+            AND fu.jornada_uso = (SELECT MAX(jornada) FROM partido WHERE fecha <= CURDATE())
         LEFT JOIN
             LatestPlayerTeam lpt ON j.id_jugador = lpt.jugador AND lpt.rn = 1
         -- Encontrar el último partido de ese equipo real

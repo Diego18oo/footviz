@@ -300,6 +300,19 @@
             let draggedPlayerId = null;
             let playerToSell = null;
             let transferCurrentPage = 1;
+            let retroCaptainActive = false;    
+            let tripleCaptainActive = false;   
+            let tacticalChangeActive = false;  
+            let wildcardActive = false;        
+            let freeHitActive = false;
+
+            const CHIP_UNLOCK_LEVELS = {
+                3: 9,  // Retro
+                4: 10, // x3
+                5: 11, // Táctico
+                6: 12, // Comodín
+                7: 12  // Sin Límites
+            };
             const transferPlayersPerPage = 10;
             const saveChangesButton = document.getElementById('save-team-changes-btn');
             const playerModal = document.getElementById('player-info-modal');
@@ -441,44 +454,78 @@
 
             async function executeTransfer(playerToBuyId) {
                 if (!playerToSell) return;
+                
                 const playerToBuy = allAvailablePlayers.find(p => p.id_jugador === playerToBuyId);
+                
+                // --- Validación de equipo (máx 2 por club) ---
                 let countSameTeam = 0;
                 miPlantilla.forEach(p => {
                     if (p.id_equipo === playerToBuy.id_equipo && p.id_jugador !== playerToSell.id_jugador) {
                         countSameTeam++;
                     }
                 });
-                if (countSameTeam >= 2) {
+                if (countSameTeam >= 2 && !freeHitActive) { // Free Hit ignora límite de equipo
                     alert(`No puedes fichar a ${playerToBuy.nombre_jugador}, ya tienes 2 jugadores de ${playerToBuy.nombre_equipo}.`);
                     return;
                 }
+
+                // --- Validación de Fichajes Restantes (con Comodín/Free Hit) ---
                 const fichajesRestantes = parseInt(document.getElementById('transfers-remaining').textContent);
                 
-                if (fichajesRestantes <= 0) {
+                // Si NO tienes fichajes Y NO tienes fichas activas, pregunta por la penalización
+                if (fichajesRestantes <= 0 && !wildcardActive && !freeHitActive) {
                      if (!confirm(`Ya no te quedan fichajes. ¿Deseas hacer este fichaje con un costo de -5 puntos?`)) {
                         return;
                     }
                 }
+
+                // --- 👇 CÁLCULO DEL PRESUPUESTO (AHORA ESTÁ AQUÍ) 👇 ---
+                const budgetElement = document.getElementById('budget-remaining');
+                const currentBudget = parseFloat(budgetElement.textContent.replace(' M', ''));
+                
+                // Calculamos: Presupuesto Actual + Venta - Compra
+                const nuevoPresupuesto = currentBudget + parseFloat(playerToSell.precio_compra) - parseFloat(playerToBuy.valor_actual);
+                // --- 👆 ---------------------------------------- 👆 ---
+
+                // --- Validación de Presupuesto (con Free Hit) ---
+                if (nuevoPresupuesto < 0 && !freeHitActive) { 
+                    alert(`Presupuesto insuficiente. Te faltan ${Math.abs(nuevoPresupuesto).toFixed(2)}M`); 
+                    return;
+                }
+
+                // Confirmación Final
                 if (!confirm(`¿Confirmar fichaje?\n\nVENDER: ${playerToSell.nombre_jugador}\nCOMPRAR: ${playerToBuy.nombre_jugador}`)) {
                     return;
                 }
+
+                // --- Llamada al Backend ---
                 try {
                     const response = await fetch('/api/fantasy/hacer-fichaje', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             jugadorSaleId: playerToSell.id_jugador,
-                            jugadorEntraId: playerToBuyId
+                            jugadorEntraId: playerToBuyId,
+                            id_ficha_activa: activeChipId 
                         })
                     });
+
                     if (!response.ok) {
                         const result = await response.json();
                         throw new Error(result.error || 'Error en el servidor');
                     }
+                    
                     const result = await response.json();
                     alert(result.message);
-                    fichajesRealizadosEnSesion++; 
-                    actualizarContadorFichajes();
+                    
+                    if (!wildcardActive && !freeHitActive) {
+                        fichajesRealizadosEnSesion++; 
+                        actualizarContadorFichajes();
+                    }
+                    
+                    // Recargar para ver los cambios reflejados
+                    window.location.reload(); 
+
                 } catch (error) {
                     alert("Error al realizar el fichaje: " + error.message);
                 }
@@ -534,15 +581,52 @@
             }
 
             //RQF7
-            function renderChips(fichasUsuario) {
+            function renderChips(fichas) {
                 const chipsList = document.getElementById('chips-list');
                 chipsList.innerHTML = ''; 
-                fichasUsuario.forEach(ficha => {
+                const userLevel = parseInt(document.getElementById('user-level').textContent) || 1;
+                fichas.forEach(ficha => {
                     const button = document.createElement('button');
-                    button.id = `chip-${ficha.id_ficha}`; 
-                    button.textContent = ficha.nombre; 
-                    button.disabled = ficha.jornada_uso !== null; 
-                    button.onclick = () => toggleChip(ficha.id_ficha, button);
+                    button.dataset.id = ficha.id_ficha; 
+                    button.textContent = ficha.nombre;
+                    button.style.backgroundColor = "#3b82f6";
+                    button.style.color = "white";
+                    button.style.border = "none";
+                    button.style.padding = "8px 12px";
+                    button.style.borderRadius = "6px";
+                    button.style.cursor = "pointer";
+                    button.style.marginRight = "10px";
+                    button.style.fontSize = "0.9rem";
+                    
+                    // 1. Verificar si está usada (prioridad máxima)
+                    if (ficha.usada) {
+                        button.disabled = true;
+                        button.textContent += " (Usada)";
+                        button.style.backgroundColor = "#475569";
+                        if (ficha.id_ficha == 6) { 
+                            wildcardActive = true;
+                            activeChipId = 6; // Importante: Mantener el ID para enviarlo al backend
+                            document.getElementById('transfers-remaining').textContent = "∞";
+                        }
+                        if (ficha.id_ficha == 7) {
+                            freeHitActive = true;
+                            activeChipId = 7;
+                            document.getElementById('transfers-remaining').textContent = "∞";
+                        }
+                    } 
+                    // 2. Verificar si tiene el nivel (solo para las nuevas)
+                    else if (CHIP_UNLOCK_LEVELS[ficha.id_ficha] && userLevel < CHIP_UNLOCK_LEVELS[ficha.id_ficha]) {
+                        button.disabled = true;
+                        button.textContent += ` (Nvl ${CHIP_UNLOCK_LEVELS[ficha.id_ficha]})`;
+                        button.style.backgroundColor = "#334155"; // Un gris diferente para bloqueado
+                        button.style.opacity = "0.6";
+                        button.title = "Sube de nivel para desbloquear";
+                    }
+                    // 3. Disponible
+                    else {
+                        button.onclick = () => toggleChip(ficha.id_ficha, button);
+                    }
+                    
                     chipsList.appendChild(button);
                 });
             }
@@ -675,6 +759,7 @@
             function isFormationValid(plantilla) {
                 const titulares = plantilla.filter(p => p.es_titular === 1);
                 if (titulares.length !== 11) return false; 
+                if (tacticalChangeActive) return true;
 
                 const positions = { G: 0, D: 0, M: 0, F: 0 };
                 titulares.forEach(p => {
@@ -688,7 +773,7 @@
             //RQF2
             function  handleSwap(player1_id, player2_id) {
                 const fechaHoy = new Date();
-                const diasNoPermitidos = [0,1,5,6];
+                const diasNoPermitidos = [0,1,6];
                 const diaHoy = fechaHoy.getDay();
                 const player1 = miPlantilla.find(p => p.id_jugador === player1_id);
                 const player2 = miPlantilla.find(p => p.id_jugador === player2_id);
@@ -825,6 +910,11 @@
                          }
                     }
                 }
+
+                if (!retroCaptainActive && newCaptain.puntos_ultima_jornada_equipo > 0) {
+                    alert('No puedes hacer capitán a un jugador que ya ha jugado (necesitas la ficha Retro).');
+                    return;
+                }
                 
 
 
@@ -841,7 +931,7 @@
             function handleTransfer() {
                 const now = new Date();
                 const dayOfWeek = now.getDay(); 
-                const allowedDays = [2, 3, 4]; 
+                const allowedDays = [2, 3, 4, 5]; 
                 if (!allowedDays.includes(dayOfWeek)) {
                     alert("¡Mercado de fichajes cerrado!\n\nSolo puedes realizar fichajes los martes, miércoles y jueves.");
                     closePlayerModal();
@@ -861,7 +951,7 @@
                 const fichajesRestantesElement = document.getElementById('transfers-remaining');
                 const fichajesRestantes = parseInt(fichajesRestantesElement.textContent);
                 //RQNF4
-                if (fichajesRestantes <= 0) {
+                if (fichajesRestantes <= 0 && !wildcardActive && !freeHitActive) {
                     if (!confirm(`Ya no te quedan fichajes. ¿Deseas hacer este fichaje con un costo de -5 puntos?`)) {
                         return;
                     }
@@ -940,6 +1030,8 @@
             function toggleChip(id, btn) {
                 if (activeChipId === id) {
                     activeChipId = null;
+                    resetChipEffects();
+                    activeChipId = null;
                     btn.style.backgroundColor = "#4f46e5";
                     btn.textContent = btn.textContent.replace(" (Activa)", "");
                     
@@ -953,15 +1045,39 @@
                     }
 
                     activeChipId = id;
+                    resetChipEffects();
+                    switch(id) {
+                        case 1: activarFichajeExtra(); break;
+                        case 2: activarDobleCapitan(); break;
+                        case 3: retroCaptainActive = true; alert("¡Capitán Retro activo! Puedes elegir a quien ya jugó."); break;
+                        case 4: tripleCaptainActive = true; alert("¡Capitán x3 activo! Tus puntos valdrán triple."); break;
+                        case 5: tacticalChangeActive = true; alert("¡Cambio Táctico activo! Formaciones libres."); break;
+                        case 6: 
+                            wildcardActive = true; 
+                            document.getElementById('transfers-remaining').textContent = "∞"; // Visualmente infinito
+                            alert("¡Comodín activo! Fichajes ilimitados."); 
+                            break;
+                        case 7: freeHitActive = true; alert("¡Sin Límites activo! Presupuesto y fichajes ilimitados (solo por hoy)."); break;
+                    }
                     btn.style.backgroundColor = "#059669"; 
                     btn.textContent += " (Activa)";
 
-                    if (id === 1) activarFichajeExtra();
-                    if (id === 2) activarDobleCapitan();
                 }
                 
                 showSaveChangesButton();
             }
+
+            function resetChipEffects() {
+                extraTransferActive = false;
+                doubleCaptainActive = false;
+                retroCaptainActive = false;
+                tripleCaptainActive = false;
+                tacticalChangeActive = false;
+                wildcardActive = false;
+                freeHitActive = false;
+                // También deberías resetear el texto de fichajes si desactivas el extra/comodín
+            }
+
             async function saveChangesToBackend() {
                 console.log("Guardando cambios en el servidor...");
                 const plantillaActualizada = miPlantilla.map(p => ({
