@@ -57,7 +57,7 @@
             .theme-toggle-button:hover { background: #3a3a5a; transform: scale(1.1); }
             /* --- Contenedor Principal --- */
             .dashboard-wrapper { display: flex; gap: 30px; max-width: 1400px; margin: 0 auto; align-items: flex-start; }
-            .dashboard-column-left { flex: 2; }
+            .dashboard-column-left { flex: 2;  }
             .dashboard-column-right { flex: 2; display: flex; flex-direction: column; gap: 30px; }
             .full-width-wrapper { max-width: 750px; margin: 30px auto 0 auto; }
             /* --- Estilo de Tarjeta --- */
@@ -182,14 +182,15 @@
                             <table id="estadisticas-ofensivas-equipo">
                                 <thead>
                                     <tr>
-                                        <th class="sortable-header" data-sort-key="nombre">Club</th>
-                                        <th class="sortable-header" data-sort-key="partidos_jugados">PJ</th>
-                                        <th class="sortable-header" data-sort-key="goles_anotados">Goles</th>
-                                        <th class="sortable-header" data-sort-key="disparos">Disparos</th>
-                                        <th class="sortable-header" data-sort-key="disparos_a_puerta">Disp. Puerta</th>
-                                        <th class="sortable-header" data-sort-key="porcentaje_disparos_a_puerta">% Disp. Puerta</th>
-                                        <th class="sortable-header" data-sort-key="xg">xG</th>
-                                        <th class="sortable-header" data-sort-key="disparos_por_90">Disp./PJ</th>
+                                        <th class="sortable-header" data-sort-key="nombre" title="Club">Club</th>
+                                        <th class="sortable-header" data-sort-key="partidos_jugados" title="Partidos jugados">PJ</th>
+                                        <th class="sortable-header" data-sort-key="goles_anotados" title="Goles">Goles</th>
+                                        <th class="sortable-header" data-sort-key="disparos" title="Disparos">Disparos</th>
+                                        <th class="sortable-header" data-sort-key="disparos_a_puerta" title="Disparos a puerta">Disp. Puerta</th>
+                                        <th class="sortable-header" data-sort-key="porcentaje_disparos_a_puerta" title="Porcentaje de disparos a puerta">% Disp. Puerta</th>
+                                        <th class="sortable-header" data-sort-key="xg" title="Goles esperados">xG</th>
+                                        <th class="sortable-header" data-sort-key="disparos_por_90" title="Disparos por partido">Disp./PJ</th>
+                                        <th class="sortable-header" data-sort-key="goles_de_penal" title="Goles de penal">Penal</th>
                                         <th>Acción</th>
                                     </tr>
                                 </thead>
@@ -338,6 +339,7 @@
                             <td>${stat.disparos}</td> <td>${stat.disparos_a_puerta}</td>
                             <td>${stat.porcentaje_disparos_a_puerta}</td> <td>${stat.xg}</td>
                             <td>${stat.disparos_por_90}</td>
+                            <td>${stat.goles_de_penal}</td>
                             <td><button class="btn-estadisticas" data-equipo-id="${stat.id_equipo}" data-equipo-nombre="${stat.nombre}">🥅</button></td>
                         `;
                         tbodyStatsOfensivas.appendChild(fila);

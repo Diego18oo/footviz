@@ -246,7 +246,7 @@
                 //RQNF8
                 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
                 if (data.contrasenia !== data.repetirContrasenia) {
-                    alert('Las contraseñas no coinciden.');
+                    alert('Las contraseñas debe contener minimo 8 caracteres, una minuscula, una mayuscula y un numero.');
                     return; 
                 }
 

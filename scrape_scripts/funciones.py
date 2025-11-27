@@ -2307,80 +2307,63 @@ def update_fantasy_team_points(engine):
 
     sql_gameweek_points = """
     WITH 
-    -- CTE 1: Equipo real más reciente de cada jugador
+    -- CTE 1: Equipo real más reciente (IGUAL)
     LatestPlayerTeam AS (
         SELECT
-            pe.jugador,
-            pe.equipo,
-            pe.temporada,
+            pe.jugador, pe.equipo, pe.temporada,
             ROW_NUMBER() OVER(PARTITION BY pe.jugador ORDER BY pe.id_plantilla DESC) as rn
-        FROM
-            plantilla_equipos pe
+        FROM plantilla_equipos pe
     ),
-    -- CTE 2: Último partido completado de cada equipo real
+    -- CTE 2: Último partido completado (IGUAL)
     LatestTeamMatch AS (
         SELECT
-            team_id,
-            temporada_id,
-            match_id,
+            team_id, temporada_id, match_id,
             ROW_NUMBER() OVER(PARTITION BY team_id, temporada_id ORDER BY match_fecha DESC, match_id DESC) as rn
         FROM (
-            -- Partidos como local
-            SELECT p.equipo_local as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha
-            FROM partido p
-            WHERE p.fecha <= CURDATE()
+            SELECT p.equipo_local as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha FROM partido p WHERE p.fecha <= CURDATE()
             UNION ALL
-            -- Partidos como visitante
-            SELECT p.equipo_visitante as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha
-            FROM partido p
-            WHERE p.fecha <= CURDATE()
+            SELECT p.equipo_visitante as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha FROM partido p WHERE p.fecha <= CURDATE()
         ) AS all_team_matches
     ),
-    -- CTE 3: Puntos de la última jornada para CADA jugador en CADA plantilla fantasy
+    -- CTE 3: Puntos calculados (MODIFICADA)
     FantasyPlayerPoints AS (
         SELECT
             pf.id_equipo_fantasy,
+            ef.id_usuario, -- ⬅️ 1. AGREGAMOS EL ID_USUARIO AQUÍ
             
             CASE
-                WHEN pf.es_titular = 1 THEN 
-                    COALESCE(pjj.puntos_fantasy, 0) * (
-                        CASE 
-                            -- Si NO es capitán, multiplicador base es 1
-                            WHEN pf.es_capitan = 0 THEN 1
-                            -- Si ES capitán Y usó la ficha 'Capitán x3' (ID 4), multiplica por 3
-                            WHEN pf.es_capitan = 1 AND fu.id_ficha IS NOT NULL THEN 3
-                            -- Si ES capitán Y NO usó la ficha, multiplica por 2 (normal)
-                            ELSE 2
-                        END
-                    )
+                WHEN pf.es_titular = 1 THEN COALESCE(pjj.puntos_fantasy, 0) * (
+                    CASE 
+                        WHEN pf.es_capitan = 0 THEN 1
+                        WHEN pf.es_capitan = 1 AND fu.id_ficha IS NOT NULL THEN 3
+                        ELSE 2
+                    END
+                )
                 ELSE 0
             END AS calculated_points
         FROM
             plantilla_fantasy pf
+        -- ⬅️ 2. HACEMOS JOIN CON LA TABLA DE EQUIPOS PARA SACAR EL USUARIO
+        JOIN
+            equipo_fantasy ef ON pf.id_equipo_fantasy = ef.id_equipo_fantasy
         JOIN
             jugador j ON pf.id_jugador = j.id_jugador
-        -- Encontrar el equipo/temporada real más reciente del jugador
-        LEFT JOIN
-            ficha_usuario fu ON pf.id_equipo_fantasy = fu.id_equipo_fantasy 
-            AND fu.id_ficha = 4 
-            AND fu.jornada_uso = (SELECT MAX(jornada) FROM partido WHERE fecha <= CURDATE())
-        LEFT JOIN
-            LatestPlayerTeam lpt ON j.id_jugador = lpt.jugador AND lpt.rn = 1
-        -- Encontrar el último partido de ese equipo real
-        LEFT JOIN
-            LatestTeamMatch ltm ON lpt.equipo = ltm.team_id AND lpt.temporada = ltm.temporada_id AND ltm.rn = 1
-        -- Encontrar los puntos del jugador para ESE partido específico
-        LEFT JOIN
-            puntos_jugador_jornada pjj ON pf.id_jugador = pjj.id_jugador AND ltm.match_id = pjj.id_partido
+        -- (Resto de tus JOINS siguen igual...)
+        LEFT JOIN ficha_usuario fu ON pf.id_equipo_fantasy = fu.id_equipo_fantasy AND fu.id_ficha = 4 AND fu.jornada_uso = (SELECT MAX(jornada) FROM partido WHERE fecha <= CURDATE())
+        LEFT JOIN LatestPlayerTeam lpt ON j.id_jugador = lpt.jugador AND lpt.rn = 1
+        LEFT JOIN LatestTeamMatch ltm ON lpt.equipo = ltm.team_id AND lpt.temporada = ltm.temporada_id AND ltm.rn = 1
+        LEFT JOIN puntos_jugador_jornada pjj ON pf.id_jugador = pjj.id_jugador AND ltm.match_id = pjj.id_partido
     )
-    -- Consulta final: Sumar todos los puntos de los jugadores por cada equipo fantasy
-    SELECT
-        id_equipo_fantasy,
-        SUM(calculated_points) AS total_jornada_points
-    FROM
-        FantasyPlayerPoints
-    GROUP BY
-        id_equipo_fantasy;
+
+-- Consulta final: (MODIFICADA)
+SELECT
+    id_equipo_fantasy,
+    id_usuario, -- ⬅️ 3. LO SELECCIONAMOS AQUÍ TAMBIÉN
+    SUM(calculated_points) AS total_jornada_points
+FROM
+    FantasyPlayerPoints
+GROUP BY
+    id_equipo_fantasy, id_usuario; 
     """
     
     meta = MetaData()
@@ -3061,12 +3044,12 @@ def asignar_piezas_rompecabezas(engine, df_usuarios_con_nivel):
 
    
     sql_estadios = text("""
-        SELECT 
+       SELECT 
             u.id_usuario, 
-            e.id_estadio
+            e.estadio AS id_estadio 
         FROM usuario u
         JOIN equipo e ON u.equipo_favorito_id = e.id_equipo
-        WHERE u.id_usuario = ANY(:user_ids)
+        WHERE u.id_usuario IN :user_ids
     """)
     
     df_estadios_fav = pd.read_sql(

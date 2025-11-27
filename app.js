@@ -89,7 +89,7 @@ app.get("/api/fantasy/logros", authenticateToken, async (req, res) => {
                 nombre: logro.nombre,
                 descripcion: logro.descripcion,
                 rarity: logro.rarity,
-                unlocked: logro.unlocked === 1 
+                unlocked: logro.unlocked  
                 
             };
         });

@@ -759,10 +759,17 @@
                         container.innerHTML = htmlTabla;
 
                         // 5. Dibujar la barra de resultados (L/E/V)
+                        const sumaTotal = probTotalLocal + probTotalEmpate + probTotalVisitante;
+                        
+
+                        const pLocal = (probTotalLocal / sumaTotal) * 100;
+                        const pEmpate = (probTotalEmpate / sumaTotal) * 100;
+                        const pVisitante = (probTotalVisitante / sumaTotal) * 100;
+                        console.log(pLocal, pEmpate, pVisitante);
                         resultadoBar.innerHTML = `
-                            <div class="popular-local" style="width: ${probTotalLocal * 100}%" title="Victoria Local">${(probTotalLocal * 100).toFixed(1)}%</div>
-                            <div class="popular-empate" style="width: ${probTotalEmpate * 100}%" title="Empate">${(probTotalEmpate * 100).toFixed(1)}%</div>
-                            <div class="popular-visitante" style="width: ${probTotalVisitante * 100}%" title="Victoria Visitante">${(probTotalVisitante * 100).toFixed(1)}%</div>
+                            <div class="popular-local" style="width: ${pLocal}%" title="Victoria Local">${pLocal.toFixed(1)}%</div>
+                            <div class="popular-empate" style="width: ${pEmpate}%" title="Empate">${pEmpate.toFixed(1)}%</div>
+                            <div class="popular-visitante" style="width: ${pVisitante}%" title="Victoria Visitante">${pVisitante.toFixed(1)}%</div>
                         `;
 
                     } catch (error) {

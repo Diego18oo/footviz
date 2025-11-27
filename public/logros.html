@@ -202,6 +202,63 @@
                 background-color: rgba(255, 255, 255, 0.7);
                 color: rgba(0, 0, 0, 0.3);
             }
+            .achievement-item {
+                display: flex;
+                align-items: center;
+                gap: 20px;
+                padding: 15px;
+                border-radius: 12px;
+                
+                /* ESTADO BLOQUEADO (Por defecto) */
+                background-color: #252540; 
+                border: 1px solid #333;
+                opacity: 0.5; /* Se ve medio transparente/apagado */
+                filter: grayscale(0.8); /* Casi blanco y negro */
+                transition: all 0.3s ease;
+            }
+
+            /* ESTADO DESBLOQUEADO (Highlight) */
+            .achievement-item.unlocked {
+                background-color: #1e1e3f; /* Fondo normal */
+                border: 2px solid #059669; /* Borde VERDE brillante */
+                opacity: 1; /* Totalmente visible */
+                filter: none; /* A todo color */
+                box-shadow: 0 0 15px rgba(5, 150, 105, 0.3); /* Resplandor verde */
+            }
+
+            /* Icono */
+            .achievement-icon {
+                font-size: 2.5rem;
+                color: #a0a0c0;
+                width: 60px;
+                text-align: center;
+                position: relative;
+            }
+
+            /* Icono cuando está desbloqueado */
+            .achievement-item.unlocked .achievement-icon {
+                color: #059669; /* Icono verde */
+            }
+            
+            /* Título cuando está desbloqueado */
+            .achievement-item.unlocked h3 {
+                color: #ffffff;
+                font-weight: 700;
+            }
+            .achievement-item.unlocked p {
+                color: #e0e0e0;
+            }
+            
+            /* Badge de "Completado" */
+            .status-badge {
+                font-size: 0.8rem;
+                font-weight: 700;
+                padding: 5px 10px;
+                border-radius: 20px;
+                text-transform: uppercase;
+            }
+            .status-locked { background-color: #333; color: #888; }
+            .status-unlocked { background-color: #059669; color: white; }
         </style>
     </head>
     <body>
@@ -276,38 +333,55 @@
                 }
 
                 function createAchievementHTML(logro) {
-                    // RQF1
-                    const unlockedClass = logro.unlocked ? 'unlocked' : '';
-                    
-                    // RQF2
-                    const progressPercent = (logro.target > 0) ? (logro.current / logro.target) * 100 : 0;
-                    const progressText = (logro.target > 1) ? `${logro.current} / ${logro.target}` : '';
-                    
-                    // RQF4
-                    const rarityText = `Desbloqueado por ${logro.rarity}% de los jugadores`;
+                // 1. Verificar si está desbloqueado (El JSON trae 1 o 0)
+                const isUnlocked = logro.unlocked === 1;
 
-                    return `
-                        <div class="achievement-item ${unlockedClass}">
-                            <div class="achievement-icon">
-                                <ion-icon name="${logro.icono || 'ribbon-outline'}"></ion-icon>
-                            </div>
-                            
-                            <div class="achievement-info">
-                                <h3>${logro.nombre}</h3>
-                                <p>${logro.descripcion}</p>
-                            </div>
-                            
-                            <div class="achievement-progress">
-                                <p class="rarity">${rarityText}</p>
-                                <p class="progress-text">${progressText}</p>
-                                <div class="progress-bar">
-                                    <div class="progress-bar-fill" style="width: ${progressPercent}%;"></div>
-                                </div>
+                // 2. Definir clases y textos según el estado
+                const activeClass = isUnlocked ? 'unlocked' : '';
+                const iconName = logro.icono || 'ribbon-outline'; // Icono por defecto si viene null
+                
+                // Badge de estado (Texto a la derecha)
+                const badgeHTML = isUnlocked 
+                    ? `<span class="status-badge status-unlocked"><ion-icon name="checkmark-circle"></ion-icon> Completado</span>`
+                    : `<span class="status-badge status-locked"><ion-icon name="lock-closed"></ion-icon> Bloqueado</span>`;
+
+                // Progreso (Solo mostrar si NO está desbloqueado y tiene meta > 1)
+                // Si ya está desbloqueado, mostramos 100%
+                let progressHTML = '';
+                if (!isUnlocked && logro.target > 1) {
+                    const percent = Math.min(100, (logro.current / logro.target) * 100);
+                    progressHTML = `
+                        <div class="achievement-progress">
+                            <p class="progress-text">${logro.current} / ${logro.target}</p>
+                            <div class="progress-bar">
+                                <div class="progress-bar-fill" style="width: ${percent}%;"></div>
                             </div>
                         </div>
                     `;
                 }
 
+                // RQF4: Rareza
+                const rarityText = `Rareza: ${parseFloat(logro.rarity).toFixed(1)}%`;
+
+                return `
+                    <div class="achievement-item ${activeClass}">
+                        <div class="achievement-icon">
+                            <ion-icon name="${iconName}"></ion-icon>
+                        </div>
+                        
+                        <div class="achievement-info">
+                            <h3>${logro.nombre}</h3>
+                            <p>${logro.descripcion}</p>
+                            <p style="font-size: 0.75rem; color: #f59e0b; margin-top: 5px;">${rarityText}</p>
+                        </div>
+
+                        <div style="text-align: right; min-width: 120px;">
+                            ${badgeHTML}
+                            ${progressHTML}
+                        </div>
+                    </div>
+                `;
+            }
                 async function loadPuzzle() {
                     const container = document.getElementById('puzzle-container');
                     if (!container) return;

@@ -305,7 +305,8 @@ export async function getEstadisticasOfensivasEquipo(temporada) {
             ee.disparos_a_puerta,
             ee.disparos_a_puerta / ee.disparos * 100 as porcentaje_disparos_a_puerta,
             ee.xg,
-            ee.disparos / ee.partidos_jugados as disparos_por_90
+            ee.disparos / ee.partidos_jugados as disparos_por_90,
+            ee.goles_de_penal
         FROM estadisticas_equipo ee 
         JOIN equipo e on ee.equipo = e.id_equipo
         WHERE ee.temporada = ?;
@@ -1462,11 +1463,11 @@ export async function getPlantillaFantasy(id_usuario){
             FROM (
                 SELECT p.equipo_local as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha
                 FROM partido p
-                WHERE p.fecha <= CURDATE() + 4 
+                WHERE p.fecha <= CURDATE()  
                 UNION ALL
                 SELECT p.equipo_visitante as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha
                 FROM partido p
-                WHERE p.fecha <= CURDATE() + 4
+                WHERE p.fecha <= CURDATE() 
             ) AS all_team_matches
         )
         SELECT
@@ -2470,7 +2471,7 @@ export async function getLogrosBase(id_usuario) {
             unlocked DESC, rarity ASC;
     `;
     
-    const [rows] = await pool.query(sql, [totalUsers, id_usuario]);
+    const [rows] = await pool.query(sql, [ id_usuario]);
     return rows;
 }
 

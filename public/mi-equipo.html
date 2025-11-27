@@ -559,7 +559,7 @@
             function createPlayerSlotHTML(player) {
                 const now = new Date();
                 const dayOfWeek = now.getDay(); 
-                const allowedDays = [2, 3, 4, 5];
+                const allowedDays = [2,   4, 5];
                 let currentGameweekPoints = player.puntos_ultima_jornada_equipo || 0;
                 if (allowedDays.includes(dayOfWeek)) {
                     currentGameweekPoints = 0;
@@ -795,15 +795,12 @@
                 if (isFormationValid(tempPlantilla)) {
                     [player1.es_titular, player2.es_titular] = [player2.es_titular, player1.es_titular];
                     console.log(diaHoy);
-                    if (diasNoPermitidos.includes(diaHoy)){
-                        alert("Solo se pueden hacer cambios los dias martes, miercoles y jueves.")
-                        
-                    } else{
-                        if(player1.puntos_ultima_jornada_equipo > 0 || player2.puntos_ultima_jornada_equipo > 0 ){
-                            alert("Cambio invalido, solo pueden entrar jugadores que no han jugado");
-                            return;
-                        }
+                    
+                    if(player1.puntos_ultima_jornada_equipo > 0  ){
+                        alert("Cambio invalido, solo pueden entrar jugadores que no han jugado");
+                        return;
                     }
+                    
 
                     
                     
@@ -876,62 +873,60 @@
                 const lastCaptainChange = localStorage.getItem('lastCaptainChange');
                 const now = new Date().getTime(); 
                 
+                /*
+                if (lastCaptainChange && !doubleCaptainActive) {
+                    const lastChangeTime = parseInt(lastCaptainChange);
+                    const hoursPassed = (now - lastChangeTime) / (1000 * 60 * 60); 
+
+                    //RQF6
+                    if (hoursPassed < 24) {
+                        alert(`Puedes cambiar de capitán solo una vez cada 24 horas. Faltan ${ (24 - hoursPassed).toFixed(1) } horas.`);
+                        closePlayerModal();
+                        return;
+                    }
+                }*/
 
                 const newCaptainId = currentPlayerIdInModal;
                 const newCaptain = miPlantilla.find(p => p.id_jugador === newCaptainId);
-                //RQNF3
-                if (newCaptain.puntos_ultima_jornada_equipo > 0) {
-                    alert('No puedes hacer capitán a un jugador que ya ha jugado esta jornada.');
+                
+                
+                if (!retroCaptainActive && newCaptain.puntos_ultima_jornada_equipo > 0) {
+                    alert('No puedes hacer capitán a un jugador que ya ha jugado esta jornada (necesitas la ficha Capitán Retro).');
                     closePlayerModal();
                     return;
                 }
+
                 const currentCaptains = miPlantilla.filter(p => p.es_capitan === 1);
+                
                 if (doubleCaptainActive) {
                     if (currentCaptains.length < 2) {
                         newCaptain.es_capitan = 1; 
                     } else {
-                        
                         alert("Ya tienes 2 capitanes. Quita uno primero."); 
                         return; 
                     }
                 } else {
+                    // Comportamiento normal: Solo 1 capitán
                     if (currentCaptains.length > 0) {
                         currentCaptains[0].es_capitan = 0; 
                     }
                     newCaptain.es_capitan = 1;
 
-                    const lastCaptainChange = localStorage.getItem('lastCaptainChange');
-                    if (lastCaptainChange) {
-                         const lastChangeTime = parseInt(lastCaptainChange);
-                        const hoursPassed = (now - lastChangeTime) / (1000 * 60 * 60); 
-                         if (hoursPassed < 24) {
-                             alert("Ya tienes un capitan activo"); 
-                             return;
-                         }
-                    }
+                    localStorage.setItem('lastCaptainChange', now.toString());
                 }
-
-                if (!retroCaptainActive && newCaptain.puntos_ultima_jornada_equipo > 0) {
-                    alert('No puedes hacer capitán a un jugador que ya ha jugado (necesitas la ficha Retro).');
-                    return;
-                }
-                
-
 
                 console.log(`Nuevo capitán: ${newCaptain.nombre_jugador}`);
 
                 renderPitchAndBench(miPlantilla);
                 closePlayerModal();
                 showSaveChangesButton(); 
-               
-                localStorage.setItem('lastCaptainChange', now.toString());
             }
-            
+
             // RQF3
             function handleTransfer() {
                 const now = new Date();
                 const dayOfWeek = now.getDay(); 
-                const allowedDays = [2, 3, 4, 5]; 
+                const allowedDays = [0,2, 3, 4]; 
                 if (!allowedDays.includes(dayOfWeek)) {
                     alert("¡Mercado de fichajes cerrado!\n\nSolo puedes realizar fichajes los martes, miércoles y jueves.");
                     closePlayerModal();
@@ -1097,6 +1092,7 @@
                     if (!response.ok) throw new Error('Respuesta del servidor no fue OK');
                     const result = await response.json();
                     alert('¡Cambios guardados con éxito!');
+                    window.reload();
                     activeChipId = null;
                     saveChangesButton.style.display = 'none';
                 } catch (error) {

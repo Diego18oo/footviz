@@ -190,6 +190,9 @@
         <header class="header">
             <h1>FootViz</h1>
             <div class="controls-container">
+                <div class="search-player" style="width: 250px;"> <input type="text" id="headerSearchInput" placeholder="Buscar jugador..." />
+                    <div class="search-results" id="headerSearchResults"></div>
+                </div>
                 <select id="liga">
                     <option value="premierleague" selected>Premier League</option>
                     <option value="laliga">La Liga</option>
@@ -210,18 +213,18 @@
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th class="sortable-header" data-sort-key="nombre_jugador">Jugador</th>
-                                    <th class="sortable-header" data-sort-key="minutos">Min</th>
-                                    <th class="sortable-header" data-sort-key="total_goles">G</th>
-                                    <th class="sortable-header" data-sort-key="disparos">Disp</th>
-                                    <th class="sortable-header" data-sort-key="disparos_a_puerta">Disp P.</th>
-                                    <th class="sortable-header" data-sort-key="porcentaje_disparos_a_puerta">% Disp P.</th>
-                                    <th class="sortable-header" data-sort-key="disparos_por_90">Disp/90</th>
-                                    <th class="sortable-header" data-sort-key="goles_por_disparo">G/Disp</th>
-                                    <th class="sortable-header" data-sort-key="distancia_promedio_de_disparos">Dist. Disp</th>
-                                    <th class="sortable-header" data-sort-key="tiros_libres">TL</th>
-                                    <th class="sortable-header" data-sort-key="penales">Pen</th>
-                                    <th class="sortable-header" data-sort-key="SUM(ejp.goles_esperados)">xG</th> 
+                                    <th class="sortable-header" data-sort-key="nombre_jugador" title="Jugador">Jugador</th>
+                                    <th class="sortable-header" data-sort-key="minutos" title="Minutos jugados">Min</th>
+                                    <th class="sortable-header" data-sort-key="total_goles" title="Goles">G</th>
+                                    <th class="sortable-header" data-sort-key="disparos" title="Disparos">Disp</th>
+                                    <th class="sortable-header" data-sort-key="disparos_a_puerta" title="Disparos a puerta">Disp P.</th>
+                                    <th class="sortable-header" data-sort-key="porcentaje_disparos_a_puerta" title="Porcentaje de disparos a puerta">% Disp P.</th>
+                                    <th class="sortable-header" data-sort-key="disparos_por_90" title="Disparos por partido">Disp/90</th>
+                                    <th class="sortable-header" data-sort-key="goles_por_disparo" title="Goles por disparo">G/Disp</th>
+                                    <th class="sortable-header" data-sort-key="distancia_promedio_de_disparos" title="Distancia promedio de disparos (metros)">Dist. Disp</th>
+                                    <th class="sortable-header" data-sort-key="tiros_libres" title="Tiros Libres">TL</th>
+                                    <th class="sortable-header" data-sort-key="penales" title="Penales">Pen</th>
+                                    <th class="sortable-header" data-sort-key="SUM(ejp.goles_esperados)" title="Goles esperados">xG</th> 
                                 </tr>
                             </thead>
                             <tbody id="maximos-goleadores-jugadores">
@@ -332,6 +335,54 @@
                     "seriea": "/api/estadisticas-ofensivas-serie-a", "bundesliga": "/api/estadisticas-ofensivas-bundesliga",
                     "ligueone": "/api/estadisticas-ofensivas-ligue-one"
                 };
+                
+                function setupHeaderSearch(inputId, resultsId) {
+                    const input = document.getElementById(inputId);
+                    const resultsDiv = document.getElementById(resultsId);
+                    
+                    input.addEventListener("input", async (e) => {
+                        const query = e.target.value;
+                        resultsDiv.innerHTML = "";
+                        
+                        if (query.length < 2) return;
+
+                        // Usamos el mismo endpoint que ya tienes
+                        const res = await fetch(`/api/buscar-jugadores?nombre=${query}`);
+                        const jugadores = await res.json();
+
+                        jugadores.forEach(jugador => {
+                            const div = document.createElement("div");
+                            // Usamos el mismo estilo que tus otros resultados
+                            div.innerHTML = `
+                                <img src="${jugador.imagen_equipo}" width="30" />
+                                <img src="${jugador.imagen_jugador}" width="30" />
+                                ${jugador.nombre_jugador}
+                            `;
+                            div.style.cursor = "pointer";
+                            div.style.padding = "10px";
+                            div.style.borderBottom = "1px solid #1e1e3f";
+                            
+                            // Al hacer clic, redirigir al perfil
+                            div.addEventListener("click", () => {
+                                window.location.href = `jugador.html?id=${jugador.id_jugador}`;
+                            });
+                            
+                            // Efecto hover simple
+                            div.addEventListener("mouseenter", () => div.style.backgroundColor = "#3a3a5a");
+                            div.addEventListener("mouseleave", () => div.style.backgroundColor = "transparent");
+
+                            resultsDiv.appendChild(div);
+                        });
+                    });
+
+                    // Cerrar resultados si se hace clic fuera (opcional pero recomendado)
+                    document.addEventListener("click", (e) => {
+                        if (e.target !== input && e.target !== resultsDiv) {
+                            resultsDiv.innerHTML = "";
+                        }
+                    });
+                }
+                
                 function sortData() {
                     allData.sort((a, b) => {
                         const valA = a[sortColumn];
@@ -697,7 +748,7 @@
                 setupSearch("searchInput1", 1);
                 setupSearch("searchInput2", 2);
 
-
+                setupHeaderSearch("headerSearchInput", "headerSearchResults");
                 // RQF2 estadísticas ofensivas individuales
                 document.querySelectorAll('#estadisticas-ofensivas th[data-sort-key]').forEach(header => {
                     header.addEventListener('click', handleHeaderClick);

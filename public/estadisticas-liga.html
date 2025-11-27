@@ -269,6 +269,8 @@
                 let totalEquiposLiga = 20;
                 let lineChartInstance = null;
                 let barChartInstance = null;
+                let rawDataSlot0 = []; 
+                let rawDataSlot1 = [];
                 const ligaSelect = document.getElementById('liga');
                 const tbody = document.querySelector("#tabla-equipos tbody");
                 let allTeamData = []; 
@@ -404,80 +406,122 @@
             // RQF3
             function cargarGraficaEvo(equipoSeleccionado, nombreEquipo, color, slot){
                 console.log(equipoSeleccionado)
+                if (!equipoSeleccionado || equipoSeleccionado === "") {
+                    if (slot === 0) rawDataSlot0 = [];
+                    else rawDataSlot1 = [];
+                    actualizarGraficoCoordinado();
+                    return;
+                }
                 fetch(`/api/evolucion-equipos/${equipoSeleccionado}`)
                 .then(response => response.json())
                 .then(info => {
                     const evolucion = info[0];
-                    const jornadas = [];
                     const posiciones = [];
 
                     // RQNF2
                     for (let i = 1; i <= 38; i++) {
                         const pos = evolucion[`jornada${i}`];
                         if (pos !== 0 ) {   
-                            jornadas.push(`J${i}`);
                             posiciones.push(pos);
                         }
                         else {
                             break;
                         }
                     }
-                    const ctx = document.getElementById('lineChart').getContext('2d');
 
-                    if (!window.lineChartInstance) {
-                        window.lineChartInstance = new Chart(ctx, 
-                        {
-                            type: 'line',
-                            data: {
-                                labels: jornadas,
-                                datasets: []
-                            },
-                            options: {
-                                responsive: true, maintainAspectRatio: false,
-                                plugins: {
-                                    legend: { position: 'top', labels: { color: '#e0e0e0' } },
-                                    title: { display: true, text: 'Comparación de Posición por Jornada', color: '#ffffff' }
-                                },
-                                scales: {
-                                    y: {
-                                        reverse: true, 
-                                        min: 0,
-                                        max: totalEquiposLiga,   
-                                        ticks: {
-                                            color: '#a0a0c0',
-                                            stepSize: 1 
-                                        },
-                                        grid: { color: 'rgba(224, 224, 224, 0.1)' },
-                                        title: {
-                                            display: true,
-                                            text: 'Posición',
-                                            color: '#e0e0e0'
-                                        }
-                                    },
-                                    x: {
-                                        ticks: { color: '#a0a0c0' },
-                                        grid: { color: 'rgba(224, 224, 224, 0.1)' },
-                                        title: { display: true, text: 'Jornada', color: '#e0e0e0' }
-                                    }
-                                }
-                                
-                            }
-                        });
-
-                    }
-                    
-
-                    window.lineChartInstance.data.datasets[slot] = {
+                    const teamData = {
                         label: nombreEquipo,
                         data: posiciones,
                         borderColor: color,
                         backgroundColor: color,
                         tension: 0.3
-                    }; 
-                    window.lineChartInstance.update();
+                    };
+                    const ctx = document.getElementById('lineChart').getContext('2d');
+                    if (slot === 0) rawDataSlot0 = teamData;
+                    else rawDataSlot1 = teamData;
+
+                    // Llamamos a la función que coordina y recorta
+                    actualizarGraficoCoordinado();
 
                     
                 })
+            }
+
+            function actualizarGraficoCoordinado() {
+                const ctx = document.getElementById('lineChart').getContext('2d');
+                
+                if (!window.lineChartInstance) {
+                     window.lineChartInstance = new Chart(ctx, {
+                        type: 'line',
+                        data: { labels: [], datasets: [] },
+                    options: {
+                            responsive: true, maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'top', labels: { color: '#e0e0e0' } },
+                                title: { display: true, text: 'Comparación de Posición por Jornada', color: '#ffffff' }
+                            },
+                            scales: {
+                                y: {
+                                    reverse: true, 
+                                    min: 0,
+                                    max: totalEquiposLiga,   
+                                    ticks: {
+                                        color: '#a0a0c0',
+                                        stepSize: 1 
+                                    },
+                                    grid: { color: 'rgba(224, 224, 224, 0.1)' },
+                                    title: {
+                                        display: true,
+                                        text: 'Posición',
+                                        color: '#e0e0e0'
+                                    }
+                                },
+                                x: {
+                                    ticks: { color: '#a0a0c0' },
+                                    grid: { color: 'rgba(224, 224, 224, 0.1)' },
+                                    title: { display: true, text: 'Jornada', color: '#e0e0e0' }
+                                }
+                            }
+                            
+                        }
+                     });
+                }
+
+                let dataset0 = null;
+                let dataset1 = null;
+                let maxLength = 0;
+
+                if (rawDataSlot0.data && (!rawDataSlot1.data || rawDataSlot1.data.length === 0)) {
+                    dataset0 = { ...rawDataSlot0 }; 
+                    maxLength = dataset0.data.length;
+                }
+                else if (rawDataSlot1.data && (!rawDataSlot0.data || rawDataSlot0.data.length === 0)) {
+                    dataset1 = { ...rawDataSlot1 }; 
+                    maxLength = dataset1.data.length;
+                }
+                else if (rawDataSlot0.data && rawDataSlot1.data) {
+                    const minLength = Math.min(rawDataSlot0.data.length, rawDataSlot1.data.length);
+                    maxLength = minLength;
+
+                    dataset0 = { ...rawDataSlot0 };
+                    dataset0.data = rawDataSlot0.data.slice(0, minLength);
+
+                    dataset1 = { ...rawDataSlot1 };
+                    dataset1.data = rawDataSlot1.data.slice(0, minLength);
+                }
+
+                const labels = [];
+                for (let i = 1; i <= maxLength; i++) {
+                    labels.push(`J${i}`);
+                }
+
+                window.lineChartInstance.data.labels = labels;
+                window.lineChartInstance.data.datasets = []; 
+                
+                if (dataset0) window.lineChartInstance.data.datasets.push(dataset0);
+                if (dataset1) window.lineChartInstance.data.datasets.push(dataset1);
+                
+                window.lineChartInstance.update();
             }
 
             let barChartInstance = null;
