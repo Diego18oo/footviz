@@ -137,10 +137,16 @@
             <button id="theme-toggle" class="theme-toggle-button">☀️</button>
         </header>
 
+        <div id="comparison-wrapper" class="comparison-wrapper">
+        </div>
+
         
 
-        <div class="comparison-wrapper" id="comparison-wrapper">
-            <!-- Las columnas de los jugadores se generarán aquí -->
+        <div class="card" style="width: 100%; margin-top: 20px;">
+            <h2>Comparativa Directa de Estadísticas</h2>
+            <div class="chart-container" style="height: 400px; position: relative;">
+                <canvas id="sharedStatsChart"></canvas>
+            </div>
         </div>
 
         <div class="card">
@@ -154,6 +160,7 @@
         <script>
             document.addEventListener("DOMContentLoaded", function() {
                 let players = [];
+                let sharedStatsChartInstance = null;
                 let percentileChartInstance = null;
                 const playerColors = ['rgba(54, 162, 235, 1)', 'rgba(255, 99, 132, 1)', 'rgba(75, 192, 192, 1)', 'rgba(255, 206, 86, 1)'];
                 const playerBgColors = ['rgba(54, 162, 235, 0.2)', 'rgba(255, 99, 132, 0.2)', 'rgba(75, 192, 192, 0.2)', 'rgba(255, 206, 86, 0.2)'];
@@ -211,7 +218,14 @@
                         return; 
                     }
                     const playerIndex = players.length;
-                    const newPlayer = { id: pid , index: playerIndex, color: playerColors[playerIndex], bgColor: playerBgColors[playerIndex] };
+                    const newPlayer = { 
+                        id: pid, 
+                        index: playerIndex, 
+                        color: playerColors[playerIndex], 
+                        bgColor: playerBgColors[playerIndex],
+                        nombre: "Cargando...", 
+                        stats: null 
+                    };
                     players.push(newPlayer);
 
                     const placeholder = document.getElementById('add-player-placeholder');
@@ -268,6 +282,8 @@
                         percentileChartInstance.data.datasets = percentileChartInstance.data.datasets.filter(ds => ds.playerId != pid);
                         percentileChartInstance.update();
                     }
+
+                    updateSharedStatsChart();
 
                     if (!document.getElementById('add-player-placeholder') && players.length < 4) {
                         createAddPlayerPlaceholder();
@@ -460,69 +476,132 @@
                 }
 
                 // RQF1
-                function cargarEstadisticasJugador(player){
+                function cargarEstadisticasJugador(player) {
                     fetch(`/api/jugador/${player.id}`)
                     .then(response => response.json())
-                    .then(data => {
-                        if (!data) {
-                            console.error("No se encontraron datos para el jugador:", player);
-                            return;
+                    .then(info => {
+                        if (!info) return;
+
+                        player.nombre = info.nombre_jugador; 
+                        console.log(player.nombre);
+                        
+                        let endpoint = `/api/estadisticas-jugador/${player.id}`;
+                        let labels, keys;
+
+                        if (info.posicion === 'G') {
+                            endpoint = `/api/estadisticas-portero/${player.id}`;
+                            labels = ['Atajadas', 'Goles Recibidos', 'Porterías Imbatidas', 'Penales Atajados', 'Pases', 'Despejes'];
+                            keys = ['atajadas', 'goles_recibidos', 'porterias_imbatidas', 'penales_atajados', 'pases', 'acciones_fuera_del_area'];
+                        } else {
+                            labels = ['Goles', 'Asistencias', 'Toques', 'Pases', 'Acciones Defensivas', 'Oportunidades Creadas', 'Partidos Jugados'];
+                            keys = ['total_goles', 'asistencias', 'toques_de_balon', 'pases', 'recuperaciones', 'acciones_creadas', 'partidos_jugados']; 
                         }
 
-                        if (data.posicion == 'G'){
-                            fetch(`/api/estadisticas-portero/${player.id}`)
-                            .then(response => response.json())
+                        return fetch(endpoint)
+                            .then(res => res.json())
                             .then(data => {
-                                const statsContainer = document.getElementById(`stats-general-${player.id}`);
-                                statsContainer.innerHTML=`
-                                    <h2>Estadisticas</h2>
-                                    <p>Goles Recibidos: ${data.goles_recibidos}</p>
-                                    <p>Goles Recibidos /90: ${data.goles_recibidos_por_90}</p>
-                                    <p>Tiros a Puerta Recibidos: ${data.tiros_a_puerta_recibidos}</p>
-                                    <p>Atajadas: ${data.atajadas}</p>
-                                    <p>% Atajadas: ${data.porcentaje_de_atajadas}</p>
-                                    <p>Porterias Imbatidas: ${data.porterias_imbatidas}</p>
-                                    <p>Penales en Contra: ${data.penales_en_contra}</p>
-                                    <p>Penales Atajados: ${data.penales_atajados}</p>
-                                    <p>Pases: ${data.pases}</p>
-                                    <p>Centros Recibidos: ${data.centros_recibidos}</p>
-                                    <p>Centros Interceptados: ${data.centros_interceptados}</p>
-                                    <p>Acciones Fuera del Area: ${data.acciones_fuera_del_area}</p>
-                                    
-                                `;
+                                const recuperaciones = parseInt(data.intercepciones || 0) + parseInt(data.entradas || 0);
 
-                            })
-                        }
-                        else{
-                            fetch(`/api/estadisticas-jugador/${player.id}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                const statsContainer = document.getElementById(`stats-general-${player.id}`);
-                                statsContainer.innerHTML=`
-                                    <h2>Estadisticas</h2>
-                                    <p>Goles: ${data.total_goles}</p>
-                                    <p>Disparos: ${data.disparos}</p>
-                                    <p>Asistencias: ${data.asistencias}</p>
-                                    <p>Acciones Creadas: ${data.acciones_creadas}</p>
-                                    <p>Pases: ${data.pases}</p>
-                                    <p>% Efectividad Pases: ${data.porcentaje_de_efectividad_de_pases}</p>
-                                    <p>Pases Progresivos: ${data.pases_progresivos}</p>
-                                    <p>Acarreos Progresivos: ${data.acarreos_progresivos}</p>
-                                    <p>Regates: ${data.regates_efectivos}</p>
-                                    <p>Toques: ${data.toques_de_balon}</p>
-                                    <p>Entradas: ${data.entradas}</p>
-                                    <p>Intercepciones: ${data.intercepciones}</p>
-                                    <p>Bloqueos: ${data.bloqueos}</p>
-                                    <p>Despejes: ${data.despejes}</p>
-                                    <p>Duelos Aereos Ganados: ${data.duelos_aereos_ganados}</p>
-                                `;
+                                player.stats = {
+                                    goles: parseInt(data.total_goles || data.goles_recibidos || 0),
+                                    asistencias: parseInt(data.asistencias || 0),
+                                    toques: parseInt(data.toques_de_balon || 0),
+                                    pases: parseInt(data.pases || 0),
+                                    recuperaciones: recuperaciones,
+                                    creacion: parseInt(data.acciones_creadas || 0),
+                                    partidos_jugados: parseInt(data.partidos_jugados || 0)
+                                };
 
-                            })
-             
-                        }
+                                updateSharedStatsChart();
+                            });
+                    })
+                    .catch(err => console.error("Error cargando stats:", err));
+                }
+                function updateSharedStatsChart() {
+                    const ctx = document.getElementById('sharedStatsChart').getContext('2d');
+                    const isLight = document.body.classList.contains('light-mode');
+                    const textColor = isLight ? '#333' : '#e0e0e0';
+                    const gridColor = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
+
+                    labels = ['Goles', 'Asistencias', 'Toques', 'Pases', 'Acciones Defensivas', 'Oportunidades Creadas', 'Partidos Jugados'];
+                    const keys = ['goles', 'asistencias', 'toques', 'pases', 'recuperaciones', 'creacion', 'partidos_jugados'];
+
+                    const activePlayers = players.filter(p => p.stats);
+
+                    const totals = keys.map(key => {
+                        return activePlayers.reduce((sum, p) => sum + (p.stats[key] || 0), 0);
                     });
 
-                    
+                    const datasets = activePlayers.map(p => {
+                        const percentageData = keys.map((key, index) => {
+                            const val = p.stats[key] || 0;
+                            const total = totals[index];
+                            return total > 0 ? (val / total) * 100 : 0;
+                        });
+
+                        return {
+                            label: p.nombre,
+                            data: percentageData, 
+                            rawValues: keys.map(k => p.stats[k] || 0), 
+                            backgroundColor: p.color, 
+                            borderColor: 'rgba(0,0,0,0.2)',
+                            borderWidth: 1,
+                            barPercentage: 0.6, 
+                            categoryPercentage: 0.9
+                        };
+                    });
+
+                    if (sharedStatsChartInstance) {
+                        sharedStatsChartInstance.destroy();
+                    }
+
+                    sharedStatsChartInstance = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: datasets
+                        },
+                        options: {
+                            indexAxis: 'y', 
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: {
+                                mode: 'y', 
+                                intersect: false,
+                            },
+                            plugins: {
+                                legend: {
+                                    labels: { color: textColor }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const raw = context.dataset.rawValues[context.dataIndex];
+                                            const perc = context.raw.toFixed(1);
+                                            return `${context.dataset.label}: ${raw} (${perc}%)`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    stacked: true, 
+                                    max: 100,      
+                                    ticks: { 
+                                        color: textColor,
+                                        callback: function(value) { return value + "%" } 
+                                    },
+                                    grid: { color: gridColor }
+                                },
+                                y: {
+                                    stacked: true, 
+                                    beginAtZero: true,
+                                    ticks: { color: textColor, font: { weight: 'bold' } },
+                                    grid: { display: false }
+                                }
+                            }
+                        }
+                    });
                 }
 
                 function dibujarCampo(ctx, bgColor, lineColor) {

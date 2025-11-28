@@ -128,6 +128,67 @@
                 background-color: #f5d34a;
                 color: #1a1a2e;
             }
+
+            .shot-maps-container {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 30px; /* Espacio entre los dos mapas */
+                justify-content: center;
+                margin-top: 20px;
+            }
+
+            /* Envoltorio de cada mapa (título + campo) */
+            .shot-maps-container > div {
+                flex: 1;
+                min-width: 300px; /* Evita que se hagan muy angostos en móvil */
+                max-width: 500px; /* Evita que se hagan gigantes en monitores grandes */
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .shot-maps-container h3 {
+                color: #a0a0c0;
+                margin-bottom: 15px;
+                font-size: 1.1rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+
+            /* El contenedor del Canvas (El Campo) */
+            .pitch-container {
+                position: relative;
+                width: 100%;
+                /* Definimos una altura fija o un aspect-ratio vertical */
+                height: 500px; 
+                background-color: #2a5f2a; /* Color base mientras carga el JS */
+                border-radius: 12px;
+                overflow: hidden; /* Para que las líneas no se salgan de las esquinas redondeadas */
+                border: 2px solid #4a4a6a; /* Borde del campo */
+                box-shadow: inset 0 0 30px rgba(0,0,0,0.3); /* Sombra interna para profundidad */
+            }
+
+            .pitch-container canvas {
+                width: 100%;
+                height: 100%;
+                display: block;
+            }
+
+            /* Estilo del Tooltip (Flotante) */
+            #shot-tooltip {
+                position: absolute;
+                background: rgba(20, 20, 35, 0.95); /* Fondo oscuro semi-transparente */
+                color: #fff;
+                padding: 10px 15px;
+                border-radius: 8px;
+                border: 1px solid #4a69ff;
+                pointer-events: none; /* Importante para que el mouse no se "choque" con él */
+                font-size: 0.85rem;
+                z-index: 1000;
+                box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+                transition: opacity 0.2s;
+            }
         </style>
     </head>
     <body>
@@ -181,6 +242,33 @@
 
         </div>
 
+        <div class="full-width-wrapper"> 
+            <div class="card">
+                <h2 class="card-title">Mapa de Disparos en la Temporada</h2>
+                <p id="label-equipo" style="text-align: center; color: #a0a0c0; margin-bottom: 15px; font-size: 0.9rem;">
+                    Pasa el mouse sobre los puntos para ver detalles.
+                </p>
+                
+                <div class="shot-maps-container" style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
+                    <div style="flex: 1; min-width: 300px; text-align: center;">
+                        <h3 id="shot-title-local">Local</h3>
+                        <div class="pitch-container" style="position: relative; height: 600px; width: 100%;">
+                            <canvas id="shot-map-local"></canvas>
+                        </div>
+                    </div>
+
+                    <div style="flex: 1; min-width: 300px; text-align: center;">
+                        <h3 id="shot-title-visitante">Visitante</h3>
+                        <div class="pitch-container" style="position: relative; height: 600px; width: 100%;">
+                            <canvas id="shot-map-visitante"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="shot-tooltip" style="display: none; position: absolute; background: rgba(20, 20, 35, 0.95); color: #fff; padding: 8px 12px; border-radius: 6px; border: 1px solid #4a69ff; pointer-events: none; font-size: 0.8rem; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.5);"></div>
+
         <div class.card>
             <h2>Probabilidades de Marcador</h2>
             <p style="font-size: 0.9rem; color: #a0a0c0; margin-bottom: 15px;">Probabilidades calculadas usando un modelo de Poisson basado en el rendimiento de la temporada.</p>
@@ -199,7 +287,8 @@
                 const partidoParam = params.get("partido");
                 let evolucionChartInstance = null;
                 let equiposEvolucion = {}; 
-                                
+                let shotsDataLocal = [];
+                let shotsDataVisitante = [];
                 let clickablePlayersLocal = [];     
                 let clickablePlayersVisitante = [];
                 
@@ -320,11 +409,94 @@
 
                         cargarEvolucionEquipos(data.id_local, data.id_visitante, data.total_equipos_liga);
                         cargarComparacionStats(data.id_local, data.id_visitante);
+                        document.getElementById('shot-title-local').textContent = data.local_nombre; 
+                        document.getElementById('shot-title-visitante').textContent = data.visitante_nombre;
+                        cargarMapaDisparos(data.id_local, 'shot-map-local', shotsDataLocal);
+                        cargarMapaDisparos(data.id_visitante, 'shot-map-visitante', shotsDataVisitante);
                     });  
 
                     
                 }
                 
+                function dibujarCampo(ctx) {
+                    const w = ctx.canvas.width;
+                    const h = ctx.canvas.height;
+                    const isLight = document.body.classList.contains('light-mode');
+
+                    // Pasto
+                    ctx.fillStyle = isLight ? '#d4e9d4' : '#2a5f2a';
+                    ctx.fillRect(0, 0, w, h);
+
+                    // Lineas
+                    ctx.strokeStyle = isLight ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.3)';
+                    ctx.lineWidth = 2;
+
+                    // Contorno
+                    const margin = 15;
+                    ctx.strokeRect(margin, margin, w - margin*2, h - margin*2);
+
+                    // Area Grande 
+                    ctx.strokeRect(w * 0.22, margin, w * 0.56, h * 0.16);
+                    // Area Chica 
+                    ctx.strokeRect(w * 0.37, margin, w * 0.26, h * 0.06);
+                    // Porteria
+                    ctx.strokeRect(w * 0.45, margin - 5, w * 0.1, 5);
+
+                    // Medio Campo
+                    ctx.beginPath();
+                    ctx.moveTo(margin, h / 2);
+                    ctx.lineTo(w - margin, h / 2);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(w / 2, h / 2, w * 0.1, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    // Area Grande 
+                    ctx.strokeRect(w * 0.22, h - margin - (h * 0.16), w * 0.56, h * 0.16);
+                    // Area Chica 
+                    ctx.strokeRect(w * 0.37, h - margin - (h * 0.06), w * 0.26, h * 0.06);
+                }
+
+                function dibujarDisparo(ctx, shot, width, height) {
+                    const margin = 15;
+                    const fieldW = width - margin*2;
+                    const fieldH = height - margin*2;
+
+                    // Normalización de Coordenadas (Asumiendo pitch_x: 0-100 largo, pitch_y: 0-100 ancho)
+                    // Convertimos para ver siempre atacando hacia ARRIBA
+                    // X en data = Eje Y en Canvas (Largo del campo)
+                    // Y en data = Eje X en Canvas (Ancho del campo)
+                    
+                    const canvasX = margin + ((100 - shot.pitch_y) / 100) * fieldW;
+                    // Invertimos X para que vaya de abajo (0) hacia arriba (100)
+                    const canvasY = margin + fieldH - ((shot.pitch_x / 80) * fieldH);
+
+                    // Tamaño del punto basado en xG (mínimo 3px, máximo 15px)
+                    const radio = Math.max(3, Math.min(15, shot.xg * 20));
+
+                    ctx.beginPath();
+                    ctx.arc(canvasX, canvasY, radio, 0, Math.PI * 2);
+                    
+                    // Color según resultado
+                    if (shot.resultado === 'goal') {
+                        ctx.fillStyle = '#ffd700'; // Oro para Goles
+                        ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+                        ctx.lineWidth = 2;
+                    } else if (shot.resultado === 'save' || shot.resultado === 'block') {
+                        ctx.fillStyle = '#3b82f6'; // Azul para paradas/bloqueos
+                        ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+                    } else {
+                        ctx.fillStyle = '#ef4444'; // Rojo para fallos
+                        ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+                    }
+                    
+                    ctx.fill();
+                    if (shot.resultado === 'goal') ctx.stroke();
+
+                    // Retornamos datos para el tooltip
+                    return { x: canvasX, y: canvasY, r: radio, data: shot };
+                }
+
                 // RQF2
                 function cargarAlineacionLocal(partido){
                     fetch(`/api/alineaciones/${partido}`)
@@ -368,6 +540,88 @@
                     .catch(error => console.error('Error al cargar las alineaciones:', error));
                 }
 
+                async function cargarMapaDisparos(equipoId, canvasId, storeArray) {
+                    const canvas = document.getElementById(canvasId);
+                    if (!canvas) return;
+                    
+                    // Ajustar resolución
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = canvas.offsetHeight;
+                    const ctx = canvas.getContext('2d');
+
+                    // Dibujar campo base
+                    dibujarCampo(ctx);
+
+                    try {
+                        // Tu endpoint ya creado
+                        const res = await fetch(`/api/mapa-disparos/${equipoId}`); 
+                        const disparos = await res.json();
+                        
+                        // Limpiamos array de tooltips
+                        storeArray.length = 0;
+
+                        if (!disparos || disparos.length === 0) {
+                            // Si no hay datos, escribir texto en el canvas
+                            ctx.fillStyle = "#a0a0c0";
+                            ctx.font = "14px Poppins";
+                            ctx.textAlign = "center";
+                            ctx.fillText("No hay datos de disparos", canvas.width/2, canvas.height/2);
+                            return;
+                        }
+
+                        // Dibujar cada disparo
+                        disparos.forEach(shot => {
+                            const shotData = dibujarDisparo(ctx, shot, canvas.width, canvas.height);
+                            storeArray.push(shotData);
+                        });
+
+                        // Configurar interactividad
+                        setupCanvasHover(canvas, storeArray);
+
+                    } catch (e) {
+                        console.error("Error cargando mapa de disparos:", e);
+                    }
+                }
+
+                function setupCanvasHover(canvas, dataArray) {
+                    const tooltip = document.getElementById('shot-tooltip');
+                    
+                    canvas.addEventListener('mousemove', (e) => {
+                        const rect = canvas.getBoundingClientRect();
+                        const mouseX = e.clientX - rect.left;
+                        const mouseY = e.clientY - rect.top;
+                        
+                        let found = null;
+                        
+                        
+                        for (let i = dataArray.length - 1; i >= 0; i--) {
+                            const s = dataArray[i];
+                            const dist = Math.sqrt((mouseX - s.x)**2 + (mouseY - s.y)**2);
+                            if (dist <= s.r + 2) { 
+                                found = s;
+                                break;
+                            }
+                        }
+
+                        if (found) {
+                            tooltip.style.display = 'block';
+                            tooltip.style.left = (e.pageX + 15) + 'px';
+                            tooltip.style.top = (e.pageY + 15) + 'px';
+                            
+                            tooltip.innerHTML = `
+                                <strong>${found.data.nombre}</strong><br>
+                                <span style="color: #a0a0c0">${found.data.resultado.toUpperCase()}</span><br>
+                                xG: <strong>${parseFloat(found.data.xg).toFixed(2)}</strong>
+                            `;
+                        } else {
+                            tooltip.style.display = 'none';
+                        }
+                    });
+
+                    canvas.addEventListener('mouseleave', () => {
+                        tooltip.style.display = 'none';
+                    });
+                }
 
                 function precargarImagenesYDibujar(ctx, jugadores, formacion, clickablePlayersArray) {
                     const promesasDeImagenes = jugadores.map(jugador => {
@@ -543,7 +797,11 @@
                         const visitorStats = data[1];
 
                         const statsToShow = [
+                            { key: 'posicion', label: 'Posicion' },
+                            { key: 'puntos', label: 'Puntos' },
+                            { key: 'victorias', label: 'Victorias' },
                             { key: 'goles_anotados', label: 'Goles Anotados' },
+                            { key: 'goles_recibidos', label: 'Goles en Contra' },
                             { key: 'disparos', label: 'Disparos' },
                             { key: 'disparos_a_puerta', label: 'Disparos a Puerta' },
                             { key: 'pases_completados', label: 'Pases Completados' },

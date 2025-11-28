@@ -182,7 +182,10 @@ export async function getStatsJugador(id_jugador) {
             sj.intercepciones,
             sj.bloqueos,
             sj.despejes,
-            sj.duelos_aereos_ganados
+            sj.duelos_aereos_ganados,
+            sj.partidos_jugados,
+            sj.minutos_jugados,
+            sj.tarjetas_amarillas
         FROM estadistica_jugador_partido ejp
         JOIN partido p ON ejp.partido = p.id_partido
         JOIN jugador j ON ejp.jugador = j.id_jugador
@@ -210,7 +213,10 @@ export async function getStatsJugador(id_jugador) {
             sj.intercepciones,
             sj.bloqueos,
             sj.despejes,
-            sj.duelos_aereos_ganados
+            sj.duelos_aereos_ganados,
+            sj.partidos_jugados,
+            sj.minutos_jugados,
+            sj.tarjetas_amarillas
         ORDER BY MAX(pe.id_plantilla) DESC;
 
         `, [id_jugador])
@@ -1104,12 +1110,26 @@ export async function getEstadisticasPortero(jugador) {
 export async function getInfoClub(club) {
     const [rows] = await pool.query(`
         SELECT
-            e.id_equipo, e.nombre as nombre_equipo, e.url_imagen as img_equipo, est.id_estadio, est.nombre as nombre_estadio, ent.id_entrenador, ent.nombre as nombre_entrenador, ent.url_imagen as img_entrenador
+            e.id_equipo, 
+            e.nombre as nombre_equipo, 
+            e.url_imagen as img_equipo, 
+            est.id_estadio, 
+            est.nombre as nombre_estadio, 
+            ent.id_entrenador, 
+            ent.nombre as nombre_entrenador, 
+            ent.url_imagen as img_entrenador,
+            
+            (
+                SELECT COALESCE(SUM(j.valor_mercado) / 1000000, 0)
+                FROM plantilla_equipos pe
+                JOIN jugador j ON pe.jugador = j.id_jugador
+                WHERE pe.equipo = e.id_equipo 
+            ) as valor_total_plantilla
+
         FROM equipo e 
         JOIN estadio est on e.estadio = est.id_estadio
         JOIN entrenador ent on e.entrenador = ent.id_entrenador
-        WHERE e.id_equipo = ?;
-
+        WHERE e.id_equipo = ?; 
         `, [club])
     return rows;
 } 

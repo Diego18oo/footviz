@@ -5,6 +5,7 @@
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@6.6.6/css/flag-icons.min.css"/>
 
         
         <style>
@@ -130,12 +131,84 @@
                 margin: 20px auto;
                 transition: background-color 0.3s, box-shadow 0.3s;
             }
+
+            .profile-bio {
+                flex: 1;
+                min-width: 250px;
+                display: flex;
+                align-items: center;
+                gap: 20px;
+                border-right: 1px solid #4a4a6a; /* Línea divisoria */
+                padding-right: 20px;
+            }
+            .profile-bio img.player-face {
+                width: 100px;
+                height: 100px;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 3px solid #4a69ff;
+                box-shadow: 0 0 15px rgba(74, 105, 255, 0.3);
+            }
+            .bio-text h1 { font-size: 1.8rem; margin-bottom: 5px; color: #fff; }
+            .bio-text p { color: #a0a0c0; font-size: 0.9rem; margin-bottom: 3px; }
+            .bio-text img.team-logo { width: 20px; vertical-align: middle; margin-right: 5px; }
+
+            /* Sección Derecha: Grid de Estadísticas */
+            .profile-stats {
+                flex: 2;
+                min-width: 300px;
+            }
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); /* Responsivo automático */
+                gap: 15px;
+            }
+            
+            /* Las cajitas de estadísticas */
+            .stat-box {
+                background-color: rgba(255, 255, 255, 0.05); /* Fondo sutil */
+                padding: 10px 5px;
+                border-radius: 8px;
+                text-align: center;
+                transition: transform 0.2s, background-color 0.2s;
+            }
+            .stat-box:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+                transform: translateY(-2px);
+            }
+            .stat-value {
+                display: block;
+                font-size: 1.4rem;
+                font-weight: 700;
+                color: #fff;
+                margin-bottom: 2px;
+            }
+            .stat-label {
+                display: block;
+                font-size: 0.75rem;
+                color: #a0a0c0;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            /* Colores específicos para tarjetas */
+            .stat-box.yellow-card .stat-value { color: #facc15; } /* Amarillo */
+            .stat-box.red-card .stat-value { color: #ef4444; }    /* Rojo */
+            .stat-box.goals .stat-value { color: #4a69ff; }       /* Azul para goles */
+
+            /* Ajuste Móvil */
+            @media (max-width: 768px) {
+                .profile-bio { border-right: none; border-bottom: 1px solid #4a4a6a; padding-bottom: 20px; padding-right: 0; }
+                #info-general { flex-direction: column; align-items: stretch; }
+            }
             
             /* --- Info General del Jugador --- */
             #info-general {
                 display: flex;
-                align-items: center;
+                flex-wrap: wrap; /* Para móviles */
                 gap: 30px;
+                align-items: center;
+                padding: 25px;
             }
             #info-general .player-image img {
                 width: 150px;
@@ -420,43 +493,104 @@
             const boton = document.getElementById("botonComparar");
             
             // RQF1
-            function cargarInfoBasicaJugador(jugador){
-                fetch(`/api/jugador/${jugador}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (!data) {
-                        console.error("No se encontraron datos para el jugador:", jugador);
-                        return;
-                    }
+            async function cargarInfoBasicaJugador(jugadorId){
+                try{
+                    const [resInfo, resStats] = await Promise.all([
+                        fetch(`/api/jugador/${jugadorId}`),
+                        fetch(`/api/estadisticas-jugador/${jugadorId}`)
+                    ]);
+                        
+                    const info = await resInfo.json();
+                    const stats = await resStats.json();
+                        
                     let infoPrincipal = document.getElementById("info-general");
-                    const fechaNac = new Date(data.fec_nac).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+                    const fechaNac = new Date(info.fec_nac).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+                    const isoCode = info.codigo_iso; // Convertimos nombre a código
+                    const urlBandera = getBanderaUrl(isoCode);
                     infoPrincipal.innerHTML = `
                     <div class="player-image">
-                        <img src="${data.img_jugador}" alt="Foto del jugador">
+                        <img src="${info.img_jugador}" alt="Foto del jugador">
                     </div>
                     <div class="player-details">
-                        <h1>${data.nombre_jugador} #${data.dorsal}</h1>
+                        <h1>${info.nombre_jugador} #${info.dorsal}</h1>
                         <div class="player-bio">
-                            <p><strong>Posición:</strong> <span>${data.posicion}</span></p>
+                            <p><strong>Posición:</strong> <span>${info.posicion}</span></p>
                             <p><strong>Fecha de Nacimiento:</strong> <span>${fechaNac}</span></p>
-                            <p><strong>Altura:</strong> <span>${data.altura} cm</span> | <strong>Pie:</strong> <span>${data.pie_preferido}</span></p>
-                            <p><strong>Valor de Mercado:</strong> <span>${data.valor_mercado}</span></p>
+                            <p><strong>Altura:</strong> <span>${info.altura} cm</span> | <strong>Pie:</strong> <span>${info.pie_preferido}</span></p>
+                            <p><strong>Valor de Mercado:</strong> <span>${info.valor_mercado}</span></p>
+                            <p><strong>Nacionalidad:</strong> <span><img src="${urlBandera}" alt="${info.pais_nombre}" 
+                            style="width: 25px; height: auto; box-shadow: 0 0 2px rgba(0,0,0,0.5);"> </span></p>
+                            
                         </div>
                     </div>
                     <div class="team-info">
-                        <img src="${data.img_equipo}" alt="Escudo del equipo" id="clubImg">
-                        <p>${data.nombre_equipo}</p>
+                        <img src="${info.img_equipo}" alt="Escudo del equipo" id="clubImg">
+                        <p>${info.nombre_equipo}</p>
+                    </div>
+
+                    <div class="profile-stats">
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <span class="stat-value">${stats.partidos_jugados || 0}</span>
+                                <span class="stat-label">Partidos</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-value">${stats.minutos_jugados || 0}'</span>
+                                <span class="stat-label">Minutos</span>
+                            </div>
+                            <div class="stat-box goals">
+                                <span class="stat-value">${stats.total_goles || 0}</span>
+                                <span class="stat-label">Goles</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-value">${stats.asistencias || 0}</span>
+                                <span class="stat-label">Asistencias</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-value">${stats.pases || 0}</span>
+                                <span class="stat-label">Pases</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-value">${stats.toques_de_balon || 0}</span>
+                                <span class="stat-label">Toques</span>
+                            </div>
+                            <div class="stat-box yellow-card">
+                                <span class="stat-value">${stats.tarjetas_amarillas || 0}</span>
+                                <span class="stat-label">Amarillas</span>
+                            </div>
+                            <div class="stat-box red-card">
+                                <span class="stat-value">${stats.tarjetas_rojas || 0}</span>
+                                <span class="stat-label">Rojas</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-value">${stats.faltas_cometidas || 0}</span>
+                                <span class="stat-label">Faltas</span>
+                            </div>
+                        </div>
                     </div>
                     `; 
                     const imgClub = document.getElementById("clubImg");
                     imgClub.addEventListener("click", () => {
-                        window.location.href = `club.html?id=${data.id_equipo}`;
+                        window.location.href = `club.html?id=${info.id_equipo}`;
                     })
-                })
+                    
+
+                } catch (error){
+                    console.error("Error cargando info:", error);
+
+                }
+                
                     
                 
             }
 
+
+            function getBanderaUrl(codigoIso) {
+                // Convertimos a minúsculas por si acaso
+                const code = codigoIso.toLowerCase();
+                // Usamos un ancho de 40px (w40) o 20px (w20) según necesites
+                return `https://flagcdn.com/w40/${code}.png`;
+            }
             // RQF6 
             function cargarUltimosPartidosJugador(jugador){
                 fetch(`/api/jugador/${jugador}`)

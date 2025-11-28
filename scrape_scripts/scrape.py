@@ -17,7 +17,7 @@ db_name = os.getenv('DB_NAME')
 
 db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
 today = datetime.now()
-yesterday = today - timedelta(days=1)
+yesterday = today - timedelta(days=4)
 yesterday = yesterday.strftime('%Y-%m-%d')
 engine = create_engine(db_url)
 
@@ -41,14 +41,14 @@ liga_fbref = [
 ]
 
 ids_para_scrapear_temporada = df_partidos_ayer['temporada'].unique() 
-#insert_estadistica_jugador(engine,  ids_para_scrapear_temporada, db_url)
+insert_estadistica_jugador(engine,  ids_para_scrapear_temporada, db_url)
 #insert_update_plantilla_equipos(engine, driver, ligas_ids, temporadas_ids, db_url)
 #print("Todo las plantillas estan actualizadas")
 
 
 
 #if len(df_partidos_futuros) > 0:
- #   print("Entrando...")
+    #print("Entrando...")
     #for i in range(len(df_partidos_futuros)):
         #prematch_ref(engine, df_partidos_futuros.iloc[i] )
         #prematch_odds(engine, df_partidos_futuros.iloc[i])
@@ -78,36 +78,36 @@ else:
         #url = f"https://fbref.com/en/comps/{liga_fbref_fixtures[iteracion]}"
         #lista_links = get_all_urls_fbref(driver, liga_url=url)
         #links_totales.extend(lista_links)
-    for i in range(len(df_partidos_ayer)):
-        print(f"Entrando a partido: {df_partidos_ayer['id_partido'][i]}")
-        partido_sofascore = df_partidos_ayer['url_sofascore'][i].split(':')[2]  
-        lista_ids_sofascore.append(partido_sofascore)
-        insert_update_partidos(engine, df_partidos_ayer.iloc[i]) 
-        insert_confirmed_lineups(engine, df_partidos_ayer.iloc[i])
-        print("Partido actualizado correctamente")
-        postmatch_odss(engine, df_partidos_ayer.iloc[i])
-        insert_estadistica_partido(engine, df_partidos_ayer.iloc[i])
-        print("Estadistica de partidos insertada correctamente")
-        insert_mapa_de_calor(engine, driver, partido_sofascore)
-        print(f"Mapa de calor de partido {partido_sofascore} insertado correctamente")
-        insert_mapa_de_disparos(engine, driver, partido_sofascore)
-        id_partido_actual = df_partidos_ayer.iloc[i]['id_partido']
-        procesar_puntos_partido(engine, id_partido_actual)
+    #for i in range(len(df_partidos_ayer)):
+        #print(f"Entrando a partido: {df_partidos_ayer['id_partido'][i]}")
+        #partido_sofascore = df_partidos_ayer['url_sofascore'][i].split(':')[2]  
+        #lista_ids_sofascore.append(partido_sofascore)
+        #insert_update_partidos(engine, df_partidos_ayer.iloc[i]) 
+        #insert_confirmed_lineups(engine, df_partidos_ayer.iloc[i])
+        #print("Partido actualizado correctamente")
+        #postmatch_odss(engine, df_partidos_ayer.iloc[i])
+        #insert_estadistica_partido(engine, df_partidos_ayer.iloc[i])
+        #print("Estadistica de partidos insertada correctamente")
+        #insert_mapa_de_calor(engine, driver, partido_sofascore)
+        #print(f"Mapa de calor de partido {partido_sofascore} insertado correctamente")
+        #insert_mapa_de_disparos(engine, driver, partido_sofascore)
+        #id_partido_actual = df_partidos_ayer.iloc[i]['id_partido']
+        #procesar_puntos_partido(engine, id_partido_actual)
          
-    for i in range(len(ids_para_scrapear_temporada)):
-        liga_a_scrapear = ids_para_scrapear_temporada[i]
-        insert_tabla_posiciones(liga_a_scrapear, engine=engine,temporada=temporadas_ids
-        [liga_a_scrapear-1])   #actualiza la tabla de posiciones de todas las ligas
-        update_standings_evolution_graph(liga_a_scrapear,engine=engine, temporada=temporadas_ids[liga_a_scrapear-1])
-        print(f"Tabla {liga_a_scrapear} insertada correctamente")
+    #for i in range(len(ids_para_scrapear_temporada)):
+        #liga_a_scrapear = ids_para_scrapear_temporada[i]
+        #insert_tabla_posiciones(liga_a_scrapear, engine=engine,temporada=temporadas_ids
+        #[liga_a_scrapear-1])   #actualiza la tabla de posiciones de todas las ligas
+        #update_standings_evolution_graph(liga_a_scrapear,engine=engine, #temporada=temporadas_ids[liga_a_scrapear-1])
+        #print(f"Tabla {liga_a_scrapear} insertada correctamente")
     
 #ultimos_partidos(engine, temporada = 4)
 #ultimos_partidos(engine, temporada = 5)
-#update_fecha_partidos(engine, temporada=1, jornada = 12)
-#update_fecha_partidos(engine, temporada=2, jornada = 13)
-#update_fecha_partidos(engine, temporada=3, jornada = 12)
-#update_fecha_partidos(engine, temporada=4, jornada = 11)
-#update_fecha_partidos(engine, temporada=5, jornada = 13)
+#update_fecha_partidos(engine, temporada=1, jornada = 13)
+#update_fecha_partidos(engine, temporada=2, jornada = 14)
+#update_fecha_partidos(engine, temporada=3, jornada = 13)
+#update_fecha_partidos(engine, temporada=4, jornada = 12)
+#update_fecha_partidos(engine, temporada=5, jornada = 14)
 #pending_odds(engine, df_partidos_pendientes)
 
 
