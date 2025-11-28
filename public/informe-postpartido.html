@@ -175,7 +175,6 @@
                         body.classList.remove('light-mode');
                         themeToggleButton.textContent = '☀️';
                     }
-                    // Volver a cargar/dibujar los elementos dinámicos con los nuevos colores
                     if (partidoParam) {
                         cargarAlineacionLocal(partidoParam);
                         cargarAlineacionVisitante(partidoParam);
@@ -404,23 +403,20 @@
                     ctx.shadowBlur = 0;
 
                     if (jugador.rating) {
-                        const rating = parseFloat(jugador.rating).toFixed(1); // Asegurar 1 decimal
+                        const rating = parseFloat(jugador.rating).toFixed(1);
                         const ratingWidth = 32;
                         const ratingHeight = 16;
                         
-                        // Posición de la caja (centrada, encima del círculo)
                         const boxX = x - (ratingWidth / 2);
-                        const boxY = y - radio - ratingHeight - 3; // 3px de espacio
+                        const boxY = y - radio - ratingHeight - 3; 
 
-                        // Dibujar la caja
                         ctx.fillStyle = getRatingColor(rating);
                         ctx.fillRect(boxX, boxY, ratingWidth, ratingHeight);
                         
-                        // Dibujar el texto del rating
-                        ctx.fillStyle = 'black'; // Texto negro para que contraste
+                        ctx.fillStyle = 'black'; 
                         ctx.font = 'bold 12px Poppins';
                         ctx.textAlign = 'center';
-                        ctx.fillText(rating, x, boxY + 12); // Ajuste vertical
+                        ctx.fillText(rating, x, boxY + 12); 
                     }
                 }
 

@@ -98,6 +98,7 @@
             text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
             padding: 5px;
             width: 60px;
+            position: relative;
         }
         .player-on-field img {
             width: 50px;
@@ -280,6 +281,24 @@
             font-size: 2.5rem;
             color: rgba(255, 255, 255, 0.3);
         }
+        .club-badge {
+                position: absolute;
+                width: 28px !important;
+                height: 28px !important;
+                
+                /* Posicionamiento: Lo ponemos en la esquina inferior derecha de la FOTO (no del div completo) */
+                top: 12px; 
+                left: 60%;
+                margin-left: 10px; /* Lo empuja a la derecha desde el centro */
+                
+                /* Estética */
+                border-radius: 50%; /* Redondo */
+                background-color: #fff; /* Fondo blanco para que resalte */
+                border: 1px solid #ccc; /* Borde sutil */
+                object-fit: contain; /* Para que el escudo no se deforme */
+                box-shadow: 0 2px 4px rgba(0,0,0,0.3); /* Sombrita */
+                z-index: 2; /* Asegura que quede encima de la foto */
+            }
         </style>
     </head>
     <body>
@@ -670,13 +689,23 @@
                         playerDiv.classList.add('captain');
                     }
 
+            
+
                     const playerImgSrc = player.url_imagen_jugador || 'placeholder-player-face.png';
                     
                     const firstName = player.nombre_jugador; 
 
+                    const clubLogoHtml = player.img_equipo 
+                    ? `<img src="${player.img_equipo}" class="club-badge">` 
+                    : '';
+
                     playerDiv.innerHTML = `
-                        <img src="${playerImgSrc}" alt="${player.nombre_jugador}">
+                        
+                        <img src="${playerImgSrc}" alt="${player.nombre_jugador}" 
+                        style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; background-color: rgba(0,0,0,0.2);">
+                        ${clubLogoHtml}
                         <span>${firstName}</span> 
+                        
                     `;
                     targetRow.appendChild(playerDiv);
                 });
@@ -706,23 +735,34 @@
                             const li = document.createElement('li');
                             
                             li.style.display = 'flex';
+                            li.style.flexDirection = 'column';
                             li.style.alignItems = 'center';
                             li.style.justifyContent = 'center';
                             li.style.gap = '10px';
-                            li.style.padding = '5px 0';
+                            li.style.padding = '8px 0';
 
                             li.dataset.partidoId = partido.id_partido; 
+
+                            const fechaObj = new Date(partido.fecha);
+                            const dia = String(fechaObj.getUTCDate()).padStart(2, '0');
+                            const mes = String(fechaObj.getUTCMonth() + 1).padStart(2, '0');
+                            const anio = fechaObj.getUTCFullYear();
+                            
+                            const fechaTexto = `${dia}/${mes}/${anio}`;
                             
                             li.innerHTML = `
-                                <span style="display: flex; align-items: center; gap: 8px;">
-                                    <img src="${partido.escudo_local}" alt="${partido.nombre_local}" style="width: 24px; height: 24px; border-radius: 50%;">
-                                    ${partido.nombre_local}
-                                </span>
-                                <span style="font-weight: 600;">vs</span>
-                                <span style="display: flex; align-items: center; gap: 8px;">
-                                    ${partido.nombre_visitante}
-                                    <img src="${partido.escudo_visitante}" alt="${partido.nombre_visitante}" style="width: 24px; height: 24px; border-radius: 50%;">
-                                </span>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span style="display: flex; align-items: center; gap: 5px;">
+                                        <img src="${partido.escudo_local}" alt="${partido.nombre_local}" style="width: 20px; height: 20px; border-radius: 50%; margin:0;">
+                                        <span style="font-size: 0.9rem;">${partido.nombre_local}</span>
+                                    </span>
+                                    <span style="font-weight: 700; font-size: 0.8rem; color: #a0a0c0;">vs</span>
+                                    <span style="display: flex; align-items: center; gap: 5px;">
+                                        <span style="font-size: 0.9rem;">${partido.nombre_visitante}</span>
+                                        <img src="${partido.escudo_visitante}" alt="${partido.nombre_visitante}" style="width: 20px; height: 20px; border-radius: 50%; margin:0;">
+                                    </span>
+                                </div>
+                                <span style="font-size: 0.75rem; color: #4a69ff; font-weight: 500;">${fechaTexto}</span>
                             `;
                             fixturesList.appendChild(li);
                         });

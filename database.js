@@ -1464,68 +1464,46 @@ async function getNombrePais(conn, paisId) {
 }
 
 export async function getPlantillaFantasy(id_usuario){
+    const [jornadaRows] = await pool.query(`SELECT MAX(jornada) as actual FROM partido WHERE fecha <= CURDATE()`);
+    const jornadaActual = jornadaRows[0].actual || 1;
     const [rows] = await pool.query(`
-        WITH LatestPlayerTeam AS (
-            SELECT
-                pe.jugador,
-                pe.equipo,
-                pe.temporada,
-                ROW_NUMBER() OVER(PARTITION BY pe.jugador ORDER BY pe.id_plantilla DESC) as rn
-            FROM
-                plantilla_equipos pe
-        ),
-        LatestTeamMatch AS (
-            SELECT
-                team_id,
-                temporada_id,
-                match_id,
-                ROW_NUMBER() OVER(PARTITION BY team_id, temporada_id ORDER BY match_fecha DESC, match_id DESC) as rn
-            FROM (
-                SELECT p.equipo_local as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha
-                FROM partido p
-                WHERE p.fecha <= CURDATE()  
-                UNION ALL
-                SELECT p.equipo_visitante as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha
-                FROM partido p
-                WHERE p.fecha <= CURDATE() 
-            ) AS all_team_matches
-        )
-        SELECT
-            pf.id_jugador,
-            pf.precio_compra,
-            pf.es_titular,
-            pf.es_capitan,
-            j.nombre AS nombre_jugador,
-            j.posicion,
+        
+
+        SELECT 
+            j.id_jugador, 
+            j.nombre AS nombre_jugador, 
+            j.posicion, 
             j.url_imagen AS url_imagen_jugador,
-            e.id_equipo,
-            e.nombre AS nombre_equipo,
             e.url_imagen AS img_equipo,
-            COALESCE(pjj.puntos_fantasy, 0) AS puntos_ultima_jornada_equipo,
-            ltm.match_id
-        FROM
-            plantilla_fantasy pf
-        JOIN
-            equipo_fantasy ef ON pf.id_equipo_fantasy = ef.id_equipo_fantasy
-        JOIN
-            usuario us ON ef.id_usuario = us.id_usuario
-        JOIN
-            jugador j ON pf.id_jugador = j.id_jugador
-        LEFT JOIN
-            LatestPlayerTeam lpt ON j.id_jugador = lpt.jugador AND lpt.rn = 1
-        LEFT JOIN
-            equipo e ON lpt.equipo = e.id_equipo
-        LEFT JOIN
-            LatestTeamMatch ltm ON lpt.equipo = ltm.team_id AND lpt.temporada = ltm.temporada_id AND ltm.rn = 1
-        LEFT JOIN
-            puntos_jugador_jornada pjj ON pf.id_jugador = pjj.id_jugador AND ltm.match_id = pjj.id_partido
-        WHERE
-            us.id_usuario = ?  
-        ORDER BY
-            FIELD(j.posicion, 'G', 'D', 'M', 'F'), 
-            pf.es_titular DESC,                   
-            j.nombre;`,
-        [id_usuario]
+            pf.es_titular, 
+            pf.es_capitan,
+            vj.valor_actual ,
+            pf.precio_compra,
+            COALESCE(pjj.puntos_fantasy, 0) as puntos_ultima_jornada_equipo,
+
+            DATE_FORMAT(
+                COALESCE(
+                    (SELECT MAX(ht.fecha_transferencia) 
+                     FROM transferencia_fantasy ht 
+                     WHERE ht.id_equipo_fantasy = pf.id_equipo_fantasy 
+                       AND ht.jugador_entra_id = pf.id_jugador),
+                    
+                    u.fecha_registro
+                ), 
+                '%d/%m/%Y' 
+            ) as fecha_compra_formateada
+
+        FROM plantilla_fantasy pf
+        JOIN equipo_fantasy ef ON pf.id_equipo_fantasy = ef.id_equipo_fantasy
+        JOIN usuario u ON ef.id_usuario = u.id_usuario
+        
+        JOIN jugador j ON pf.id_jugador = j.id_jugador
+        JOIN valor_jugador_fantasy vj on j.id_jugador = vj.id_jugador
+        LEFT JOIN plantilla_equipos pe on j.id_jugador = pe.jugador
+        LEFT JOIN equipo e ON pe.equipo = e.id_equipo 
+        LEFT JOIN puntos_jugador_jornada pjj ON j.id_jugador = pjj.id_jugador AND pjj.jornada = ?
+        WHERE ef.id_usuario = ?;`,
+        [jornadaActual,id_usuario]
   );
   return rows;
 
@@ -1554,6 +1532,7 @@ export async function getDesglosePuntosFantasyJugador(id_jugador){
             j.id_jugador,
             j.nombre AS nombre_jugador,
             j.posicion,
+            pa.codigo_iso,
             j.url_imagen AS url_imagen_jugador,
             
             ct.id_equipo_actual,
@@ -1576,6 +1555,7 @@ export async function getDesglosePuntosFantasyJugador(id_jugador){
             partido p ON pjj.id_partido = p.id_partido
         JOIN
             jugador j ON pjj.id_jugador = j.id_jugador
+        JOIN pais pa on j.pais = pa.id_pais
         LEFT JOIN
             CurrentTeam ct ON pjj.id_jugador = ct.jugador AND ct.rn = 1
         LEFT JOIN
@@ -1639,7 +1619,6 @@ export async function realizarFichaje( id_usuario, jugadorSaleId, jugadorEntraId
     await conn.beginTransaction();
 
     try {
-        // 1. Obtener datos del equipo
         const [equipos] = await conn.query(
             `SELECT id_equipo_fantasy, presupuesto_restante, fichajes_jornada_restantes, puntos_totales 
              FROM equipo_fantasy WHERE id_usuario = ? FOR UPDATE`,
@@ -1649,7 +1628,6 @@ export async function realizarFichaje( id_usuario, jugadorSaleId, jugadorEntraId
         if (!equipos.length) throw new Error("Equipo no encontrado");
         const equipo = equipos[0];
 
-        // 2. Obtener precios
         const [jugadores] = await conn.query(
             `SELECT id_jugador, valor_actual FROM valor_jugador_fantasy 
              WHERE id_jugador IN (?, ?)`,
@@ -1660,35 +1638,28 @@ export async function realizarFichaje( id_usuario, jugadorSaleId, jugadorEntraId
         const entra = jugadores.find(j => j.id_jugador === jugadorEntraId);
         if (!sale || !entra) throw new Error("Jugadores no encontrados");
 
-        // 3. Validar Presupuesto (ID 7 = Sin Límites ignora esto)
         const nuevoPresupuesto = parseFloat(equipo.presupuesto_restante) + parseFloat(sale.valor_actual) - parseFloat(entra.valor_actual);
         if (nuevoPresupuesto < 0 && idFichaActiva != 7) {
             throw new Error("Presupuesto insuficiente.");
         }
 
-        // --- 👇 LÓGICA DE FICHAS Y PENALIZACIÓN 👇 ---
-        let nuevosFichajesRestantes = equipo.fichajes_jornada_restantes - 1; // Por defecto resta 1
+        let nuevosFichajesRestantes = equipo.fichajes_jornada_restantes - 1; 
         let costoPuntos = 0;
         let registrarFicha = false;
 
-        // CASO: FICHAJE EXTRA (ID 1)
         if (idFichaActiva == 1) {
-            // Verificar si ya se usó
             const [check] = await conn.query(
                 `SELECT id_ficha_usuario FROM ficha_usuario WHERE id_equipo_fantasy = ? AND id_ficha = 1`,
                 [equipo.id_equipo_fantasy]
             );
             if (check.length > 0) throw new Error("Ya utilizaste tu Fichaje Extra esta temporada.");
 
-            // EFECTO: No restamos fichajes (se mantiene igual que antes)
             nuevosFichajesRestantes = equipo.fichajes_jornada_restantes; 
-            costoPuntos = 0; // Sin penalización
-            registrarFicha = true; // Hay que marcarla como usada
+            costoPuntos = 0; 
+            registrarFicha = true; 
         }
 
-        // CASO: COMODÍN (ID 6) o SIN LÍMITES (ID 7)
         else if (idFichaActiva == 6 || idFichaActiva == 7) {
-            // Verificar si ya se usó (opcional, o confiar en el frontend/app.js)
              const [check] = await conn.query(
                 `SELECT id_ficha_usuario FROM ficha_usuario WHERE id_equipo_fantasy = ? AND id_ficha = ?`,
                 [equipo.id_equipo_fantasy, idFichaActiva]
@@ -1698,23 +1669,19 @@ export async function realizarFichaje( id_usuario, jugadorSaleId, jugadorEntraId
             nuevosFichajesRestantes = equipo.fichajes_jornada_restantes; 
             costoPuntos = 0;
             
-            // 3. Solo registramos la ficha si es la PRIMERA vez que la activa
             registrarFicha = !yaEstabaActiva;
         }
         
-        // CASO NORMAL (Sin ficha de transferencia activa)
         else {
-            // Si nos quedamos en negativos, cobramos penalización
             if (nuevosFichajesRestantes < 0) {
                 costoPuntos = 5;
             }
         }
 
         const nuevosPuntosTotales = equipo.puntos_totales - costoPuntos;
-
-        // --- 4. REGISTRAR USO DE FICHA (Si aplica) ---
+        const [jornadaRows] = await conn.query(`SELECT MIN(jornada) as proxima FROM partido WHERE fecha > NOW()`);
+        const jornadaActual = jornadaRows[0].proxima || 1;
         if (registrarFicha) {
-            // Obtenemos la jornada actual para el registro
             const [jornadaRows] = await conn.query(`SELECT MIN(jornada) as proxima FROM partido WHERE fecha > NOW()`);
             const jornadaActual = jornadaRows[0].proxima || 1;
 
@@ -1724,7 +1691,6 @@ export async function realizarFichaje( id_usuario, jugadorSaleId, jugadorEntraId
             );
         }
 
-        // --- 5. EJECUTAR CAMBIOS (PLANTILLA Y EQUIPO) ---
         await conn.query(
             `UPDATE plantilla_fantasy SET id_jugador = ?, precio_compra = ? 
              WHERE id_equipo_fantasy = ? AND id_jugador = ?`,
@@ -1735,6 +1701,13 @@ export async function realizarFichaje( id_usuario, jugadorSaleId, jugadorEntraId
             `UPDATE equipo_fantasy SET presupuesto_restante = ?, fichajes_jornada_restantes = ?, puntos_totales = ?
              WHERE id_equipo_fantasy = ?`,
             [nuevoPresupuesto, nuevosFichajesRestantes, nuevosPuntosTotales, equipo.id_equipo_fantasy]
+        );
+
+        await conn.query(
+            `INSERT INTO transferencia_fantasy 
+             (id_equipo_fantasy, jornada, jugador_sale_id, jugador_entra_id, costo_puntos)
+             VALUES (?, ?, ?, ?, ?)`,
+            [equipo.id_equipo_fantasy, jornadaActual, jugadorSaleId, jugadorEntraId, costoPuntos]
         );
 
         await conn.commit();
@@ -2284,7 +2257,7 @@ export async function getLeagueRankingTop10(id_liga_fantasy) {
             lfm.id_liga_fantasy = ?
          ORDER BY
             ef.puntos_totales DESC, ef.nombre_equipo ASC
-         LIMIT 5`, 
+         LIMIT 10`, 
         [id_liga_fantasy]
     );
     return rows;
@@ -2657,7 +2630,6 @@ export async function getFichasEquipo(id_equipo_fantasy) {
             f.id_ficha, 
             f.nombre, 
             f.descripcion,
-            -- Si 'jornada_uso' no es nulo, significa que ya se usó
             fu.jornada_uso 
         FROM 
             ficha f
@@ -2673,15 +2645,62 @@ export async function getFichasEquipo(id_equipo_fantasy) {
     }));
 }
 
-export async function registrarUsoFicha(id_equipo_fantasy, id_ficha) {
-    
-    const [jornadaRows] = await pool.query(
-        `SELECT MIN(jornada) as proxima_jornada FROM partido WHERE fecha > NOW()`
-    );
-    const jornadaActual = jornadaRows[0].proxima_jornada || 1; 
+export async function getJornadaActual() {
+    const [rows] = await pool.query(`SELECT MIN(jornada) as proxima FROM partido WHERE fecha > NOW()`);
+    return rows[0].proxima || 1;
+}
 
-    await pool.query(`
-        INSERT INTO ficha_usuario (id_equipo_fantasy, id_ficha, jornada_uso)
-        VALUES (?, ?, ?)
-    `, [id_equipo_fantasy, id_ficha, jornadaActual]);
+export async function registrarUsoFicha(id_equipo_fantasy, id_ficha, jornadaActual = null) {
+    if (!jornadaActual) jornadaActual = await getJornadaActual();
+
+    const conn = await pool.getConnection();
+    await conn.beginTransaction();
+
+    try {
+        const [fichaExistente] = await conn.query(
+            `SELECT id_ficha FROM ficha_usuario WHERE id_equipo_fantasy = ? AND jornada_uso = ? FOR UPDATE`,
+            [id_equipo_fantasy, jornadaActual]
+        );
+
+        if (fichaExistente.length > 0) {
+            const idFichaAnterior = fichaExistente[0].id_ficha;
+
+            if (idFichaAnterior == id_ficha) {
+                await conn.commit();
+                return;
+            }
+
+            const fichasIrreversibles = [1, 6];
+
+            if (fichasIrreversibles.includes(idFichaAnterior)) {
+                throw new Error("No puedes cambiar de ficha. Ya has confirmado acciones de mercado (Fichaje Extra, Comodín o Sin Límites) en esta jornada.");
+            }
+
+            await conn.query(
+                `DELETE FROM ficha_usuario WHERE id_equipo_fantasy = ? AND jornada_uso = ?`,
+                [id_equipo_fantasy, jornadaActual]
+            );
+        }
+
+        await conn.query(
+            `INSERT INTO ficha_usuario (id_equipo_fantasy, id_ficha, jornada_uso)
+             VALUES (?, ?, ?)`,
+            [id_equipo_fantasy, id_ficha, jornadaActual]
+        );
+
+        await conn.commit();
+    } catch (error) {
+        await conn.rollback();
+        throw error;
+    } finally {
+        conn.release();
+    }
+}
+
+export async function getCantidadPiezasUsuario(id_usuario) {
+    const [rows] = await pool.query(
+        `SELECT COUNT(*) as total FROM pieza_rompecabezas_usuario WHERE id_usuario = ?`,
+        [id_usuario]
+    );
+    return rows[0].total || 0;
 }

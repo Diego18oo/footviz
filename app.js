@@ -5,7 +5,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import cookieParser from 'cookie-parser';
-import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail, getUsuarioData, getEquipoFantasyUsuario, getJugadoresFantasy, crearEquipoFantasyCompleto, getPlantillaFantasy, getDesglosePuntosFantasyJugador, getProximoPartido, realizarFichaje, actualizarPlantilla, getProximosPartidosDeEquipos, getMVPdeLaSemana, getPartidosRandom, getPlantillasDePredicciones, getEstadoDeForma, getPronosticoResultado, getPronosticoPrimerEquipoEnAnotar, getPronosticoPrimerJugadorEnAnotar, guardarPrediccionUsuario, getJornadaFromPartido, getMisPredicciones, getHistorialPredicciones, unirseLigaPorCodigo, crearLiga, getLeagueRanking, getMisLigas, getPublicLeagueIDs, getLeagueRankingTop10, getEquipoEventoUsuario, getEventoRanking, getEventoActivo, crearEquipoEventoCompleto, getAvailableEventPlayers, getEquipoEventoUsuarioID, getPlantillaEvento, getLogrosBase, otorgarLogro, getStatsParaPoisson, getPuzzleDelUsuario, getUltimaJornadaCompletada, getFichasEquipo, registrarUsoFicha} from './database.js'
+import {getTablaLiga, getUltimosPartidos, getMaximosGoleadores, getMejoresValorados, getEstadisticasOfensivas, getStatsJugador, buscarJugadores, getStatsMaximas, getMejoresGoles, getEstadisticasOfensivasEquipo, getXgPorEquipo, getMapaDeDisparosEquipo, getEvolucionEquipos, getPromediosStatsDeUnaLiga, getPartidos, getResultadoPartido, getInfoPrePartido, getPosiblesAlineaciones, getUltimosEnfrentamientos, getEstadisticasEquipo, getComparacionEvolucionEquipos, getComparacionStatsEquipos, getInfoPostPartido, getEstadisticasPartido, getMapaDeDisparosPartido, getMapaDeCalorJugador, getMapaDeDisparosJugador, getPercentilesJugador, getUltimosPartidosJugador, getInfoJugador, getUltimosPartidosPortero, getPercentilesPortero, getEstadisticasPortero, getInfoClub, getUltimosPartidosClub, getAlineacionClub, getPlantillaClub, getTodosLosEquipos, crearUsuario, buscarUsuarioPorEmail, buscarUsuarioPorUsername, getTodosLosPaises, findUserByEmail, getUsuarioData, getEquipoFantasyUsuario, getJugadoresFantasy, crearEquipoFantasyCompleto, getPlantillaFantasy, getDesglosePuntosFantasyJugador, getProximoPartido, realizarFichaje, actualizarPlantilla, getProximosPartidosDeEquipos, getMVPdeLaSemana, getPartidosRandom, getPlantillasDePredicciones, getEstadoDeForma, getPronosticoResultado, getPronosticoPrimerEquipoEnAnotar, getPronosticoPrimerJugadorEnAnotar, guardarPrediccionUsuario, getJornadaFromPartido, getMisPredicciones, getHistorialPredicciones, unirseLigaPorCodigo, crearLiga, getLeagueRanking, getMisLigas, getPublicLeagueIDs, getLeagueRankingTop10, getEquipoEventoUsuario, getEventoRanking, getEventoActivo, crearEquipoEventoCompleto, getAvailableEventPlayers, getEquipoEventoUsuarioID, getPlantillaEvento, getLogrosBase, otorgarLogro, getStatsParaPoisson, getPuzzleDelUsuario, getUltimaJornadaCompletada, getFichasEquipo, registrarUsoFicha, getJornadaActual, getCantidadPiezasUsuario} from './database.js'
  
 
 const app = express()  
@@ -31,6 +31,10 @@ function authenticateToken(req, res, next) {
         next(); 
     });
 }
+
+app.get("/api/session-status", authenticateToken, (req, res) => {
+    res.sendStatus(200); 
+});
 
 app.get("/api/fantasy/mi-rompecabezas", authenticateToken, async (req, res) => {
     try {
@@ -72,25 +76,71 @@ app.get("/api/fantasy/logros", authenticateToken, async (req, res) => {
         const logros = await getLogrosBase(userId);
         
         
-        const [userData, equipoData] = await Promise.all([
+        const [userData, equipoData, piezasCount] = await Promise.all([
             getUsuarioData(userId),
-            getEquipoFantasyUsuario(userId)
+            getEquipoFantasyUsuario(userId),
+            getCantidadPiezasUsuario(userId)
         ]);
+
+        if (piezasCount >= 4) {
+            const yaTieneColeccionista = logros.find(l => l.id_logro === 4 && l.unlocked === 1);
+            if (!yaTieneColeccionista) {
+                await otorgarLogro(userId, 4); 
+                
+                const logroColeccionista = logros.find(l => l.id_logro === 4);
+                if (logroColeccionista) logroColeccionista.unlocked = 1;
+            }
+        }
         
         const equipoCount = equipoData ? 1 : 0; 
-
+        const logrosDesbloqueadosCount = logros.filter(l => l.unlocked === 1 && l.id_logro !== 10).length;
+        const totalLogrosParaGoat = logros.length - 1; 
         const logrosConProgreso = logros.map(logro => {
             let currentProgress = 0;
-            
-            
+            let target = 1; 
+
+            if (logro.unlocked === 1) {
+                if (logro.id_logro === 4) { currentProgress = 4; target = 4; }
+                else if (logro.id_logro === 10) { currentProgress = totalLogrosParaGoat; target = totalLogrosParaGoat; }
+                else { currentProgress = 1; target = 1; }
+            } 
+            else {
+                switch(logro.id_logro) { 
+                    case 1: 
+                        currentProgress = 0; 
+                        target = 1;
+                        break;
+                    case 2: 
+                        currentProgress = 0;
+                        target = 1;
+                        break;
+                    
+                    case 4: 
+                        currentProgress = piezasCount;
+                        target = 4; 
+                        break;
+
+                    case 10: 
+                        currentProgress = logrosDesbloqueadosCount;
+                        target = totalLogrosParaGoat;
+                        break;
+
+                    
+                    default:
+                        currentProgress = 0;
+                        target = 1;
+                }
+            }
             
             return {
                 id: logro.id_logro,
                 nombre: logro.nombre,
                 descripcion: logro.descripcion,
+                icono: logro.icono, 
                 rarity: logro.rarity,
-                unlocked: logro.unlocked  
-                
+                unlocked: logro.unlocked === 1,
+                current: currentProgress,
+                target: target           
             };
         });
 
@@ -494,23 +544,40 @@ app.post("/api/fantasy/actualizar-plantilla", authenticateToken, async (req, res
         }
 
         const equipo = await getEquipoFantasyUsuario(userId); 
-
         if (!equipo) {
-            return res.status(404).json({ error: "No se encontró el equipo fantasy del usuario." });
+            return res.status(404).json({ error: "No se encontró el equipo fantasy." });
         }
+
+        const numCapitanes = plantilla.filter(p => p.es_capitan).length;
+
+        if (numCapitanes > 1) {
+            let tienePermiso = (id_ficha_activa == 2); 
+
+            if (!tienePermiso) {
+                const fichas = await getFichasEquipo(equipo.id_equipo_fantasy);
+                const fichaDoble = fichas.find(f => f.id_ficha === 2);
+                if (fichaDoble && fichaDoble.usada) {
+                    tienePermiso = true;
+                }
+            }
+
+            if (!tienePermiso) {
+                return res.status(400).json({ error: "No puedes tener 2 capitanes sin activar la ficha." });
+            }
+        }
+
         
         await actualizarPlantilla(equipo.id_equipo_fantasy, plantilla);
+
         if (id_ficha_activa) {
-            
             const fichas = await getFichasEquipo(equipo.id_equipo_fantasy);
             const fichaDeseada = fichas.find(f => f.id_ficha == id_ficha_activa);
 
             if (fichaDeseada && !fichaDeseada.usada) {
                 await registrarUsoFicha(equipo.id_equipo_fantasy, id_ficha_activa);
-            } else {
-                console.warn("Intento de usar una ficha ya gastada o inexistente.");
             }
         }
+
         res.status(200).json({ message: "¡Plantilla actualizada con éxito!" });
 
     } catch (error) {
@@ -523,14 +590,12 @@ app.post("/api/fantasy/actualizar-plantilla", authenticateToken, async (req, res
 app.post("/api/fantasy/hacer-fichaje", authenticateToken, async (req, res) => {
     try {
         const userId = req.userId;
-        // 👇 IMPORTANTE: Recibir id_ficha_activa
         const { jugadorSaleId, jugadorEntraId, id_ficha_activa } = req.body; 
 
         if (!jugadorSaleId || !jugadorEntraId) {
             return res.status(400).json({ error: "Faltan datos de jugadores." });
         }
 
-        // 👇 Pasamos el ID de la ficha a la función
         const resultado = await realizarFichaje(userId, jugadorSaleId, jugadorEntraId, id_ficha_activa);
 
         let mensaje = "¡Fichaje realizado con éxito!";
@@ -585,12 +650,13 @@ app.get("/api/fantasy/mi-equipo", authenticateToken, async (req, res) => {
     const userId = req.userId;
 
     try {
+        const jornadaActual = await getJornadaActual();
         const userInfo = await getUsuarioData(userId);
         const equipoInfo = await getEquipoFantasyUsuario(userId);
         const plantillaConDetalles = await getPlantillaFantasy(userId);
         const fichas = await getFichasEquipo(equipoInfo.id_equipo_fantasy);
 
-        res.status(200).json({userInfo, equipoInfo, plantillaConDetalles, fichas});
+        res.status(200).json({userInfo, equipoInfo, plantillaConDetalles, fichas, jornadaActual});
     } catch (error) {
         console.error(`Error al obtener dashboard para usuario ${userId}:`, error);
         res.status(500).json({ error: "Error interno al obtener datos del dashboard" });

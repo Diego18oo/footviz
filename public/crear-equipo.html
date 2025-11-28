@@ -548,6 +548,9 @@
                 playersRemainingDisplay.textContent = `${15 - playersSelectedCount}`;
                 budgetDisplay.textContent = `$${currentBudget.toFixed(1)}m`;
                 // RQNF2
+                if (currentBudget < 0){
+                    alert("Limite de presupuesto excedido");
+                }
                 if (playersSelectedCount === 15 && currentBudget >= 0) {
                     continueButton.disabled = false;
                 } else {
@@ -617,7 +620,7 @@
                 updateTeamState(null, 'reset'); 
                 const targetSquad = { 'G': 2, 'D': 5, 'M': 5, 'F': 3 };
                 // RQNF3
-                const maxPricePerPlayer = 8; 
+                const maxPricePerPlayer = 6.6; 
                 // RQNF4
                 const maxPlayersPerTeam = 2;
 

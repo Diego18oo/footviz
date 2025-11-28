@@ -373,7 +373,6 @@
             const themeToggleButton = document.getElementById('theme-toggle');
             const body = document.body;
 
-            // Función para aplicar el tema y actualizar el botón
             const applyTheme = (theme) => {
                 if (theme === 'light') {
                     body.classList.add('light-mode');
@@ -384,7 +383,7 @@
                 }
             };
 
-            const savedTheme = localStorage.getItem('theme') || 'dark'; // 'dark' es el default
+            const savedTheme = localStorage.getItem('theme') || 'dark'; 
             applyTheme(savedTheme);
 
             themeToggleButton.addEventListener('click', () => {
@@ -539,14 +538,27 @@
 
         
 
-        // Listeners para las otras tablas
         document.getElementById("encabezado-tabla-equipos").addEventListener("click", function(){
             window.location.href = "estadisticas-liga.html?liga=" + ligaSelect.value;
         });
 
         const loginButton = document.getElementById('login');
-        loginButton.addEventListener('click', () =>{
-            window.location.href = "login.html";
+        
+        loginButton.addEventListener('click', async () => {
+            const originalText = loginButton.textContent;
+            loginButton.textContent = "Entrar a Fantasy";
+
+            try {
+                const response = await fetch('/api/session-status');
+
+                if (response.ok) {
+                    window.location.href = "fantasy.html";
+                } else {
+                    window.location.href = "login.html";
+                }
+            } catch (error) {
+                window.location.href = "login.html";
+            }
         });
 
 

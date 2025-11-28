@@ -17,7 +17,7 @@ db_name = os.getenv('DB_NAME')
 
 db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
 today = datetime.now()
-yesterday = today - timedelta(days=4)
+yesterday = today - timedelta(days=1)
 yesterday = yesterday.strftime('%Y-%m-%d')
 engine = create_engine(db_url)
 
@@ -41,18 +41,18 @@ liga_fbref = [
 ]
 
 ids_para_scrapear_temporada = df_partidos_ayer['temporada'].unique() 
-insert_estadistica_jugador(engine,  ids_para_scrapear_temporada, db_url)
+#insert_estadistica_jugador(engine,  ids_para_scrapear_temporada, db_url)
 #insert_update_plantilla_equipos(engine, driver, ligas_ids, temporadas_ids, db_url)
 #print("Todo las plantillas estan actualizadas")
 
 
 
-#if len(df_partidos_futuros) > 0:
-    #print("Entrando...")
-    #for i in range(len(df_partidos_futuros)):
-        #prematch_ref(engine, df_partidos_futuros.iloc[i] )
-        #prematch_odds(engine, df_partidos_futuros.iloc[i])
-        #insert_predicted_lineups(engine, df_partidos_futuros.iloc[i])
+if len(df_partidos_futuros) > 0:
+    print("Entrando...")
+    for i in range(len(df_partidos_futuros)):
+        prematch_ref(engine, df_partidos_futuros.iloc[i] )
+        prematch_odds(engine, df_partidos_futuros.iloc[i])
+        insert_predicted_lineups(engine, df_partidos_futuros.iloc[i])
 
 #ejecutar_procesos_fin_de_jornada(engine, 12)
 

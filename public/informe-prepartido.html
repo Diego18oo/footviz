@@ -462,22 +462,15 @@
                     const fieldW = width - margin*2;
                     const fieldH = height - margin*2;
 
-                    // Normalización de Coordenadas (Asumiendo pitch_x: 0-100 largo, pitch_y: 0-100 ancho)
-                    // Convertimos para ver siempre atacando hacia ARRIBA
-                    // X en data = Eje Y en Canvas (Largo del campo)
-                    // Y en data = Eje X en Canvas (Ancho del campo)
                     
                     const canvasX = margin + ((100 - shot.pitch_y) / 100) * fieldW;
-                    // Invertimos X para que vaya de abajo (0) hacia arriba (100)
                     const canvasY = margin + fieldH - ((shot.pitch_x / 80) * fieldH);
 
-                    // Tamaño del punto basado en xG (mínimo 3px, máximo 15px)
                     const radio = Math.max(3, Math.min(15, shot.xg * 20));
 
                     ctx.beginPath();
                     ctx.arc(canvasX, canvasY, radio, 0, Math.PI * 2);
                     
-                    // Color según resultado
                     if (shot.resultado === 'goal') {
                         ctx.fillStyle = '#ffd700'; // Oro para Goles
                         ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
@@ -493,7 +486,6 @@
                     ctx.fill();
                     if (shot.resultado === 'goal') ctx.stroke();
 
-                    // Retornamos datos para el tooltip
                     return { x: canvasX, y: canvasY, r: radio, data: shot };
                 }
 
@@ -544,24 +536,19 @@
                     const canvas = document.getElementById(canvasId);
                     if (!canvas) return;
                     
-                    // Ajustar resolución
                     canvas.width = canvas.offsetWidth;
                     canvas.height = canvas.offsetHeight;
                     const ctx = canvas.getContext('2d');
 
-                    // Dibujar campo base
                     dibujarCampo(ctx);
 
                     try {
-                        // Tu endpoint ya creado
                         const res = await fetch(`/api/mapa-disparos/${equipoId}`); 
                         const disparos = await res.json();
                         
-                        // Limpiamos array de tooltips
                         storeArray.length = 0;
 
                         if (!disparos || disparos.length === 0) {
-                            // Si no hay datos, escribir texto en el canvas
                             ctx.fillStyle = "#a0a0c0";
                             ctx.font = "14px Poppins";
                             ctx.textAlign = "center";
@@ -569,13 +556,11 @@
                             return;
                         }
 
-                        // Dibujar cada disparo
                         disparos.forEach(shot => {
                             const shotData = dibujarDisparo(ctx, shot, canvas.width, canvas.height);
                             storeArray.push(shotData);
                         });
 
-                        // Configurar interactividad
                         setupCanvasHover(canvas, storeArray);
 
                     } catch (e) {
@@ -951,27 +936,23 @@
                 }
 
                 function poisson(lambda, k) {
-                    // P(x = k) = (e^(-λ) * λ^k) / k!
                     return (Math.exp(-lambda) * Math.pow(lambda, k)) / factorial(k);
                 }
 
                 async function cargarProbabilidades(partidoId) {
-                    const MAX_GOLES = 10; // Calcular hasta 10 goles
+                    const MAX_GOLES = 10; 
                     const container = document.getElementById('prob-matrix-container');
                     const resultadoBar = document.getElementById('prob-resultado-bar');
                     container.innerHTML = "<p>Calculando probabilidades...</p>";
 
                     try {
-                        // 1. Obtener las estadísticas base
                         const res = await fetch(`/api/fantasy/partido-probabilidades/${partidoId}`);
                         const stats = await res.json();
 
-                        // 2. Calcular Goles Esperados (Lambda)
                         const lambdaLocal = stats.poder_ataque_local * stats.poder_defensa_visitante * stats.avg_liga_casa;
                         const lambdaVisitante = stats.poder_ataque_visitante * stats.poder_defensa_local * stats.avg_liga_visita;
                         console.log(lambdaLocal, lambdaVisitante);
 
-                        // 3. Calcular P(x=k) para 0-10 goles
                         let probLocal = [];
                         let probVisitante = [];
                         for (let k = 0; k <= MAX_GOLES; k++) {
@@ -979,32 +960,26 @@
                             probVisitante[k] = poisson(lambdaVisitante, k);
                         }
 
-                        // 4. Crear la matriz de marcadores y sumar resultados
                         let htmlTabla = '<table>';
                         let probTotalLocal = 0;
                         let probTotalEmpate = 0;
                         let probTotalVisitante = 0;
 
-                        // Fila de encabezado (Goles Visitante)
                         htmlTabla += '<thead><tr><th class="header-local">Local / Visitante</th>';
                         for (let j = 0; j <= MAX_GOLES; j++) {
                             htmlTabla += `<th class="header-visitante">${j}</th>`;
                         }
                         htmlTabla += '</tr></thead><tbody>';
 
-                        // Filas de datos
-                        for (let i = 0; i <= MAX_GOLES; i++) { // Goles Local (filas)
+                        for (let i = 0; i <= MAX_GOLES; i++) { 
                             htmlTabla += `<tr><th class="header-local">${i}</th>`;
-                            for (let j = 0; j <= MAX_GOLES; j++) { // Goles Visitante (columnas)
-                                // Probabilidad de este marcador exacto (ej. 1-0)
+                            for (let j = 0; j <= MAX_GOLES; j++) { 
                                 const probMarcador = probLocal[i] * probVisitante[j];
                                 
-                                // Sumar a los totales (RQF6)
                                 if (i > j) probTotalLocal += probMarcador;
                                 else if (i === j) probTotalEmpate += probMarcador;
                                 else probTotalVisitante += probMarcador;
                                 
-                                // Estilo de celda
                                 let cellClass = '';
                                 if (probMarcador > 0.08) cellClass = 'prob-high';
                                 else if (probMarcador > 0.04) cellClass = 'prob-mid';
@@ -1016,7 +991,6 @@
                         htmlTabla += '</tbody></table>';
                         container.innerHTML = htmlTabla;
 
-                        // 5. Dibujar la barra de resultados (L/E/V)
                         const sumaTotal = probTotalLocal + probTotalEmpate + probTotalVisitante;
                         
 

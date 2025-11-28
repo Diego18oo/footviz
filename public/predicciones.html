@@ -310,7 +310,7 @@
             const darkChartOptions = { 
                 responsive: true, maintainAspectRatio: false,
                 scales: { 
-                    y: { ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(224, 224, 224, 0.1)' }, title: { display: true, text: 'Puntos XP Acumulados', color: '#e0e0e0'} }, 
+                    y: { ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(224, 224, 224, 0.1)' }, title: { display: true, text: 'Puntos', color: '#e0e0e0'} }, 
                     x: { ticks: { color: '#e0e0e0' }, grid: { color: 'rgba(224, 224, 224, 0.1)' }, title: { display: true, text: 'Jornada', color: '#e0e0e0'} } 
                 }, 
                 plugins: { legend: { display: false } } 
@@ -505,7 +505,7 @@
                     const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" }));
                     const dayOfWeek = now.getDay(); 
                     
-                    const closedDays = [ 1, 5, 6]; 
+                    const closedDays = [ 1, 6]; 
 
                     if (closedDays.includes(dayOfWeek)) {
                         alert("¡Mercado de predicciones cerrado!\n\nLas predicciones se abren de martes a jueves.");

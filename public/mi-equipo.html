@@ -224,7 +224,10 @@
                 <div class="modal-content">
                     <button class="modal-close-btn" onclick="closePlayerModal()">&times;</button>
                     <img id="modal-player-img" src="placeholder-player-face.png" alt="Jugador">
-                    <h3 id="modal-player-name">Nombre Jugador</h3>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                        <img id="modal-player-flag" src="" alt="Flag" style="width: 24px; height: auto; border-radius: 2px; box-shadow: 0 0 2px rgba(0,0,0,0.5); display: none;"> 
+                        <h3 id="modal-player-name" style="margin: 0;">Nombre Jugador</h3>
+                    </div>
                     <p><img src="" id="modal-player-club"> - <span id="modal-player-pos">POS</span></p>
                     <p>Valor: <strong id="modal-player-value">--M</strong> | Popularidad: <strong id="modal-player-popularity">--%</strong></p>
                     <p>Puntos Totales: <strong id="modal-player-total-points">--</strong></p>
@@ -307,11 +310,11 @@
             let freeHitActive = false;
 
             const CHIP_UNLOCK_LEVELS = {
-                3: 9,  // Retro
-                4: 10, // x3
-                5: 11, // Táctico
-                6: 12, // Comodín
-                7: 12  // Sin Límites
+                3: 9,  
+                4: 10, 
+                5: 11, 
+                6: 12, 
+                7: 12  
             };
             const transferPlayersPerPage = 10;
             const saveChangesButton = document.getElementById('save-team-changes-btn');
@@ -350,7 +353,7 @@
                     fichajesBase = parseInt(data.equipoInfo.fichajes_jornada_restantes);
                     actualizarContadorFichajes();
                     renderPitchAndBench(miPlantilla);
-                    renderChips(data.fichas);
+                    renderChips(data.fichas, data.jornadaActual);
 
 
                 } catch (error) {
@@ -457,48 +460,39 @@
                 
                 const playerToBuy = allAvailablePlayers.find(p => p.id_jugador === playerToBuyId);
                 
-                // --- Validación de equipo (máx 2 por club) ---
                 let countSameTeam = 0;
                 miPlantilla.forEach(p => {
                     if (p.id_equipo === playerToBuy.id_equipo && p.id_jugador !== playerToSell.id_jugador) {
                         countSameTeam++;
                     }
                 });
-                if (countSameTeam >= 2 && !freeHitActive) { // Free Hit ignora límite de equipo
+                if (countSameTeam >= 2 && !freeHitActive) { 
                     alert(`No puedes fichar a ${playerToBuy.nombre_jugador}, ya tienes 2 jugadores de ${playerToBuy.nombre_equipo}.`);
                     return;
                 }
 
-                // --- Validación de Fichajes Restantes (con Comodín/Free Hit) ---
                 const fichajesRestantes = parseInt(document.getElementById('transfers-remaining').textContent);
                 
-                // Si NO tienes fichajes Y NO tienes fichas activas, pregunta por la penalización
                 if (fichajesRestantes <= 0 && !wildcardActive && !freeHitActive) {
                      if (!confirm(`Ya no te quedan fichajes. ¿Deseas hacer este fichaje con un costo de -5 puntos?`)) {
                         return;
                     }
                 }
 
-                // --- 👇 CÁLCULO DEL PRESUPUESTO (AHORA ESTÁ AQUÍ) 👇 ---
                 const budgetElement = document.getElementById('budget-remaining');
                 const currentBudget = parseFloat(budgetElement.textContent.replace(' M', ''));
                 
-                // Calculamos: Presupuesto Actual + Venta - Compra
                 const nuevoPresupuesto = currentBudget + parseFloat(playerToSell.precio_compra) - parseFloat(playerToBuy.valor_actual);
-                // --- 👆 ---------------------------------------- 👆 ---
 
-                // --- Validación de Presupuesto (con Free Hit) ---
                 if (nuevoPresupuesto < 0 && !freeHitActive) { 
                     alert(`Presupuesto insuficiente. Te faltan ${Math.abs(nuevoPresupuesto).toFixed(2)}M`); 
                     return;
                 }
 
-                // Confirmación Final
                 if (!confirm(`¿Confirmar fichaje?\n\nVENDER: ${playerToSell.nombre_jugador}\nCOMPRAR: ${playerToBuy.nombre_jugador}`)) {
                     return;
                 }
 
-                // --- Llamada al Backend ---
                 try {
                     const response = await fetch('/api/fantasy/hacer-fichaje', {
                         method: 'POST',
@@ -523,7 +517,6 @@
                         actualizarContadorFichajes();
                     }
                     
-                    // Recargar para ver los cambios reflejados
                     window.location.reload(); 
 
                 } catch (error) {
@@ -559,7 +552,7 @@
             function createPlayerSlotHTML(player) {
                 const now = new Date();
                 const dayOfWeek = now.getDay(); 
-                const allowedDays = [2,   4, 5];
+                const allowedDays = [2,3,   4, 5];
                 let currentGameweekPoints = player.puntos_ultima_jornada_equipo || 0;
                 if (allowedDays.includes(dayOfWeek)) {
                     currentGameweekPoints = 0;
@@ -569,60 +562,75 @@
                 if (player.es_capitan) {
                     captainBadge = '<span class="captain-badge">C</span>';
                 }
+
+                const clubLogo = player.img_equipo 
+                    ? `<img src="${player.img_equipo}" class="club-badge">` 
+                    : '';
+
+                const fechaCompra = player.fecha_compra_formateada || '--/--/----';
                 
                 return `
-                    <div class="player-slot" data-player-id="${player.id_jugador}" data-position="${player.posicion}" draggable="true"> 
-                        ${captainBadge}
-                        <img src="${player.url_imagen_jugador || 'placeholder-player-face.png'}" alt="${player.nombre_jugador}">
+                    <div class="player-slot" 
+                         data-player-id="${player.id_jugador}" 
+                         data-position="${player.posicion}" 
+                         draggable="true"
+                         title="Fichado el: ${fechaCompra}"> ${captainBadge}
+                        
+                        <img src="${player.url_imagen_jugador || 'placeholder-player-face.png'}" alt="${player.nombre_jugador}"
+                             style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; background-color: rgba(0,0,0,0.2);">
+                        
+                        
                         <span class="player-name">${player.nombre_jugador}</span>
                         <span class="player-points">${currentGameweekPoints} Pts</span>
+                        
+                        <span style="font-size: 0.6rem; color: #a0a0c0; margin-top: 2px;">${fechaCompra}</span>
                     </div>
                 `;
             }
 
             //RQF7
-            function renderChips(fichas) {
+            function renderChips(fichas, jornadaActual) {
                 const chipsList = document.getElementById('chips-list');
                 chipsList.innerHTML = ''; 
                 const userLevel = parseInt(document.getElementById('user-level').textContent) || 1;
+                
+                const fichaIrreversibleActiva = fichas.find(f => 
+                    f.usada && 
+                    f.jornada_uso === jornadaActual && 
+                    [1, 6].includes(f.id_ficha)
+                );
+
                 fichas.forEach(ficha => {
                     const button = document.createElement('button');
                     button.dataset.id = ficha.id_ficha; 
                     button.textContent = ficha.nombre;
-                    button.style.backgroundColor = "#3b82f6";
-                    button.style.color = "white";
-                    button.style.border = "none";
-                    button.style.padding = "8px 12px";
-                    button.style.borderRadius = "6px";
-                    button.style.cursor = "pointer";
-                    button.style.marginRight = "10px";
-                    button.style.fontSize = "0.9rem";
                     
-                    // 1. Verificar si está usada (prioridad máxima)
-                    if (ficha.usada) {
+                    if (ficha.usada && ficha.jornada_uso === jornadaActual) {
+                        button.style.backgroundColor = "#059669"; 
+                        button.textContent += " (Activa)";
+                        if (ficha.id_ficha == 6) { wildcardActive = true; activeChipId = 6; document.getElementById('transfers-remaining').textContent = "∞"; }
+                        if ([1, 6].includes(ficha.id_ficha)) {
+                            button.onclick = () => alert("Esta ficha ya ha sido confirmada para esta jornada y no se puede cancelar.");
+                        } else {
+                            button.onclick = () => toggleChip(ficha.id_ficha, button);
+                        }
+                    }
+                    else if (fichaIrreversibleActiva) {
+                        button.disabled = true;
+                        button.style.backgroundColor = "#334155";
+                        button.style.opacity = "0.5";
+                        button.title = "No puedes cambiar de ficha porque ya usaste una de mercado.";
+                    }
+                    else if (ficha.usada && ficha.jornada_uso < jornadaActual) {
                         button.disabled = true;
                         button.textContent += " (Usada)";
                         button.style.backgroundColor = "#475569";
-                        if (ficha.id_ficha == 6) { 
-                            wildcardActive = true;
-                            activeChipId = 6; // Importante: Mantener el ID para enviarlo al backend
-                            document.getElementById('transfers-remaining').textContent = "∞";
-                        }
-                        if (ficha.id_ficha == 7) {
-                            freeHitActive = true;
-                            activeChipId = 7;
-                            document.getElementById('transfers-remaining').textContent = "∞";
-                        }
                     } 
-                    // 2. Verificar si tiene el nivel (solo para las nuevas)
                     else if (CHIP_UNLOCK_LEVELS[ficha.id_ficha] && userLevel < CHIP_UNLOCK_LEVELS[ficha.id_ficha]) {
-                        button.disabled = true;
-                        button.textContent += ` (Nvl ${CHIP_UNLOCK_LEVELS[ficha.id_ficha]})`;
-                        button.style.backgroundColor = "#334155"; // Un gris diferente para bloqueado
-                        button.style.opacity = "0.6";
-                        button.title = "Sube de nivel para desbloquear";
+                         button.disabled = true;
+                         button.style.backgroundColor = "#334155";
+                         button.textContent += ` (Nvl ${CHIP_UNLOCK_LEVELS[ficha.id_ficha]})`;
                     }
-                    // 3. Disponible
                     else {
                         button.onclick = () => toggleChip(ficha.id_ficha, button);
                     }
@@ -630,9 +638,7 @@
                     chipsList.appendChild(button);
                 });
             }
-
             
-
             //RQF4
             function openPlayerModal(playerId) {
                 currentPlayerIdInModal = playerId;
@@ -653,6 +659,15 @@
                     document.getElementById('modal-player-name').textContent = playerData.nombre_jugador;
                     document.getElementById('modal-player-img').src = playerData.url_imagen_jugador;
                     document.getElementById('modal-player-club').src = playerData.img_equipo_actual;
+
+                    const flagImg = document.getElementById('modal-player-flag');
+                    if (playerData.codigo_iso) {
+                        flagImg.src = `https://flagcdn.com/w40/${playerData.codigo_iso.toLowerCase()}.png`;
+                        flagImg.style.display = 'inline-block'; 
+                    } else {
+                        flagImg.style.display = 'none';
+                    }
+
                     if (playerData.posicion == 'F'){
                         document.getElementById('modal-player-pos').textContent = "DEL";
                     } else if (playerData.posicion == 'M') {
@@ -873,7 +888,7 @@
                 const lastCaptainChange = localStorage.getItem('lastCaptainChange');
                 const now = new Date().getTime(); 
                 
-                /*
+                
                 if (lastCaptainChange && !doubleCaptainActive) {
                     const lastChangeTime = parseInt(lastCaptainChange);
                     const hoursPassed = (now - lastChangeTime) / (1000 * 60 * 60); 
@@ -884,7 +899,7 @@
                         closePlayerModal();
                         return;
                     }
-                }*/
+                }
 
                 const newCaptainId = currentPlayerIdInModal;
                 const newCaptain = miPlantilla.find(p => p.id_jugador === newCaptainId);
@@ -906,7 +921,6 @@
                         return; 
                     }
                 } else {
-                    // Comportamiento normal: Solo 1 capitán
                     if (currentCaptains.length > 0) {
                         currentCaptains[0].es_capitan = 0; 
                     }
@@ -926,14 +940,14 @@
             function handleTransfer() {
                 const now = new Date();
                 const dayOfWeek = now.getDay(); 
-                const allowedDays = [0,2, 3, 4]; 
+                const allowedDays = [0,2, 3, 4, 5]; 
                 if (!allowedDays.includes(dayOfWeek)) {
                     alert("¡Mercado de fichajes cerrado!\n\nSolo puedes realizar fichajes los martes, miércoles y jueves.");
                     closePlayerModal();
                     return; 
                 }
                 //RQNF2
-                if (dayOfWeek === 4 && (now.getHours() >= 23 && now.getMinutes() >= 59)) {
+                if (dayOfWeek === 5 && (now.getHours() >= 23 && now.getMinutes() >= 59)) {
                     alert("¡Mercado de fichajes cerrado!\n\nLa fecha límite (jueves 11:59 PM) ya ha pasado.");
                     closePlayerModal();
                     return;
@@ -954,7 +968,9 @@
 
                 const budgetElement = document.getElementById('budget-remaining');
                 const currentBudget = parseFloat(budgetElement.textContent.replace(' M', ''));
+                console.log(currentBudget);
                 const presupuestoDisponible = currentBudget + parseFloat(playerToSell.precio_compra); 
+                console.log(presupuestoDisponible);
                 console.log(playerToSell);
                 document.getElementById('transfer-sell-player-name').textContent = playerToSell.nombre_jugador;
                 document.getElementById('transfer-current-budget').textContent = `$${presupuestoDisponible.toFixed(1)}M`;
@@ -992,7 +1008,7 @@
                 extraTransferActive = true;
                 fichajesExtra = 1; 
                 actualizarContadorFichajes();
-                alert("¡Fichaje Extra activado! Ahora tienes un traspaso adicional gratis.");
+                
             }
 
             function desactivarFichajeExtra() {
@@ -1009,7 +1025,7 @@
 
             function activarDobleCapitan() {
                 doubleCaptainActive = true;
-                alert("¡Doble Capitán activado! Ahora puedes seleccionar un segundo capitán.");
+                
             }
 
             function desactivarDobleCapitan() {
@@ -1028,7 +1044,7 @@
                     resetChipEffects();
                     activeChipId = null;
                     btn.style.backgroundColor = "#4f46e5";
-                    btn.textContent = btn.textContent.replace(" (Activa)", "");
+                    btn.textContent = btn.textContent.replace(" ", "");
                     
                     if (id === 1) desactivarFichajeExtra(); 
                     if (id === 2) desactivarDobleCapitan(); 
@@ -1044,18 +1060,18 @@
                     switch(id) {
                         case 1: activarFichajeExtra(); break;
                         case 2: activarDobleCapitan(); break;
-                        case 3: retroCaptainActive = true; alert("¡Capitán Retro activo! Puedes elegir a quien ya jugó."); break;
-                        case 4: tripleCaptainActive = true; alert("¡Capitán x3 activo! Tus puntos valdrán triple."); break;
-                        case 5: tacticalChangeActive = true; alert("¡Cambio Táctico activo! Formaciones libres."); break;
+                        case 3: retroCaptainActive = true;  break;
+                        case 4: tripleCaptainActive = true; break;
+                        case 5: tacticalChangeActive = true; break;
                         case 6: 
                             wildcardActive = true; 
-                            document.getElementById('transfers-remaining').textContent = "∞"; // Visualmente infinito
-                            alert("¡Comodín activo! Fichajes ilimitados."); 
+                            document.getElementById('transfers-remaining').textContent = "∞"; 
                             break;
-                        case 7: freeHitActive = true; alert("¡Sin Límites activo! Presupuesto y fichajes ilimitados (solo por hoy)."); break;
+                        case 7: freeHitActive = true; ;
+                        break;
                     }
                     btn.style.backgroundColor = "#059669"; 
-                    btn.textContent += " (Activa)";
+                    btn.textContent += " ";
 
                 }
                 
@@ -1070,7 +1086,6 @@
                 tacticalChangeActive = false;
                 wildcardActive = false;
                 freeHitActive = false;
-                // También deberías resetear el texto de fichajes si desactivas el extra/comodín
             }
 
             async function saveChangesToBackend() {
@@ -1092,12 +1107,11 @@
                     if (!response.ok) throw new Error('Respuesta del servidor no fue OK');
                     const result = await response.json();
                     alert('¡Cambios guardados con éxito!');
-                    window.reload();
+                    window.location.reload();
                     activeChipId = null;
                     saveChangesButton.style.display = 'none';
                 } catch (error) {
                     console.error("Error al guardar cambios:", error);
-                    alert("Error al guardar cambios. Inténtalo de nuevo.");
                 }
             }
             loadTeamData();

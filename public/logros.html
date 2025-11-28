@@ -333,20 +333,14 @@
                 }
 
                 function createAchievementHTML(logro) {
-                // 1. Verificar si está desbloqueado (El JSON trae 1 o 0)
-                const isUnlocked = logro.unlocked === 1;
+                const isUnlocked = logro.unlocked === true || logro.unlocked === 1;
 
-                // 2. Definir clases y textos según el estado
                 const activeClass = isUnlocked ? 'unlocked' : '';
-                const iconName = logro.icono || 'ribbon-outline'; // Icono por defecto si viene null
-                
-                // Badge de estado (Texto a la derecha)
+                const iconName = logro.icono || 'ribbon-outline'; 
                 const badgeHTML = isUnlocked 
                     ? `<span class="status-badge status-unlocked"><ion-icon name="checkmark-circle"></ion-icon> Completado</span>`
                     : `<span class="status-badge status-locked"><ion-icon name="lock-closed"></ion-icon> Bloqueado</span>`;
 
-                // Progreso (Solo mostrar si NO está desbloqueado y tiene meta > 1)
-                // Si ya está desbloqueado, mostramos 100%
                 let progressHTML = '';
                 if (!isUnlocked && logro.target > 1) {
                     const percent = Math.min(100, (logro.current / logro.target) * 100);

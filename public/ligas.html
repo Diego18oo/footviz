@@ -437,7 +437,6 @@
 
                     if (!response.ok) {
                         const errData = await response.json();
-                        // Lanza un error para ser atrapado por el 'catch'
                         throw new Error(errData.error || 'Error desconocido del servidor');
                     }
                         

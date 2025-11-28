@@ -296,7 +296,6 @@
                 const tbody = document.querySelector("#estadisticas-ofensivas tbody");
                 const tipoDeStatBtn = document.getElementById('tipo-de-estadistica');
                 
-                // --- LÓGICA DE TEMA ---
                 const themeToggleButton = document.getElementById('theme-toggle');
                 const body = document.body;
 
@@ -346,13 +345,11 @@
                         
                         if (query.length < 2) return;
 
-                        // Usamos el mismo endpoint que ya tienes
                         const res = await fetch(`/api/buscar-jugadores?nombre=${query}`);
                         const jugadores = await res.json();
 
                         jugadores.forEach(jugador => {
                             const div = document.createElement("div");
-                            // Usamos el mismo estilo que tus otros resultados
                             div.innerHTML = `
                                 <img src="${jugador.imagen_equipo}" width="30" />
                                 <img src="${jugador.imagen_jugador}" width="30" />
@@ -362,12 +359,10 @@
                             div.style.padding = "10px";
                             div.style.borderBottom = "1px solid #1e1e3f";
                             
-                            // Al hacer clic, redirigir al perfil
                             div.addEventListener("click", () => {
                                 window.location.href = `jugador.html?id=${jugador.id_jugador}`;
                             });
                             
-                            // Efecto hover simple
                             div.addEventListener("mouseenter", () => div.style.backgroundColor = "#3a3a5a");
                             div.addEventListener("mouseleave", () => div.style.backgroundColor = "transparent");
 
@@ -375,7 +370,6 @@
                         });
                     });
 
-                    // Cerrar resultados si se hace clic fuera (opcional pero recomendado)
                     document.addEventListener("click", (e) => {
                         if (e.target !== input && e.target !== resultsDiv) {
                             resultsDiv.innerHTML = "";
