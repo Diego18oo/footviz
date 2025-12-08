@@ -505,7 +505,7 @@
                     const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" }));
                     const dayOfWeek = now.getDay(); 
                     
-                    const closedDays = [ 1, 6]; 
+                    const closedDays = [ 0,  1]; 
 
                     if (closedDays.includes(dayOfWeek)) {
                         alert("¡Mercado de predicciones cerrado!\n\nLas predicciones se abren de martes a jueves.");

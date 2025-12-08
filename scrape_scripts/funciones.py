@@ -2161,10 +2161,13 @@ def procesar_puntos_partido(engine, id_partido):
 
 def actualizar_valor_mercado_fantasy(engine):
     """
-    Actualiza el valor de mercado de TODOS los jugadores fantasy
-    basado en la fórmula: V = Vbase + (W1*Rendimiento) + (W2*Popularidad)
+    Actualiza el valor de mercado incluyendo depreciación por inactividad.
+    Regla:
+    - 2 partidos inactivo: -5%
+    - 3+ partidos: -2.5% acumulativo adicional por cada jornada extra.
     """
     
+    # Constantes
     W1_RENDIMIENTO = 0.75
     W2_POPULARIDAD = 0.25
     DIVISOR_VALOR_BASE = 15000000.0  
@@ -2173,8 +2176,15 @@ def actualizar_valor_mercado_fantasy(engine):
     meta.reflect(bind=engine)
     tabla_valor_fantasy = meta.tables['valor_jugador_fantasy']
 
-    
-    sql_query = text(f"""
+   
+    jornada_actual_query = text("SELECT MAX(jornada) FROM partido WHERE fecha < CURDATE()")
+    with engine.connect() as conn:
+        jornada_actual = conn.execute(jornada_actual_query).scalar() or 1
+
+    print(f"Calculando valores para jornada actual: {jornada_actual}")
+
+    # Consulta Principal
+    sql_base = text(f"""
         SELECT
             j.id_jugador,
             j.valor_mercado,
@@ -2186,60 +2196,107 @@ def actualizar_valor_mercado_fantasy(engine):
             valor_jugador_fantasy v ON j.id_jugador = v.id_jugador
         LEFT JOIN
             (
-                SELECT
-                    id_jugador,
-                    AVG(puntos_fantasy) as rendimiento
-                FROM
-                    puntos_jugador_jornada
-                GROUP BY
-                    id_jugador
+                SELECT id_jugador, AVG(puntos_fantasy) as rendimiento
+                FROM puntos_jugador_jornada
+                GROUP BY id_jugador
             ) r ON j.id_jugador = r.id_jugador
     """)
 
-    df_data = pd.read_sql(sql_query, engine)
+    df_data = pd.read_sql(sql_base, engine)
     
     if df_data.empty:
-        print("No se encontraron jugadores para actualizar.")
+        print("No se encontraron jugadores.")
         return
- 
+
     df_data['valor_mercado'] = df_data['valor_mercado'].fillna(0)
     df_data['popularidad'] = df_data['popularidad'].fillna(0)
     df_data['rendimiento'] = df_data['rendimiento'].fillna(0)
 
-    
     v_base = df_data['valor_mercado'] / DIVISOR_VALOR_BASE
-    
     rendimiento_pond = W1_RENDIMIENTO * df_data['rendimiento']
-    
     popularidad_pond = W2_POPULARIDAD * df_data['popularidad']
     
-    v_jugador_nuevo = v_base + rendimiento_pond + popularidad_pond
+    df_data['valor_preliminar'] = v_base + rendimiento_pond + popularidad_pond
+
+
     
-    df_data['valor_actual_nuevo'] = round(v_jugador_nuevo, 2)
+    
+    sql_historial = text(f"""
+        SELECT 
+            j.id_jugador,
+            p.jornada,
+            COALESCE(ejp.minutos, 0) as minutos_jugados
+        FROM jugador j
+        JOIN plantilla_equipos pe ON j.id_jugador = pe.jugador 
+        JOIN partido p ON (p.equipo_local = pe.equipo OR p.equipo_visitante = pe.equipo)
+        LEFT JOIN estadistica_jugador_partido ejp ON ejp.jugador = j.id_jugador AND ejp.partido = p.id_partido
+        WHERE p.jornada <= :jornada_actual 
+          AND p.jornada > :jornada_inicio_corte
+          AND p.fecha < CURDATE()
+        ORDER BY j.id_jugador, p.jornada DESC
+    """)
+    
+    df_historial = pd.read_sql(sql_historial, engine, params={"jornada_actual": jornada_actual, "jornada_inicio_corte": max(0, jornada_actual - 10)})
+
+    def calcular_racha_inactividad(group):
+        racha = 0
+        for minutos in group['minutos_jugados']:
+            if minutos == 0:
+                racha += 1
+            else:
+                break 
+        return racha
+
+    if not df_historial.empty:
+        rachas = df_historial.groupby('id_jugador').apply(calcular_racha_inactividad)
+        rachas.name = 'partidos_inactivos'
+        df_data = df_data.merge(rachas, on='id_jugador', how='left')
+        df_data['partidos_inactivos'] = df_data['partidos_inactivos'].fillna(0)
+    else:
+        df_data['partidos_inactivos'] = 0
+
+    def aplicar_castigo(row):
+        valor = row['valor_preliminar']
+        inactivo = int(row['partidos_inactivos'])
+        
+        if inactivo < 2:
+            return valor 
+        
+        valor = valor * 0.95
+        
+        if inactivo > 2:
+            extra_misses = inactivo - 2
+            factor_extra = pow(0.975, extra_misses)
+            valor = valor * factor_extra
+            
+        return valor
+
+    df_data['valor_final'] = df_data.apply(aplicar_castigo, axis=1)
+    
+    df_data['valor_actual_nuevo'] = round(df_data['valor_final'], 2)
 
     data_para_insertar = []
     for row in df_data.itertuples():
+        val_final = max(0.1, float(row.valor_actual_nuevo)) 
+        
         data_para_insertar.append({
             'id_jugador': int(row.id_jugador),
-            'valor_actual': float(row.valor_actual_nuevo)
+            'valor_actual': val_final
         }) 
 
     if data_para_insertar:
         stmt = insert(tabla_valor_fantasy)
-        
         update_stmt = stmt.on_duplicate_key_update(
             valor_actual = stmt.inserted.valor_actual
         )
-        
         with engine.begin() as conn:
             conn.execute(update_stmt, data_para_insertar)
             
-        print(f"Valor fantasy actualizado para {len(data_para_insertar)} jugadores.")
+        print(f"Valor fantasy actualizado para {len(data_para_insertar)} jugadores (con penalizaciones).")
     else:
         print("Fallo mi loco: No hubo datos para insertar.")
     
     return
-
 
 def actualizar_porcentaje_popularidad(engine):
     

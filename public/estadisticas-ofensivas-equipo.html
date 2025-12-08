@@ -26,7 +26,7 @@
                 border-bottom: 1px solid #2a2a4a;
                 transition: border-bottom-color 0.3s;
             }
-            .header h1 { font-size: 2rem; color: #ffffff; font-weight: 700; }
+            .header h1 { font-size: 2rem; color: #ffffff; font-weight: 700; cursor: pointer;}
             .header .controls-container { display: flex; align-items: center; gap: 20px; }
             .header select, .header button {
                 background-color: #2a2a4a;
@@ -160,7 +160,7 @@
     </head>
     <body> 
         <header class="header">
-            <h1>FootViz</h1>
+            <h1 onclick="window.location='index.html'">FootViz</h1>
             <div class="controls-container">
                 <select id="liga">
                     <option value="premierleague" selected>Premier League</option>

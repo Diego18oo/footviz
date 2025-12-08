@@ -160,8 +160,8 @@
                     <h2 id="username-display">Usuario</h2>
                 </div>
                 <div class="user-icons">
-                    <ion-icon name="trophy-outline" title="Mis Logros"></ion-icon>
-                    <ion-icon name="person-circle-outline" title="Mi Perfil"></ion-icon>
+                    <ion-icon name="trophy-outline" title="Mis Logros" onclick="window.location='logros.html'"></ion-icon>
+                    <ion-icon name="home-outline" onclick="window.location='fantasy.html'"></ion-icon>
                     </div>
             </header>
 
@@ -552,7 +552,7 @@
             function createPlayerSlotHTML(player) {
                 const now = new Date();
                 const dayOfWeek = now.getDay(); 
-                const allowedDays = [2,3,   4, 5];
+                const allowedDays = [2,3, 4, 5];
                 let currentGameweekPoints = player.puntos_ultima_jornada_equipo || 0;
                 if (allowedDays.includes(dayOfWeek)) {
                     currentGameweekPoints = 0;
@@ -604,6 +604,7 @@
                     const button = document.createElement('button');
                     button.dataset.id = ficha.id_ficha; 
                     button.textContent = ficha.nombre;
+                    button.title = ficha.descripcion;
                     
                     if (ficha.usada && ficha.jornada_uso === jornadaActual) {
                         button.style.backgroundColor = "#059669"; 
@@ -940,7 +941,7 @@
             function handleTransfer() {
                 const now = new Date();
                 const dayOfWeek = now.getDay(); 
-                const allowedDays = [0,2, 3, 4, 5]; 
+                const allowedDays = [2,3, 4, 6]; 
                 if (!allowedDays.includes(dayOfWeek)) {
                     alert("¡Mercado de fichajes cerrado!\n\nSolo puedes realizar fichajes los martes, miércoles y jueves.");
                     closePlayerModal();

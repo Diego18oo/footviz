@@ -1305,10 +1305,14 @@ export async function getJugadoresFantasy(){
             SELECT
                 pe.jugador,
                 pe.equipo,
-                pe.temporada,
-                ROW_NUMBER() OVER(PARTITION BY pe.jugador, pe.temporada ORDER BY pe.id_plantilla DESC) as rn
+                -- Eliminamos temporada del select si no se usa fuera
+                ROW_NUMBER() OVER(
+                    PARTITION BY pe.jugador 
+                    ORDER BY pe.id_plantilla DESC -- El ID más alto es el último fichaje
+                ) as rn
             FROM
                 plantilla_equipos pe
+         
         )
         SELECT
             vj.id_jugador,
@@ -1335,7 +1339,7 @@ export async function getJugadoresFantasy(){
             partido p ON pjj.id_partido = p.id_partido 
         WHERE
             vj.valor_actual > 0
-            AND lta.rn = 1
+            AND lta.rn = 1 -- Solo el equipo más reciente
         GROUP BY
             vj.id_jugador,
             j.nombre,
@@ -1371,8 +1375,10 @@ export async function crearEquipoFantasyCompleto(id_usuario, nombreEquipo, presu
 
         const placeholders = plantillaJugadores.map(() => '?').join(','); 
         const [jugadoresConPrecio] = await conn.query(
-            `SELECT id_jugador, valor_actual FROM valor_jugador_fantasy 
-             WHERE id_jugador IN (${placeholders})`,
+            `SELECT vj.id_jugador, vj.valor_actual, j.posicion 
+             FROM valor_jugador_fantasy vj
+             JOIN jugador j ON vj.id_jugador = j.id_jugador
+             WHERE vj.id_jugador IN (${placeholders})`,
             [...plantillaJugadores]
         );
 
@@ -1382,16 +1388,57 @@ export async function crearEquipoFantasyCompleto(id_usuario, nombreEquipo, presu
             throw new Error("No se encontraron los datos de precio para todos los jugadores.");
         }
 
-        const plantillaValues = jugadoresConPrecio.map((jugador, index) => {
-            const id_jugador = jugador.id_jugador;
-            const precio_compra = jugador.valor_actual;
+        const porPosicion = { G: [], D: [], M: [], F: [] };
+        jugadoresConPrecio.forEach(j => {
             
+            if (porPosicion[j.posicion]) porPosicion[j.posicion].push(j);
+        });
 
-            const es_titular = (index < 11) ? 1 : 0; 
+        const titulares = [];
+        const suplentes = [];
 
-            const es_capitan = (index === 0) ? 1 : 0; 
+        // 2. Seleccionar mínimos obligatorios (1-3-3-1 es una base segura, o 1-2-2-1 según tus reglas)
+        // (Tus reglas dicen: min 1 POR, 2 DEF, 2 MED, 1 DEL. Usaremos eso)
+        
+        // Helper para mover jugadores
+        const mover = (origen, destino, cantidad) => {
+            for (let i = 0; i < cantidad; i++) {
+                if (origen.length > 0) destino.push(origen.shift());
+            }
+        };
 
-            return [newTeamId, id_jugador, precio_compra, es_titular, es_capitan];
+        mover(porPosicion.G, titulares, 1); // 1 Portero
+        suplentes.push(...porPosicion.G);
+        mover(porPosicion.D, titulares, 3); // 2 Defensas
+        mover(porPosicion.M, titulares, 2); // 2 Medios
+        mover(porPosicion.F, titulares, 1); // 1 Delantero
+
+        // 3. Rellenar los huecos restantes hasta llegar a 11
+        // Juntamos lo que sobró en una sola lista
+        const restantes = [...porPosicion.D, ...porPosicion.M, ...porPosicion.F];
+        
+        // Ordenamos por valor (opcional: poner a los caros de titular)
+        restantes.sort((a, b) => b.valor_actual - a.valor_actual);
+
+        while (titulares.length < 11 && restantes.length > 0) {
+            titulares.push(restantes.shift());
+        }
+
+        // 4. Los que quedan van a la banca
+        suplentes.push(...restantes);
+
+        // 5. Crear el array final para el INSERT
+        const plantillaValues = [];
+
+        // Procesar Titulares
+        titulares.forEach((j, idx) => {
+            const es_capitan = (idx === 0) ? 1 : 0; // El primero es capitán
+            plantillaValues.push([newTeamId, j.id_jugador, j.valor_actual, 1, es_capitan]);
+        });
+
+        // Procesar Suplentes
+        suplentes.forEach(j => {
+            plantillaValues.push([newTeamId, j.id_jugador, j.valor_actual, 0, 0]);
         });
 
         await conn.query(
@@ -1464,7 +1511,7 @@ async function getNombrePais(conn, paisId) {
 }
 
 export async function getPlantillaFantasy(id_usuario){
-    const [jornadaRows] = await pool.query(`SELECT MAX(jornada) as actual FROM partido WHERE fecha <= CURDATE()`);
+    const [jornadaRows] = await pool.query(`SELECT MAX(jornada) as actual FROM partido WHERE fecha <= CURDATE() and jornada !=19`);
     const jornadaActual = jornadaRows[0].actual || 1;
     const [rows] = await pool.query(`
         
@@ -1503,7 +1550,7 @@ export async function getPlantillaFantasy(id_usuario){
         LEFT JOIN equipo e ON pe.equipo = e.id_equipo 
         LEFT JOIN puntos_jugador_jornada pjj ON j.id_jugador = pjj.id_jugador AND pjj.jornada = ?
         WHERE ef.id_usuario = ?;`,
-        [jornadaActual,id_usuario]
+        [jornadaActual ,id_usuario]
   );
   return rows;
 

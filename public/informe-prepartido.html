@@ -25,7 +25,7 @@
                 border-bottom: 1px solid #2a2a4a;
                 transition: border-bottom-color 0.3s;
             }
-            .header h1 { font-size: 2rem; color: #ffffff; font-weight: 700; }
+            .header h1 { font-size: 2rem; color: #ffffff; font-weight: 700; cursor: pointer;}
             .theme-toggle-button {
                 background: #2a2a4a; border: 1px solid #4a4a6a; color: #fff; width: 42px; height: 42px;
                 padding: 10px; border-radius: 50%; cursor: pointer; font-size: 1.2rem;
@@ -193,6 +193,7 @@
     </head>
     <body>
         <header class="header">
+            <h1 onclick="window.location='index.html'">FootViz</h1>
             <h1>Informe Pre-Partido</h1>
             <button id="theme-toggle" class="theme-toggle-button">☀️</button>
         </header>

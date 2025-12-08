@@ -367,7 +367,7 @@
                 
                 if (league.tipo === 'privada' && league.es_admin) {
                     leagueCodeBoxEl.style.display = 'flex';
-                    leagueCodeTextEl.textContent = league.codigo;
+                    leagueCodeTextEl.textContent = league.codigo_invitacion;
                 } else {
                     leagueCodeBoxEl.style.display = 'none';
                 }
@@ -484,6 +484,11 @@
             //RQF6
             leagueCodeBoxEl.addEventListener('click', () => {
                 const code = leagueCodeTextEl.textContent;
+                if (code == ''){
+                    console.log(leagueCodeBoxEl)
+                }
+                
+                console.log(code);
                 navigator.clipboard.writeText(code).then(() => alert("Código copiado al portapapeles: " + code));
             });
 
