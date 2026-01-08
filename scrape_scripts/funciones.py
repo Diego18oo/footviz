@@ -2353,75 +2353,83 @@ def actualizar_porcentaje_popularidad(engine):
 
 def update_fantasy_team_points(engine):
     """
-    Calcula los puntos de la última jornada para CADA equipo fantasy y 
-    actualiza (suma) sus 'puntos_totales' en la base de datos.
-
-    Esta función asume que 'puntos_totales' es un acumulado histórico, 
-    por lo que los puntos de la jornada calculados se AÑADIRÁN al total.
+    Calcula los puntos de la última jornada (jugadores - penalizaciones)
+    y actualiza 'puntos_totales' en la base de datos.
     """
-    
-    print(" Iniciando cálculo de puntos de la jornada fantasy...")
+    print("Iniciando cálculo de puntos de la jornada fantasy...")
 
-    sql_gameweek_points = """
+    
+    with engine.connect() as conn:
+        
+        jornada_actual = conn.execute(text("SELECT MAX(jornada) FROM partido WHERE fecha <= CURDATE()")).scalar() or 1
+
+    print(f"Calculando para la Jornada: {jornada_actual}")
+
+    sql_gameweek_points = text(f"""
     WITH 
-    -- CTE 1: Equipo real más reciente (IGUAL)
     LatestPlayerTeam AS (
         SELECT
             pe.jugador, pe.equipo, pe.temporada,
             ROW_NUMBER() OVER(PARTITION BY pe.jugador ORDER BY pe.id_plantilla DESC) as rn
         FROM plantilla_equipos pe
     ),
-    -- CTE 2: Último partido completado (IGUAL)
     LatestTeamMatch AS (
         SELECT
             team_id, temporada_id, match_id,
             ROW_NUMBER() OVER(PARTITION BY team_id, temporada_id ORDER BY match_fecha DESC, match_id DESC) as rn
         FROM (
-            SELECT p.equipo_local as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha FROM partido p WHERE p.fecha <= CURDATE()
+            SELECT p.equipo_local as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha 
+            FROM partido p WHERE p.jornada = :jornada_actual 
             UNION ALL
-            SELECT p.equipo_visitante as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha FROM partido p WHERE p.fecha <= CURDATE()
+            SELECT p.equipo_visitante as team_id, p.temporada as temporada_id, p.id_partido as match_id, p.fecha as match_fecha 
+            FROM partido p WHERE p.jornada = :jornada_actual
         ) AS all_team_matches
     ),
-    -- CTE 3: Puntos calculados (MODIFICADA)
     FantasyPlayerPoints AS (
         SELECT
             pf.id_equipo_fantasy,
-            ef.id_usuario, -- ⬅️ 1. AGREGAMOS EL ID_USUARIO AQUÍ
-            
+            ef.id_usuario,
             CASE
                 WHEN pf.es_titular = 1 THEN COALESCE(pjj.puntos_fantasy, 0) * (
                     CASE 
                         WHEN pf.es_capitan = 0 THEN 1
-                        WHEN pf.es_capitan = 1 AND fu.id_ficha IS NOT NULL THEN 3
-                        ELSE 2
+                        WHEN pf.es_capitan = 1 AND fu.id_ficha IS NOT NULL THEN 3 
+                        ELSE 2 
                     END
                 )
                 ELSE 0
             END AS calculated_points
         FROM
             plantilla_fantasy pf
-        -- ⬅️ 2. HACEMOS JOIN CON LA TABLA DE EQUIPOS PARA SACAR EL USUARIO
         JOIN
             equipo_fantasy ef ON pf.id_equipo_fantasy = ef.id_equipo_fantasy
         JOIN
             jugador j ON pf.id_jugador = j.id_jugador
-        -- (Resto de tus JOINS siguen igual...)
-        LEFT JOIN ficha_usuario fu ON pf.id_equipo_fantasy = fu.id_equipo_fantasy AND fu.id_ficha = 4 AND fu.jornada_uso = (SELECT MAX(jornada) FROM partido WHERE fecha <= CURDATE())
+        LEFT JOIN ficha_usuario fu ON pf.id_equipo_fantasy = fu.id_equipo_fantasy AND fu.id_ficha = 4 AND fu.jornada_uso = :jornada_actual
         LEFT JOIN LatestPlayerTeam lpt ON j.id_jugador = lpt.jugador AND lpt.rn = 1
         LEFT JOIN LatestTeamMatch ltm ON lpt.equipo = ltm.team_id AND lpt.temporada = ltm.temporada_id AND ltm.rn = 1
         LEFT JOIN puntos_jugador_jornada pjj ON pf.id_jugador = pjj.id_jugador AND ltm.match_id = pjj.id_partido
+    ),
+    TeamPenalties AS (
+        SELECT 
+            id_equipo_fantasy,
+            SUM(costo_puntos) as total_penalty
+        FROM transferencia_fantasy
+        WHERE jornada = :jornada_actual
+        GROUP BY id_equipo_fantasy
     )
 
--- Consulta final: (MODIFICADA)
-SELECT
-    id_equipo_fantasy,
-    id_usuario, -- ⬅️ 3. LO SELECCIONAMOS AQUÍ TAMBIÉN
-    SUM(calculated_points) AS total_jornada_points
-FROM
-    FantasyPlayerPoints
-GROUP BY
-    id_equipo_fantasy, id_usuario; 
-    """
+    SELECT
+        fp.id_equipo_fantasy,
+        fp.id_usuario,
+        (SUM(fp.calculated_points) - COALESCE(tp.total_penalty, 0)) AS total_jornada_points
+    FROM
+        FantasyPlayerPoints fp
+    LEFT JOIN
+        TeamPenalties tp ON fp.id_equipo_fantasy = tp.id_equipo_fantasy
+    GROUP BY
+        fp.id_equipo_fantasy, fp.id_usuario; 
+    """)
     
     meta = MetaData()
     meta.reflect(bind=engine)
@@ -2431,10 +2439,11 @@ GROUP BY
     
     with engine.begin() as conn:
         try:
-            df_puntos_jornada = pd.read_sql(text(sql_gameweek_points), conn)
+            df_puntos_jornada = pd.read_sql(sql_gameweek_points, conn, params={"jornada_actual": jornada_actual})
         except Exception as e:
             print(f"Error al calcular los puntos de la jornada: {e}")
             return 
+        
         if df_puntos_jornada.empty:
             print("No se encontraron puntos de jornada para actualizar.")
             return
@@ -2447,11 +2456,12 @@ GROUP BY
                 'puntos_val': int(row.total_jornada_points)
             }
             for row in df_puntos_jornada.itertuples()
-            if row.total_jornada_points > 0 
+            
+            if row.total_jornada_points != 0 
         ]
 
         if not update_data:
-            print("No hay equipos con nuevos puntos para actualizar.")
+            print("No hay cambios en los puntos.")
             return
 
         update_stmt = tabla_equipo_fantasy.update(). \
@@ -2461,8 +2471,9 @@ GROUP BY
         conn.execute(update_stmt, update_data)
         count_updated = len(update_data)
 
-    print(f"Actualización completada. Se sumaron puntos a {count_updated} equipos fantasy.")
+    print(f"Actualización completada. Se actualizaron puntos a {count_updated} equipos fantasy.")
     return df_puntos_jornada
+
 
 def calcular_puntos_predicciones(engine, id_partido):
     """

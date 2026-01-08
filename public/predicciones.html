@@ -231,13 +231,35 @@
                 height: 250px; /* Altura para el gráfico */
             }
 
+            .fantasy-header {
+                display: flex; justify-content: space-between; align-items: center;
+                background-color: #1e1e3f; padding: 15px 25px; border-radius: 12px; margin-bottom: 20px;
+            }
+            .user-profile-summary { display: flex; align-items: center; gap: 15px; }
+            .user-level-xp { text-align: right; }
+            .user-icons { display: flex; gap: 10px; font-size: 1.5rem; }
+            .user-icons ion-icon { cursor: pointer; }
+
         </style>
     </head>
     <body>
         <div class="container">
 
-            <header class="header">
-                <h1>Mis Predicciones</h1>
+            <header class="fantasy-header">
+                
+                <div class="user-profile-summary">
+                    
+                    <div class="user-level-xp">
+                        <div>Nivel <strong id="user-level">--</strong></div>
+                        <div><span id="user-xp">--</span> xp</div>
+                    </div>
+                    <h2 id="username-display">Usuario</h2>
+                </div>
+                <h1>Predicciones</h1>
+                <div class="user-icons">
+                    <ion-icon name="trophy-outline" title="Mis Logros" onclick="window.location='logros.html'"></ion-icon>
+                    <ion-icon name="home-outline" onclick="window.location='fantasy.html'"></ion-icon>
+                    </div>
             </header>
 
             <main class="predictions-container">
@@ -357,6 +379,33 @@
                 }
             }
             
+            async function loadTeamData() {
+                try {
+                    const response = await fetch('/api/fantasy/mi-equipo');
+                    if (response.status === 401 || response.status === 403) {
+                        alert("Sesión expirada."); 
+                        window.location.href = '/login.html'; 
+                        return;
+                    }
+                    if (!response.ok) throw new Error('Error al cargar datos del equipo.');
+
+                    const data = await response.json(); 
+                    miPlantilla = data.plantillaConDetalles; 
+
+                    document.getElementById('username-display').textContent = data.userInfo.username;
+                    document.getElementById('user-level').textContent = data.userInfo.nivel;
+                    document.getElementById('user-xp').textContent = data.userInfo.xp_total;
+
+                    
+
+
+                } catch (error) {
+                    console.error("Error en loadTeamData:", error);
+                }
+            }
+
+            loadTeamData();
+
             // RQF3 Y RQF4
             function renderPointsGraph(historial) {
                 const ctx = document.getElementById('points-graph').getContext('2d');

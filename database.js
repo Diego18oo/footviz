@@ -1807,7 +1807,7 @@ export async function getProximosPartidosDeEquipos(){
     join equipo el on p.equipo_local = el.id_equipo
     join equipo ev on p.equipo_visitante= ev.id_equipo
 
-    where momio_ganador is null and fecha > '2025-11-02' order by fecha asc limit 5; `
+    where momio_ganador is null and fecha > '2026-01-01' order by fecha asc limit 5; `
   );
   return rows;
 

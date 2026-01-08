@@ -147,7 +147,7 @@
             }
         </style>
     </head>
-    <body>
+    <body> 
         <div class="container">
 
             <header class="fantasy-header">
@@ -552,7 +552,7 @@
             function createPlayerSlotHTML(player) {
                 const now = new Date();
                 const dayOfWeek = now.getDay(); 
-                const allowedDays = [2,3, 4, 5];
+                const allowedDays = [2, 4, 5];
                 let currentGameweekPoints = player.puntos_ultima_jornada_equipo || 0;
                 if (allowedDays.includes(dayOfWeek)) {
                     currentGameweekPoints = 0;
@@ -618,18 +618,18 @@
                     }
                     else if (fichaIrreversibleActiva) {
                         button.disabled = true;
-                        button.style.backgroundColor = "#334155";
+                        button.style.backgroundColor = "#5F799E";
                         button.style.opacity = "0.5";
                         button.title = "No puedes cambiar de ficha porque ya usaste una de mercado.";
                     }
                     else if (ficha.usada && ficha.jornada_uso < jornadaActual) {
                         button.disabled = true;
                         button.textContent += " (Usada)";
-                        button.style.backgroundColor = "#475569";
+                        button.style.backgroundColor = "#5F799E";
                     } 
                     else if (CHIP_UNLOCK_LEVELS[ficha.id_ficha] && userLevel < CHIP_UNLOCK_LEVELS[ficha.id_ficha]) {
                          button.disabled = true;
-                         button.style.backgroundColor = "#334155";
+                         button.style.backgroundColor = "#5F799E";
                          button.textContent += ` (Nvl ${CHIP_UNLOCK_LEVELS[ficha.id_ficha]})`;
                     }
                     else {
@@ -895,11 +895,12 @@
                     const hoursPassed = (now - lastChangeTime) / (1000 * 60 * 60); 
 
                     //RQF6
+                    /*
                     if (hoursPassed < 24) {
                         alert(`Puedes cambiar de capitán solo una vez cada 24 horas. Faltan ${ (24 - hoursPassed).toFixed(1) } horas.`);
                         closePlayerModal();
                         return;
-                    }
+                    }*/
                 }
 
                 const newCaptainId = currentPlayerIdInModal;

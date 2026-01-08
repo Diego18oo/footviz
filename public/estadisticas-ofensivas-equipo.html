@@ -56,10 +56,19 @@
             }
             .theme-toggle-button:hover { background: #3a3a5a; transform: scale(1.1); }
             /* --- Contenedor Principal --- */
-            .dashboard-wrapper { display: flex; gap: 30px; max-width: 1400px; margin: 0 auto; align-items: flex-start; }
-            .dashboard-column-left { flex: 2;  }
-            .dashboard-column-right { flex: 2; display: flex; flex-direction: column; gap: 30px; }
-            .full-width-wrapper { max-width: 750px; margin: 30px auto 0 auto; }
+            .dashboard-wrapper {
+                display: grid;
+                grid-template-columns: 1fr 1fr; 
+                gap: 30px;
+                max-width: 1400px;
+                margin: 0 auto;
+            }
+            .dashboard-column-left,
+            .dashboard-column-right {
+                flex: 1;
+                min-width: 0;
+            }
+            
             /* --- Estilo de Tarjeta --- */
             .card {
                 background-color: #1e1e3f;
@@ -213,18 +222,20 @@
                             <canvas id="porteriaCanvas"></canvas>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <div class="full-width-wrapper">
-                <div class="card">
-                    <h2 class="card-title">Mapa de Disparos</h2>
-                    <p id="label-equipo">Selecciona un equipo de la tabla para ver sus disparos</p>
-                    <div class="pitch-container">
-                        <canvas id="campoCanvas"></canvas>
+                    <div class="card">
+                        <h2 class="card-title">Mapa de Disparos</h2>
+                        <p id="label-equipo">Selecciona un equipo de la tabla para ver sus disparos</p>
+                        <div class="pitch-container">
+                            <canvas id="campoCanvas"></canvas>
+                        </div>
                     </div>
                 </div>
+
+                    
             </div>
+
+            
         </main>
 
         <div id="tooltip"></div>
